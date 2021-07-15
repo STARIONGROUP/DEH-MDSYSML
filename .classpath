@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="bin/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="**" kind="src" output="bin/classes" path="src/main/resources">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="bin/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="test" value="true"/>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/patch.jar"/>
+	<classpathentry kind="lib" path="lib/brand.jar"/>
+	<classpathentry kind="lib" path="lib/brand_api.jar"/>
+	<classpathentry kind="lib" path="lib/activation.jar"/>
+	<classpathentry kind="lib" path="lib/annotation.jar"/>
+	<classpathentry kind="lib" path="lib/batik.jar"/>
+	<classpathentry kind="lib" path="lib/bridj-0.7.0.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.osgi.launcher-17.0.5-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/commons-compress-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/commons-httpclient-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging-1.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/concurrent.jar"/>
+	<classpathentry kind="lib" path="lib/EccpressoAll.jar"/>
+	<classpathentry kind="lib" path="lib/ehcache-2.10.1.jar"/>
+	<classpathentry kind="lib" path="lib/flexlm.jar"/>
+	<classpathentry kind="lib" path="lib/gson-2.2.4.jar"/>
+	<classpathentry kind="lib" path="lib/HTMLEditorLight.jar"/>
+	<classpathentry kind="lib" path="lib/hunspell-bridj-1.0.5-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/javassist.jar"/>
+	<classpathentry kind="lib" path="lib/jhall.jar"/>
+	<classpathentry kind="lib" path="lib/jide-action.jar"/>
+	<classpathentry kind="lib" path="lib/jide-charts.jar"/>
+	<classpathentry kind="lib" path="lib/jide-common.jar"/>
+	<classpathentry kind="lib" path="lib/jide-components.jar"/>
+	<classpathentry kind="lib" path="lib/jide-diff.jar"/>
+	<classpathentry kind="lib" path="lib/jide-dock.jar"/>
+	<classpathentry kind="lib" path="lib/jide-editor.jar"/>
+	<classpathentry kind="lib" path="lib/jide-gantt.jar"/>
+	<classpathentry kind="lib" path="lib/jide-grids.jar"/>
+	<classpathentry kind="lib" path="lib/jide-shortcut.jar"/>
+	<classpathentry kind="lib" path="lib/jimi.jar"/>
+	<classpathentry kind="lib" path="lib/jna.jar"/>
+	<classpathentry kind="lib" path="lib/jnp-client.jar"/>
+	<classpathentry kind="lib" path="lib/jsr250-api-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jsr305.jar"/>
+	<classpathentry kind="lib" path="lib/jtidy.jar"/>
+	<classpathentry kind="lib" path="lib/junit-osgi.jar"/>
+	<classpathentry kind="lib" path="lib/JUnitParams-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/launcher.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-analyzers-common-7.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-core-7.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-misc-7.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/md.jar"/>
+	<classpathentry kind="lib" path="lib/md_api.jar"/>
+	<classpathentry kind="lib" path="lib/md_common.jar"/>
+	<classpathentry kind="lib" path="lib/md_common_api.jar"/>
+	<classpathentry kind="lib" path="lib/md_common_test.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.14-20160307.jar"/>
+	<classpathentry kind="lib" path="lib/poi-ooxml-3.14-20160307.jar"/>
+	<classpathentry kind="lib" path="lib/poi-ooxml-schemas-3.14-20160307.jar"/>
+	<classpathentry kind="lib" path="lib/tw_common.jar"/>
+	<classpathentry kind="lib" path="lib/tw_common_api.jar"/>
+	<classpathentry kind="lib" path="lib/xalan.jar"/>
+	<classpathentry kind="lib" path="lib/xmlbeans-2.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/y.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="output" path="bin/classes"/>
+</classpath>

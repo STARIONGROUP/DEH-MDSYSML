@@ -9,9 +9,8 @@ The DEH MDSYSML allows users to interactivly exchange data between models built 
 
 - Copy then past all the Jar file located in ```{your Cameo/MagicDraw installation path}\lib\``` to ```{The location of the DEH-MDSYSML project repository}\lib\```.
 - Generate a Jar named "DEHMDSYSMLPlugin", no need to include the references from the lib folder.
-- Export the generated project to jar.
 - Copy then paste the Jar file into ```{your Cameo/MagicDraw installation path}\plugins\com.rheagroup.dehmdsysml\```.
-- Copy then paste the file named ```plugin.xml``` file into ```{your Cameo/MagicDraw installation path}\plugins\com.rheagroup.dehmdsysml\```.
+- Copy then paste the file named ```plugin.xml``` into ```{your Cameo/MagicDraw installation path}\plugins\com.rheagroup.dehmdsysml\```.
 
 ## License
 
