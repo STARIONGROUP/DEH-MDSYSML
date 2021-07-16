@@ -13,9 +13,9 @@
 ### System Configuration
 <!-- Tell us about the environment where you are experiencing the bug -->
 
-- DEHPCommon version:
+- Cameo System Modeler/MagicDraw version:
 - Environment (Operating system, version and so on):
-- .NET Framework version:
+- Java version:
 - Additional information:
 
 <!-- Thanks for reporting the issue to DEH-MDSYSML! -->
