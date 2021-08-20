@@ -5,7 +5,7 @@
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
- * This file is part of CDP4-SDKJ Community Edition
+ * This file is part of DEH-MDSYSML
  *
  * The DEH-MDSYSML is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,9 +26,6 @@ package Actions.ToolBar;
 import java.awt.event.ActionEvent;
 import java.util.Collection;
 
-import javax.swing.Icon;
-import javax.swing.JOptionPane;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,7 +33,6 @@ import com.jidesoft.docking.DockingManager;
 import com.nomagic.magicdraw.actions.MDAction;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.ui.MainFrame;
-import com.nomagic.magicdraw.ui.dialogs.MDDialogParentProvider;
 
 import App.AppContainer;
 import Utils.ImageLoader.ImageLoader;
@@ -61,8 +57,6 @@ public class OpenHubBrowserPanelAction extends MDAction
     
     /**
      * Initializes a new {@link OpenHubBrowserPanelAction}
-     * @param id the id of the panel
-     * @param name the
      */
     public OpenHubBrowserPanelAction()
     {
@@ -72,8 +66,11 @@ public class OpenHubBrowserPanelAction extends MDAction
     
     /**
     * Commands the {@link MDHubBrowserPanel} to show or hide
+    * 
+    * @param actionEvent The {@link ActionEvent} that originated the action performed. This parameter is unused.
     */
-    public void actionPerformed(ActionEvent e)
+    @Override
+    public void actionPerformed(ActionEvent actionEvent)
     {            
         try
         {

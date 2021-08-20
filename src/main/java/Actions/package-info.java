@@ -5,7 +5,7 @@
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
- * This file is part of CDP4-SDKJ Community Edition
+ * This file is part of DEH-MDSYSML
  *
  * The DEH-MDSYSML is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

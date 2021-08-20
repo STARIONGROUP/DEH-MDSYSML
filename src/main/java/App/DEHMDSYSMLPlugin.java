@@ -5,7 +5,7 @@
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
- * This file is part of CDP4-SDKJ Community Edition
+ * This file is part of DEH-MDSYSML
  *
  * The DEH-MDSYSML is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,7 @@ public class DEHMDSYSMLPlugin extends Plugin
                 {
 	                public void configure(ActionsManager manager)
 	                {
-	                   NMAction found= manager.getActionFor(ActionsID.NEW_PROJECT);
+	                   NMAction found = manager.getActionFor(ActionsID.NEW_PROJECT);
 	                   
 	                   if( found != null )
 	                   {
@@ -75,8 +75,7 @@ public class DEHMDSYSMLPlugin extends Plugin
 	             	             
 	                        // Get all actions from this category (menu).
 	                        List<NMAction> actionsInCategory = category.getActions();
-	             
-	             
+	                        
 	                        //Add the action after the "New Project" action.
 	                        int indexOfFound = actionsInCategory.indexOf(found);
 	                        actionsInCategory.add(indexOfFound+1, new OpenHubBrowserPanelAction());
@@ -121,7 +120,7 @@ public class DEHMDSYSMLPlugin extends Plugin
     /**
      * Registers the dependencies of the DEH-MDSYSML plugin into the {@linkplain AppContainer.Container}
      */
-    private void RegisterDependencies()
+    public void RegisterDependencies()
     {
         try
         {
