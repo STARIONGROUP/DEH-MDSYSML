@@ -1,9 +1,9 @@
 /*
- * DEHMDSYSMLPlugin.java
+ * IHubBrowserPanelViewModel.java
  *
  * Copyright (c) 2015-2019 RHEA System S.A.
  *
- * Author: Sam GerenÃ©, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
  * This file is part of CDP4-SDKJ Community Edition
  *
@@ -21,30 +21,19 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package ViewModels.Interfaces;
 
-package app;
-import javax.swing.*;
-import com.nomagic.magicdraw.plugins.Plugin;
+import ViewModels.HubBrowserPanelViewModel;
 
-public class DEHMDSYSMLPlugin extends Plugin
+/**
+ * The {@linkplain IHubBrowserPanelViewModel} is the interface definition for {@link HubBrowserPanelViewModel}
+ */
+public interface IHubBrowserPanelViewModel extends IViewModel
 {
-    @Override
-    public void init()
-    {
-        JOptionPane.showMessageDialog(null, "My MDSYSMLPlugin init");
-    }
-    @Override
-    public boolean close()
-    {
-        JOptionPane.showMessageDialog( null, "My MDSYSMLPlugin close");
-        return true;
-    }
-    @Override
-    public boolean isSupported()
-    {
-        //plugin can check here for specific conditions
-        //if false is returned plugin is not loaded.
-        return true;
-    }
+    /**
+     * Action to be taken when the Connect button is clicked
+     * 
+     * @return a {@linkplain Boolean} as the dialog result
+     */
+    Boolean ConnectButtonAction();
 }
-
