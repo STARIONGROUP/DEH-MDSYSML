@@ -52,18 +52,37 @@ import javax.swing.JTree;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import org.junit.Ignore;
 
+/**
+ * The {@linkplain MDHubBrowserPanel} is the {@linkplain HubBrowserPanel} for the MagicDraw / Cameo software
+ */
 @SuppressWarnings("serial")
 public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowserPanelViewModel>
 {
+    /**
+     * The key that identify this view in the dock layout manager of the MagicDraw / Cameo software
+     */
     public static final String PanelDockKey = "DEH MagicDraw Adapter - HubBrowserPanel";
     
+    /**
+     * An assert whether this view is visible
+     */
     private boolean isVisibleInTheDock;
     
+    /**
+     * The {@link INavigationService}
+     */
     protected INavigationService navigationService;
 
+    /**
+     * The {@link IHubBrowserPanelViewModel} as the data context of this view
+     */
     private IHubBrowserPanelViewModel dataContext;
     
+    /**
+     * The {@linkplain HubBrowserPanel} this view wraps
+     */
     private HubBrowserPanel hubBrowserPanel;
     
     /**
@@ -71,7 +90,6 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
      */
     public MDHubBrowserPanel()
     {
-        //initialize();
         setKey(PanelDockKey);
         setTabTitle("Hub Browser");
         setFrameIcon(ImageLoader.GetIcon("icon16.png"));
@@ -82,6 +100,7 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
 
     /**
      * Show or Hide this {@link MDHubBrowserPanel}
+     * 
      * @param dockingManager The {@link DockingManager} that is allowed to hide or show this frame
      */
     public void ShowHide(DockingManager dockingManager)
@@ -97,22 +116,32 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
             this.isVisibleInTheDock = true;
         }
     }
-
+    
+    /**
+     * Binds the <code>TViewModel viewModel</code> to the implementing view
+     * 
+     * @param <code>viewModel</code> the view model to bind
+     */
     @Override
     public void Bind(IHubBrowserPanelViewModel viewModel)
     {
-        this.hubBrowserPanel.ConnectButton.addActionListener(new ActionListener() 
+        this.hubBrowserPanel.ConnectButton().addActionListener(new ActionListener() 
         {
             public void actionPerformed(ActionEvent e)
             {
                 if(dataContext.ConnectButtonAction())
                 {
-                    hubBrowserPanel.ConnectButton.setText("Disconnect");
+                    hubBrowserPanel.ConnectButton().setText("Disconnect");
                 }
             }
         });        
     }
     
+    /**
+     * Sets the DataContext
+     * 
+     * @param viewModel the {@link IViewModel} to assign
+     */
     @Override
     public void SetDataContext(IViewModel viewModel)
     {
@@ -120,6 +149,11 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
         this.Bind(dataContext);
     }
 
+    /**
+     * Gets the DataContext
+     * 
+     * @return An {@link IViewModel}
+     */
     @Override
     public IHubBrowserPanelViewModel GetDataContext()
     {
