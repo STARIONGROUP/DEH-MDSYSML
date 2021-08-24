@@ -40,7 +40,7 @@ public class DEHMDSYSMLPluginTestFixture
 	{
 		DEHMDSYSMLPlugin plugin = new DEHMDSYSMLPlugin();
 		assertNotNull(plugin);
-		assertTrue(plugin.isSupported());;
+		assertTrue(plugin.isSupported());
         assertTrue(plugin.close());
 	}
 	
