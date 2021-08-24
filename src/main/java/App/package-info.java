@@ -1,11 +1,11 @@
 /*
- * MDSYSMLPluginTest.java
+ * package-info.java
  *
  * Copyright (c) 2015-2019 RHEA System S.A.
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
- * This file is part of CDP4-SDKJ Community Edition
+ * This file is part of DEH-MDSYSML
  *
  * The DEH-MDSYSML is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,22 +22,4 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package test;
-
-import org.junit.jupiter.api.Test;
-
-import App.DEHMDSYSMLPlugin;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-public class DEHMDSYSMLPluginTest {
-
-	@Test
-	public void VerifyLoad()
-	{
-		DEHMDSYSMLPlugin plugin = new DEHMDSYSMLPlugin();
-		assertNotNull(plugin);
-		assertTrue(plugin.isSupported());
-	}
-}
+package App;

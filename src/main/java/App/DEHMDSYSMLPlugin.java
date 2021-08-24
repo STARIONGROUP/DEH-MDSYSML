@@ -38,7 +38,6 @@ import com.nomagic.magicdraw.actions.ActionsID;
 import com.nomagic.magicdraw.plugins.Plugin;
 import com.nomagic.magicdraw.actions.ActionsConfiguratorsManager;
 
-import App.AppContainer;
 import ViewModels.HubBrowserPanelViewModel;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import Actions.ToolBar.*;
@@ -130,7 +129,7 @@ public class DEHMDSYSMLPlugin extends Plugin
         {
             this.logger.error(String.format("MDSYSMLPlugin register dependencies has thrown an exception with %s \n\r %s", exception.toString(), exception.getStackTrace()));
             throw exception;
-        }    
+        }
     }
 }
 
