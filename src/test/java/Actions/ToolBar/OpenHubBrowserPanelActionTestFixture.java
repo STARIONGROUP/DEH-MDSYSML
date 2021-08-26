@@ -1,11 +1,11 @@
 /*
- * DEHMDSYSMLPlugin.java
+ * OpenHubBrowserPanelActionTestFixture.java
  *
- * Copyright (c) 2015-2019 RHEA System S.A.
+ * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam GerenÃ©, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
- * This file is part of CDP4-SDKJ Community Edition
+ * This file is part of DEH-CommonJ
  *
  * The DEH-MDSYSML is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,30 +21,29 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package Actions.ToolBar;
 
-package app;
-import javax.swing.*;
-import com.nomagic.magicdraw.plugins.Plugin;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-public class DEHMDSYSMLPlugin extends Plugin
+import static org.mockito.ArgumentMatchers.*;
+
+import java.awt.event.ActionEvent;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class OpenHubBrowserPanelActionTestFixture
 {
-    @Override
-    public void init()
-    {
-        JOptionPane.showMessageDialog(null, "My MDSYSMLPlugin init");
+    @Before
+    public void setUp() throws Exception
+    {        
     }
-    @Override
-    public boolean close()
-    {
-        JOptionPane.showMessageDialog( null, "My MDSYSMLPlugin close");
-        return true;
-    }
-    @Override
-    public boolean isSupported()
-    {
-        //plugin can check here for specific conditions
-        //if false is returned plugin is not loaded.
-        return true;
-    }
-}
 
+    @Test
+    public void test()
+    {
+        OpenHubBrowserPanelAction action = new OpenHubBrowserPanelAction();
+        assertDoesNotThrow(() -> action.actionPerformed(any(ActionEvent.class)));
+    }
+
+}

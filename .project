@@ -3,6 +3,7 @@
 	<name>DEH-MDSYSML</name>
 	<comment></comment>
 	<projects>
+		<project>DEH-CommonJ</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
