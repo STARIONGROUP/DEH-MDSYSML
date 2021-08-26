@@ -1,7 +1,7 @@
 /*
  * OpenBrowserPanelAction.java
  *
- * Copyright (c) 2015-2019 RHEA System S.A.
+ * Copyright (c) 2020-2021 RHEA System S.A.
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *

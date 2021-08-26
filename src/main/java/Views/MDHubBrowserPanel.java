@@ -1,7 +1,7 @@
 /*
  * MDHubBrowserPanel.java
  *
- * Copyright (c) 2015-2019 RHEA System S.A.
+ * Copyright (c) 2020-2021 RHEA System S.A.
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
@@ -68,7 +68,7 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
     /**
      * An assert whether this view is visible
      */
-    private boolean isVisibleInTheDock;
+    private boolean isVisibleInTheDock = true;
     
     /**
      * The {@link INavigationService}
@@ -93,6 +93,7 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
         setKey(PanelDockKey);
         setTabTitle("Hub Browser");
         setFrameIcon(ImageLoader.GetIcon("icon16.png"));
+        this.setCloseAction(_autohideAction);
         this.setDefaultCloseAction(JFrame.HIDE_ON_CLOSE);
         this.hubBrowserPanel = new HubBrowserPanel();
         getRootPane().getContentPane().add(this.hubBrowserPanel);
@@ -123,18 +124,28 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
      * @param <code>viewModel</code> the view model to bind
      */
     @Override
-    public void Bind(IHubBrowserPanelViewModel viewModel)
+    public void Bind()
     {
         this.hubBrowserPanel.ConnectButton().addActionListener(new ActionListener() 
         {
             public void actionPerformed(ActionEvent e)
             {
-                if(dataContext.ConnectButtonAction())
+                if(dataContext.GetIsConnected())
                 {
-                    hubBrowserPanel.ConnectButton().setText("Disconnect");
+                    if(dataContext.Connect())
+                    {
+                        hubBrowserPanel.ConnectButton().setText("Disconnect");
+                    }
+                }
+                else
+                {
+                    dataContext.Disconnect();
+                    hubBrowserPanel.ConnectButton().setText("Connect");
                 }
             }
-        });        
+        });
+        
+        this.hubBrowserPanel.getHubBrowserHeader().SetDataContext(this.dataContext.GetHubBrowserHeaderViewModel());
     }
     
     /**
@@ -146,7 +157,7 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
     public void SetDataContext(IViewModel viewModel)
     {
         this.dataContext = (IHubBrowserPanelViewModel)viewModel;   
-        this.Bind(dataContext);
+        this.Bind();
     }
 
     /**

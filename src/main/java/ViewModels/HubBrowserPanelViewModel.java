@@ -1,7 +1,7 @@
 /*
  * HubBrowserPanelViewModel.java
  *
- * Copyright (c) 2015-2019 RHEA System S.A.
+ * Copyright (c) 2020-2021 RHEA System S.A.
  *
  * Author: Sam Geren�, Alex Vorobiev, Nathanael Smiechowski 
  *
@@ -25,6 +25,7 @@ package ViewModels;
 
 import HubController.IHubController;
 import Service.NavigationService.INavigationService;
+import ViewModels.Interfaces.IHubBrowserHeaderViewModel;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import Views.HubLogin;
 
@@ -44,14 +45,32 @@ public class HubBrowserPanelViewModel implements IHubBrowserPanelViewModel
     private IHubController hubController;
 
     /**
+     * the {@linkplain IHubBrowserHeaderViewModel}
+     */
+    private IHubBrowserHeaderViewModel hubBrowserHeaderViewModel;
+    
+    /**
+     * Gets the {@linkplain IHubBrowserHeaderViewModel}
+     * 
+     * @return the {@linkplain IHubBrowserHeaderViewModel}
+     */
+    @Override
+    public IHubBrowserHeaderViewModel GetHubBrowserHeaderViewModel()
+    {
+        return this.hubBrowserHeaderViewModel;
+    }
+
+    /**
      * Initializes a new {@link HubBrowserPanelViewModel}
      * @param navigationService the {@linkplain INavigationService}
      * @param hubController the {@linkplain IHubController}
+     * @param hubBrowserHeaderViewModel the {@linkplain IHubBrowserHeaderViewModel}
      */
-    public HubBrowserPanelViewModel(INavigationService navigationService, IHubController hubController)
+    public HubBrowserPanelViewModel(INavigationService navigationService, IHubController hubController, IHubBrowserHeaderViewModel hubBrowserHeaderViewModel)
     {
         this.navigationService = navigationService;
         this.hubController = hubController;
+        this.hubBrowserHeaderViewModel = hubBrowserHeaderViewModel;
     }
 
     /**
@@ -60,9 +79,29 @@ public class HubBrowserPanelViewModel implements IHubBrowserPanelViewModel
      * @return a {@linkplain Boolean} as the dialog result
      */
     @Override
-    public Boolean ConnectButtonAction()
+    public Boolean Connect()
     {
         HubLogin view = new HubLogin();
         return this.navigationService.ShowDialog(view);
-    }    
+    }
+    
+    /**
+     * Closes the {@linkplain Session}
+     */
+    @Override
+    public void Disconnect()
+    {
+        this.hubController.Close();
+    }
+    
+    /**
+     * Gets a value indicating whether the session is open or not
+     * 
+     * @return a {@linkplain Boolean}
+     */
+    @Override
+    public Boolean GetIsConnected()
+    {
+        return this.hubController.GetIsSessionOpen();    
+    }
 }

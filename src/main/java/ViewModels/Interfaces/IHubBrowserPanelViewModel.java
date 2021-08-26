@@ -1,7 +1,7 @@
 /*
  * IHubBrowserPanelViewModel.java
  *
- * Copyright (c) 2015-2019 RHEA System S.A.
+ * Copyright (c) 2020-2021 RHEA System S.A.
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
@@ -35,5 +35,24 @@ public interface IHubBrowserPanelViewModel extends IViewModel
      * 
      * @return a {@linkplain Boolean} as the dialog result
      */
-    Boolean ConnectButtonAction();
+    Boolean Connect();
+
+    /**
+     * Gets the {@linkplain IHubBrowserHeaderViewModel}
+     * 
+     * @return the {@linkplain IHubBrowserHeaderViewModel}
+     */
+    IHubBrowserHeaderViewModel GetHubBrowserHeaderViewModel();
+
+    /**
+     * Gets a value indicating whether the session is open or not
+     * 
+     * @return a {@linkplain Boolean}
+     */
+    Boolean GetIsConnected();
+
+    /**
+     * Closes the {@linkplain Session}
+     */
+    void Disconnect();
 }

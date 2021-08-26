@@ -1,7 +1,7 @@
 /*
  * HubBrowserPanelViewModelTestFixture.java
  *
- * Copyright (c) 2015-2019 RHEA System S.A.
+ * Copyright (c) 2020-2021 RHEA System S.A.
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import HubController.IHubController;
 import Service.NavigationService.INavigationService;
+import ViewModels.Interfaces.IHubBrowserHeaderViewModel;
 import Views.HubLogin;
 
 class HubBrowserPanelViewModelTestFixture
@@ -41,6 +42,7 @@ class HubBrowserPanelViewModelTestFixture
 
     private INavigationService navigationService;
     private IHubController hubController;
+    private IHubBrowserHeaderViewModel hubBrowserHeaderViewModel;
 
     /**
      * @throws java.lang.Exception
@@ -50,13 +52,14 @@ class HubBrowserPanelViewModelTestFixture
     {
         this.navigationService = mock(INavigationService.class);
         this.hubController = mock(IHubController.class);
+        this.hubBrowserHeaderViewModel = mock(IHubBrowserHeaderViewModel.class);
     }
 
     @Test
     void VerifyConnectButtonAction()
     {
-        HubBrowserPanelViewModel viewModel = new HubBrowserPanelViewModel(this.navigationService, this.hubController);
-        assertDoesNotThrow(() -> viewModel.ConnectButtonAction());
+        HubBrowserPanelViewModel viewModel = new HubBrowserPanelViewModel(this.navigationService, this.hubController, this.hubBrowserHeaderViewModel);
+        assertDoesNotThrow(() -> viewModel.Connect());
         verify(this.navigationService, times(1)).ShowDialog(any(HubLogin.class));
     }    
 }
