@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam GerenÃ©, Alex Vorobiev, Nathanael Smiechowski 
  *
  * This file is part of DEH-MDSYSML
  *
@@ -60,7 +60,7 @@ public class OpenHubBrowserPanelAction extends MDAction
      */
     public OpenHubBrowserPanelAction()
     {
-         super("Hub Browser", "Open/Close the Hub Browser Panel", null, null);      
+         super("Hub Browser", "Open/Close the Hub Browser Panel", null, null);
          this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
     }
     
@@ -96,5 +96,5 @@ public class OpenHubBrowserPanelAction extends MDAction
             this.logger.error(String.format("OpenHubBrowserPanelAction actionPerformed has thrown an exception %s \n\r %s", exception.toString(), exception.getStackTrace()));
             throw exception;
         }
-    }    
+    }
 }

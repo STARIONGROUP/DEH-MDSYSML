@@ -24,4 +24,4 @@
 /**
  *
  */
-package Actions;
+package Actions.Browser;

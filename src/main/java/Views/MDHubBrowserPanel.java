@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam GerenÃ©, Alex Vorobiev, Nathanael Smiechowski 
  *
  * This file is part of DEH-MDSYSML
  *
@@ -30,7 +30,7 @@ import com.jidesoft.docking.DockableFrame;
 import com.jidesoft.docking.DockingManager;
 
 import App.AppContainer;
-import Service.NavigationService.INavigationService;
+import Services.NavigationService.INavigationService;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import ViewModels.Interfaces.IViewModel;
@@ -93,8 +93,7 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
         setKey(PanelDockKey);
         setTabTitle("Hub Browser");
         setFrameIcon(ImageLoader.GetIcon("icon16.png"));
-        this.setCloseAction(_autohideAction);
-        this.setDefaultCloseAction(JFrame.HIDE_ON_CLOSE);
+        this.setDefaultCloseAction(CLOSE_ACTION_TO_HIDE);
         this.hubBrowserPanel = new HubBrowserPanel();
         getRootPane().getContentPane().add(this.hubBrowserPanel);
     }
@@ -130,9 +129,10 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
         {
             public void actionPerformed(ActionEvent e)
             {
-                if(dataContext.GetIsConnected())
+                if(!dataContext.GetIsConnected())
                 {
-                    if(dataContext.Connect())
+                    Boolean connectionDialogResult= dataContext.Connect();
+                    if(connectionDialogResult != null && connectionDialogResult)
                     {
                         hubBrowserPanel.ConnectButton().setText("Disconnect");
                     }
@@ -146,6 +146,8 @@ public class MDHubBrowserPanel extends DockableFrame implements IView<IHubBrowse
         });
         
         this.hubBrowserPanel.getHubBrowserHeader().SetDataContext(this.dataContext.GetHubBrowserHeaderViewModel());
+        this.hubBrowserPanel.GetElementDefinitionBrowser().SetDataContext(this.dataContext.GetElementDefinitionBrowserViewModel());
+        this.hubBrowserPanel.GetRequirementBrowser().SetDataContext(this.dataContext.GetRequirementBrowserViewModel());
     }
     
     /**

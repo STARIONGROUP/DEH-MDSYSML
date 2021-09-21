@@ -1,11 +1,11 @@
 /*
- * OpenHubBrowserPanelActionTestFixture.java
+ * MapActionTestFixture.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
  * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
  *
- * This file is part of DEH-CommonJ
+ * This file is part of DEH-MDSYSML
  *
  * The DEH-MDSYSML is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,28 +21,40 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Actions.ToolBar;
+package Actions.Browser;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 
 import java.awt.event.ActionEvent;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public class OpenHubBrowserPanelActionTestFixture
+import com.nomagic.magicdraw.tests.MagicDrawTestRunner;
+
+import DstController.IDstController;
+import HubController.IHubController;
+
+@RunWith(MagicDrawTestRunner.class)
+public class MapActionTestFixture
 {
-    @Before
-    public void setUp() throws Exception
-    {        
-    }
+    private IDstController dstController;
+    private IHubController hubController;
 
-    @Test
-    public void test()
+    @Before
+    public void setup()
     {
-        OpenHubBrowserPanelAction action = new OpenHubBrowserPanelAction();
+        this.hubController = mock(IHubController.class);
+        this.dstController = mock(IDstController.class);
+    }
+    
+    @Test
+    public void VerifyActionPerformed()
+    {
+        MapAction action = new MapAction(this.hubController, this.dstController);
         assertDoesNotThrow(() -> action.actionPerformed(any(ActionEvent.class)));
     }
 }
