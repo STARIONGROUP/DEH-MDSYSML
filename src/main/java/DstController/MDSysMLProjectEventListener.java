@@ -28,6 +28,9 @@ import com.nomagic.magicdraw.core.project.ProjectEventListener;
 
 import Reactive.ObservableValue;
 
+/**
+ * The {@linkplain MDSysMLProjectEventListener} is a {@linkplain ProjectEventListener}. It listens for changes happening in Cameo/MagicDraw on the open project
+ */
 public final class MDSysMLProjectEventListener implements ProjectEventListener
 {
     /**
@@ -36,10 +39,14 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     protected final ObservableValue<Boolean> HasOneDocumentOpenObservable = new ObservableValue<Boolean>(false, Boolean.class);
     
     /**
-     * Gets a reactive {@linkplain Project}
+     * Gets a reactive {@linkplain Project} of type {@linkplain ObservableValue} of type {@linkplain Project}
      */
     protected final ObservableValue<Project> OpenDocumentObservable = new ObservableValue<Project>(Project.class);
     
+    /**
+     * Occurs when the project gets closed
+     * Fires the {@linkplain HasOneDocumentOpenObservable} and the {@linkplain OpenDocumentObservable}
+     */
     @Override
     public void projectClosed(Project project)
     {
@@ -47,6 +54,10 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
         this.OpenDocumentObservable.Value(null);
     }
 
+    /**
+     * Occurs when a project is created
+     * Fires the {@linkplain HasOneDocumentOpenObservable} and the {@linkplain OpenDocumentObservable}
+     */
     @Override
     public void projectCreated(Project project)
     {
@@ -54,6 +65,10 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
         this.OpenDocumentObservable.Value(project);
     }
 
+    /**
+     * Occurs when the project gets open
+     * Fires the {@linkplain HasOneDocumentOpenObservable} and the {@linkplain OpenDocumentObservable}
+     */
     @Override
     public void projectOpened(Project project)
     {
@@ -61,6 +76,10 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
         this.OpenDocumentObservable.Value(project);
     }
 
+    /**
+     * Occurs when the project gets open from the user interface
+     * Fires the {@linkplain HasOneDocumentOpenObservable} and the {@linkplain OpenDocumentObservable}
+     */
     @Override
     public void projectOpenedFromGUI(Project project)
     {
@@ -68,6 +87,10 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
         this.OpenDocumentObservable.Value(project);
     }
 
+    /**
+     * Occurs when the project gets replaced by another one
+     * Fires the {@linkplain HasOneDocumentOpenObservable} and the {@linkplain OpenDocumentObservable} 
+     */
     @Override
     public void projectReplaced(Project project, Project project2)
     {
@@ -75,33 +98,63 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
         this.OpenDocumentObservable.Value(project2);    
     }
 
+    /**
+     * Occurs when the project gets deactivated. Unused
+     */
     @Override
     public void projectDeActivated(Project project) { }
-    
+
+    /**
+     * Occurs when the project gets activated. Unused
+     */
     @Override
     public void projectActivated(Project project) { }
 
+    /**
+     * Occurs when the project gets activated from the user interface. Unused
+     */
     @Override
     public void projectActivatedFromGUI(Project project) { }
     
+    /**
+     * Occurs when the project gets pre activated. Unused
+     */
     @Override
     public void projectPreActivated(Project project) { }
 
+    /**
+     * Occurs when the project gets pre closed. Unused
+     */
     @Override
     public void projectPreClosed(Project project) { }
 
+    /**
+     * Occurs when the project gets pre closed final. Unused
+     */
     @Override
     public void projectPreClosedFinal(Project project) { }
 
+    /**
+     * Occurs when the project gets pre deactivated. Unused
+     */
     @Override
     public void projectPreDeActivated(Project project) { }
 
+    /**
+     * Occurs when the project gets pre replaced. Unused
+     */
     @Override
     public void projectPreReplaced(Project project, Project project2) { }
 
+    /**
+     * Occurs when the project gets pre saved. Unused
+     */
     @Override
     public void projectPreSaved(Project project, boolean isSaved) { }
 
+    /**
+     * Occurs when the project gets saved. Unused
+     */
     @Override
     public void projectSaved(Project project, boolean isSaved) { }
 }
