@@ -1,9 +1,9 @@
 /*
- * HubBrowserPanelViewModelTestFixture.java
+ * BlockDefinitionMappingRuleTestFixture.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam GerenÃ©, Alex Vorobiev, Nathanael Smiechowski 
  *
  * This file is part of DEH-MDSYSML
  *
@@ -21,28 +21,25 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ViewModels;
+package MappingRules;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.ArgumentMatchers.*;
+
+import java.util.Arrays;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+
 import HubController.IHubController;
-import Service.NavigationService.INavigationService;
-import ViewModels.Interfaces.IHubBrowserHeaderViewModel;
-import Views.HubLogin;
+import Reactive.ObservableCollection;
 
-class HubBrowserPanelViewModelTestFixture
+class BlockDefinitionMappingRuleTestFixture
 {
-
-    private INavigationService navigationService;
     private IHubController hubController;
-    private IHubBrowserHeaderViewModel hubBrowserHeaderViewModel;
+    private BlockDefinitionMappingRule rule;
 
     /**
      * @throws java.lang.Exception
@@ -50,16 +47,21 @@ class HubBrowserPanelViewModelTestFixture
     @BeforeEach
     void setUp() throws Exception
     {
-        this.navigationService = mock(INavigationService.class);
         this.hubController = mock(IHubController.class);
-        this.hubBrowserHeaderViewModel = mock(IHubBrowserHeaderViewModel.class);
+        this.rule = new BlockDefinitionMappingRule(this.hubController);
     }
 
     @Test
-    void VerifyConnectButtonAction()
+    void VerifyTransform()
     {
-        HubBrowserPanelViewModel viewModel = new HubBrowserPanelViewModel(this.navigationService, this.hubController, this.hubBrowserHeaderViewModel);
-        assertDoesNotThrow(() -> viewModel.Connect());
-        verify(this.navigationService, times(1)).ShowDialog(any(HubLogin.class));
-    }    
+        assertDoesNotThrow(() -> this.rule.Transform(hubController));
+        assertEquals(0, this.rule.Transform(hubController).size());
+
+        Class element0 = mock(Class.class);
+        Class element1 = mock(Class.class);
+        Class element2 = mock(Class.class);
+        ObservableCollection<Class> elements = new ObservableCollection<Class>(Arrays.asList(element0, element1, element2), Class.class);
+        
+        assertDoesNotThrow(() -> this.rule.Transform(elements));
+    }
 }
