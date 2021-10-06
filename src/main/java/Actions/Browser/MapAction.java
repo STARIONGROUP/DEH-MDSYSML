@@ -83,13 +83,21 @@ public class MapAction extends DefaultBrowserAction
     public MapAction(IHubController hubController, IDstController dstController) 
     {
         super("Map Selection", "Map the current selection", KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK, true), null);
-        this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
+        this.setSmallIcon(ImageLoader.GetIcon("icon16.png"));
         this.dstController = dstController;
         this.hubController = hubController;
-        this.SetIsEnabled(this.hubController.GetIsSessionOpen());
-        this.hubController.GetIsSessionOpenObservable().subscribe(x -> this.SetIsEnabled(x));
+        this.hubController.GetIsSessionOpenObservable().subscribe(x -> this.updateState());
     }
 
+    /**
+     * Updates the enabled/disabled state of this action
+     */
+    @Override
+    public void updateState()
+    {
+       this.SetIsEnabled(this.hubController.GetOpenIteration() != null);
+    }
+    
     /**
      * Sets a value indicating whether this action is enabled
      * 
@@ -98,7 +106,6 @@ public class MapAction extends DefaultBrowserAction
     private void SetIsEnabled(boolean shouldEnable)
     {
         shouldEnable &= this.getTree() != null && this.getTree().getSelectedNodes().length > 0;
-        this.logger.error(String.format("shouldEnable && this.tree != null && this.tree.getSelectedNodes().length > 0 =======> %s", shouldEnable));
         this.setEnabled(shouldEnable);
     }
     
@@ -109,17 +116,30 @@ public class MapAction extends DefaultBrowserAction
     */
     @Override
     public void actionPerformed(ActionEvent actionEvent)
-    {            
+    {
         try
         {
-            ObservableCollection<Element> elements = this.SortSelectedElements();
-            this.logger.error(String.format("this.dstController.Map(elements) ?? %s", this.dstController.Map(elements)));
+           this.logger.error(String.format("Mapping action is done with success ? %s", this.MapSelectedElements()));
         }
         catch (Exception exception) 
         {
             this.logger.error(String.format("MapAction actionPerformed has thrown an exception %s", exception));
             throw exception;
         }
+    }
+    
+    /**
+     * Asynchronously maps the selected elements from the current tree
+     * 
+     * @return a value indicating whether the mapping operation succeeded
+     */
+    private boolean MapSelectedElements()
+    {
+        ObservableCollection<Element> elements = this.SortSelectedElements();
+        boolean result = this.dstController.Map(elements);
+        this.logger.error(String.format("this.dstController.Map(elements) ?? %s", result));
+        
+        return result;
     }
 
     /**
@@ -130,7 +150,7 @@ public class MapAction extends DefaultBrowserAction
         ObservableCollection<Element> elements = new ObservableCollection<Element>(Element.class);
         
         Node[] nodes = this.getTree().getSelectedNodes();
-                    
+
         for (Node node : nodes)
         {
             Object userObject = node.getUserObject();
@@ -138,7 +158,7 @@ public class MapAction extends DefaultBrowserAction
             if (userObject instanceof Element)
             {
                 Element element = (Element)userObject;
-                
+
                 if(element instanceof Model)
                 {
                     elements.add(element);
