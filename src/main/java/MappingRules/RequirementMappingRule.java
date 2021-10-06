@@ -153,49 +153,8 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
                 this.logger.catching(exception);
             }
         }
-        
-        this.Debug(this.requirementsSpecifications);
     }
-
-    /**
-     * @param requirementsSpecifications2
-     */
-    private void Debug(ArrayList<RequirementsSpecification> requirementsSpecifications2)
-    {
-        this.logger.error(String.format("-------│-DEBUG MAPPING REQUIREMENTS-%s requirements specification-│----------", requirementsSpecifications2.size()));
-        
-        for(RequirementsSpecification element : requirementsSpecifications2)
-        {
-            this.logger.error(String.format("REQDEBUG=> RequirementsSpecification name ? %s and has %s groups and %s requirements", 
-                    element.getName(), element.getGroup().size(), element.getRequirement().size()));
-            
-            this.DebugLoopThroughGroups(element.getGroup());
-            
-            for (Requirement requirement : element.getRequirement())
-            {
-                this.logger.error(String.format("REQDEBUG=> requirement name ? %s and requirement definition ? %s", 
-                        requirement.getName(), requirement.getDefinition().stream().map(x -> x.getContent()).findFirst().orElse("THIS REQ HAS NO DEFINITION CONTENT")));
-            }
-        }
-    }
-
-    /**
-     * @param currentGroups
-     */
-    private void DebugLoopThroughGroups(ContainerList<RequirementsGroup> currentGroups)
-    {
-        if(currentGroups != null && currentGroups.size() > 0)
-        {
-            for (RequirementsGroup group : currentGroups)
-            {
-                this.logger.error(String.format("REQDEBUG=> RequirementsGroup name ? %s and has %s groups", 
-                        group.getName(), group.getGroup().size()));
-                
-                this.DebugLoopThroughGroups(group.getGroup());
-            }
-        }
-    }
-
+    
     /**
      * Tries to create the groups between the current {@linkplain RequirementsSpecification} and the current {@linkplain Requirement} to be created,
      * and creates the {@linkplain Requirement}. This method is called recursively until the methods reaches the {@linkplain Requirement}
