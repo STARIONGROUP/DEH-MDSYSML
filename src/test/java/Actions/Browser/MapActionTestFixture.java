@@ -26,6 +26,7 @@ package Actions.Browser;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.awt.event.ActionEvent;
 
@@ -34,9 +35,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.nomagic.magicdraw.tests.MagicDrawTestRunner;
+import com.nomagic.magicdraw.ui.browser.Tree;
 
 import DstController.IDstController;
 import HubController.IHubController;
+import Reactive.ObservableValue;
 
 @RunWith(MagicDrawTestRunner.class)
 public class MapActionTestFixture
@@ -49,12 +52,15 @@ public class MapActionTestFixture
     {
         this.hubController = mock(IHubController.class);
         this.dstController = mock(IDstController.class);
+        ObservableValue<Boolean> isSessionOpen = new ObservableValue<Boolean>(true, Boolean.class);
+        when(this.hubController.GetIsSessionOpenObservable()).thenReturn(isSessionOpen.Observable());
     }
     
     @Test
     public void VerifyActionPerformed()
     {
         MapAction action = new MapAction(this.hubController, this.dstController);
+        action.setTree(new Tree());
         assertDoesNotThrow(() -> action.actionPerformed(any(ActionEvent.class)));
     }
 }

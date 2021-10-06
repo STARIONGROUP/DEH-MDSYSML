@@ -25,7 +25,6 @@ package DstController;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -34,13 +33,12 @@ import org.apache.logging.log4j.Logger;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
-import com.nomagic.magicdraw.uml.ElementImpl;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
-
 import Reactive.ObservableCollection;
+import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
+import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import io.reactivex.Observable;
 
 /**
@@ -99,13 +97,13 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<ElementDefinition> dstMapResult = new ObservableCollection<ElementDefinition>(ElementDefinition.class);
+    private ObservableCollection<Thing> dstMapResult = new ObservableCollection<Thing>(Thing.class);
 
     /**
      * Gets The {@linkplain ObservableCollection} of dst map result
      */
     @Override
-    public ObservableCollection<ElementDefinition> GetDstMapResult()
+    public ObservableCollection<Thing> GetDstMapResult()
     {
         return this.dstMapResult;
     }
@@ -126,11 +124,11 @@ public final class DstController implements IDstController
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
      * and assign the map result to the dstMapResult or the hubMapResult
      * 
-     * @param input the {@linkplain Collection} of {@linkplain Object} to map
+     * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
      * @return a {@linkplain boolean} indicating whether the mapping operation went well
      */
     @Override
-    public boolean Map(ObservableCollection<?> input)
+    public boolean Map(IMappableThingCollection input)
     {        
         Object resultAsObject = this.mappingEngine.Map(input);
         
@@ -143,6 +141,11 @@ public final class DstController implements IDstController
                 if(resultAsCollection.stream().allMatch(ElementDefinition.class::isInstance))
                 {
                     this.dstMapResult.addAll(resultAsCollection.stream().map(ElementDefinition.class::cast).collect(Collectors.toList()));
+                    return true;
+                }
+                else if(resultAsCollection.stream().allMatch(RequirementsSpecification.class::isInstance))
+                {
+                    this.dstMapResult.addAll(resultAsCollection.stream().map(RequirementsSpecification.class::cast).collect(Collectors.toList()));
                     return true;
                 }
             }

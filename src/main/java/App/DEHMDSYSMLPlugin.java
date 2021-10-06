@@ -56,6 +56,7 @@ import DstController.DstController;
 import DstController.IDstController;
 import HubController.IHubController;
 import MappingRules.BlockDefinitionMappingRule;
+import MappingRules.RequirementMappingRule;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
 
@@ -185,6 +186,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IMappingEngineService.class, MappingEngineService.class);
             AppContainer.Container.as(CACHE).addComponent(MapAction.class);
             AppContainer.Container.addComponent(BlockDefinitionMappingRule.class.getName(), BlockDefinitionMappingRule.class);
+            AppContainer.Container.addComponent(RequirementMappingRule.class.getName(), RequirementMappingRule.class);
         }
         catch (Exception exception) 
         {

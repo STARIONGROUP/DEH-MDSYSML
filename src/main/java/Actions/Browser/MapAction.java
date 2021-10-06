@@ -25,33 +25,32 @@ package Actions.Browser;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import Utils.ImageLoader.ImageLoader;
-
-import com.jidesoft.editor.selection.SelectionEvent;
-import com.jidesoft.editor.selection.SelectionListener;
 import com.nomagic.magicdraw.actions.MDAction;
-import com.nomagic.magicdraw.ui.browser.Node;
-import com.nomagic.magicdraw.ui.browser.Tree;
 import com.nomagic.magicdraw.ui.browser.actions.DefaultBrowserAction;
-import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdmodels.Model;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import DstController.IDstController;
 import HubController.IHubController;
-import Reactive.ObservableCollection;
+import Services.MappingEngineService.IMappableThingCollection;
+import Utils.ImageLoader.ImageLoader;
+import Utils.Stereotypes.MagicDrawBlockCollection;
+import Utils.Stereotypes.MagicDrawRequirementCollection;
+import Utils.Stereotypes.StereotypeUtils;
+import Utils.Stereotypes.Stereotypes;
+import Views.MDHubBrowserPanel;
 
 /**
  * The {@link MapAction} is a {@link MDAction} that is to be added to the Cameo/Magic draw element browser context menu
@@ -135,55 +134,72 @@ public class MapAction extends DefaultBrowserAction
      */
     private boolean MapSelectedElements()
     {
-        ObservableCollection<Element> elements = this.SortSelectedElements();
-        boolean result = this.dstController.Map(elements);
-        this.logger.error(String.format("this.dstController.Map(elements) ?? %s", result));
+        ArrayList<IMappableThingCollection> mappableElements = this.SortSelectedElements();
         
+        boolean result = true;
+        
+        for (IMappableThingCollection elements : mappableElements.stream().filter(x -> !x.isEmpty()).collect(Collectors.toList()))
+        {
+            result &= this.dstController.Map(elements);
+        }
+
         return result;
     }
 
     /**
      * Sorts the selected element from the tree and return the correct sequence depending on what have been selected
      */
-    private ObservableCollection<Element> SortSelectedElements()
+    private ArrayList<IMappableThingCollection> SortSelectedElements()
     {
-        ObservableCollection<Element> elements = new ObservableCollection<Element>(Element.class);
+        MagicDrawBlockCollection blocks = new MagicDrawBlockCollection();
+        MagicDrawRequirementCollection requirements = new MagicDrawRequirementCollection();
         
-        Node[] nodes = this.getTree().getSelectedNodes();
+        List<Element> elements = Arrays.asList(this.getTree().getSelectedNodes())
+                .stream()
+                .filter(x -> x.getUserObject() instanceof Element)
+                .map(x -> (Element)x.getUserObject())
+                .collect(Collectors.toList());
 
-        for (Node node : nodes)
+        this.SortElement(elements, blocks, requirements);
+        
+        return new ArrayList<IMappableThingCollection>(Arrays.asList(blocks, requirements));
+    }
+
+    /**
+     * Parses and sorts the provided {@linkplain Element} collection and add these to the respective out collections.
+     * Can be recursive.
+     * 
+     * @param elements the element collection to sort
+     * @param blocks the Block collection
+     * @param requirements the requirements collection
+     */
+    private void SortElement(Collection<Element> elements, MagicDrawBlockCollection blocks, MagicDrawRequirementCollection requirements)
+    {
+        for (Element element : elements)
         {
-            Object userObject = node.getUserObject();
-            
-            if (userObject instanceof Element)
+            if (element instanceof Class)
             {
-                Element element = (Element)userObject;
-
-                if(element instanceof Model)
-                {
-                    elements.add(element);
-                    break;
-                }
+                Class classElement = (Class)element;
                 
-                else if(element instanceof Package)
+                if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
                 {
-                    if(elements.stream().allMatch(x -> x instanceof Package))
-                    {
-                        elements.add(element);
-                    }
+                    blocks.add(classElement);
                 }
-                
-                else if(element instanceof Class)
+                else if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
                 {
-                    if(elements.stream().allMatch(x -> x instanceof Class))
-                    {
-                        elements.add(element);
-                    }
-                }                
+                    requirements.add(classElement);
+                }
+            }
+            else if(element instanceof Package)
+            {
+                Package packageElement = (Package)element;
+                
+                if(!elements.stream().anyMatch(x -> packageElement.getOwnedElement().stream().anyMatch(e -> e.equals(x))))
+                {
+                    this.SortElement(packageElement.getOwnedElement(), blocks, requirements);
+                }
             }
         }
-        
-        return elements;
     }    
 }
 
