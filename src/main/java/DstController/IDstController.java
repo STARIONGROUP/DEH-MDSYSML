@@ -23,11 +23,14 @@
  */
 package DstController;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import com.nomagic.magicdraw.core.Project;
 
 import Reactive.ObservableCollection;
+import Services.MappingEngineService.IMappableThingCollection;
+import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import io.reactivex.Observable;
 
@@ -40,10 +43,10 @@ public interface IDstController
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
      * and assign the map result to the dstMapResult or the hubMapResult
      * 
-     * @param input the {@linkplain Collection} of {@linkplain Object} to map
+     * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
      * @return a {@linkplain boolean} indicating whether the mapping operation went well
      */
-    boolean Map(ObservableCollection<?> input);
+    boolean Map(IMappableThingCollection input);
 
     /**
      * Gets a value indicating if Cameo/MagicDraw has an open document
@@ -69,5 +72,5 @@ public interface IDstController
     /**
      * Gets The {@linkplain ObservableCollection} of dst map result
      */
-    ObservableCollection<ElementDefinition> GetDstMapResult();
+    ObservableCollection<Thing> GetDstMapResult();
 }

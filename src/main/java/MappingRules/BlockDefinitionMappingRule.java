@@ -31,25 +31,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.*;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
-import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdmodels.Model;
 
 import HubController.IHubController;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
 
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
+import Utils.Stereotypes.MagicDrawBlockCollection;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
@@ -76,18 +72,13 @@ import cdp4dal.operations.TransactionContextResolver;
 /**
  * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain Element} to {@linkplain ElementDefinition}
  */
-public class BlockDefinitionMappingRule extends MappingRule<ObservableCollection<Element>, ArrayList<ElementDefinition>>
+public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollection, ArrayList<ElementDefinition>>
 {
     /**
      * The string that indicates the language code for the {@linkplain Definition} for {@linkplain ElementDefinition}s
      * That contains the MagicDraw Id of the mapped {@linkplain Block}
      */
     private static final String MDIID = "MDIID";
-
-    /**
-     * The current class logger
-     */
-    private Logger logger = LogManager.getLogger();
     
     /**
      * The {@linkplain IHubController}
@@ -150,7 +141,7 @@ public class BlockDefinitionMappingRule extends MappingRule<ObservableCollection
     }
     
     /**
-     * Transforms an {@linkplain ObservableCollection} of type {@linkplain Element} to an {@linkplain ArrayList} of {@linkplain ElementDefinition}
+     * Transforms an {@linkplain MagicDrawBlockCollection} of type {@linkplain Class} to an {@linkplain ArrayList} of {@linkplain ElementDefinition}
      * 
      * @param input the {@linkplain ObservableCollection} of type {@linkplain Element} to transform
      * @return the {@linkplain ArrayList} of {@linkplain ElementDefinition}
@@ -160,29 +151,8 @@ public class BlockDefinitionMappingRule extends MappingRule<ObservableCollection
     {
         try
         {
-            ObservableCollection<Element> elements = this.CastInput(input);
-            
-            List<Class> allBlocks = new ArrayList<Class>();
-            
-            for (Element element : elements)
-            {          
-                if(element instanceof Model)
-                {
-                    allBlocks = this.GetElementOfType(
-                            elements.stream().flatMap(x -> x.getOwnedElement().stream())
-                            .collect(Collectors.toList()), Class.class);
-                }
-                
-                if(element instanceof Package)
-                {
-                    allBlocks = this.GetElementOfType(elements, Class.class);
-                }
-                            
-            }
-            
-            allBlocks = this.GetElementOfType(elements, Class.class);
-            
-            return this.Map(allBlocks);
+            MagicDrawBlockCollection elements = this.CastInput(input);
+            return this.Map(elements);
         }
         catch (Exception exception)
         {
@@ -494,7 +464,6 @@ public class BlockDefinitionMappingRule extends MappingRule<ObservableCollection
                     
                     quantityKind.getAllPossibleScale().add(refScale.Get());
                     quantityKind.setDefaultScale(refScale.Get());
-                    
                 }
                 
                 else if(valueSpecification instanceof LiteralBoolean)
@@ -696,8 +665,7 @@ public class BlockDefinitionMappingRule extends MappingRule<ObservableCollection
                 return;
             }
         }
-        
-        
+
         if(Boolean.TRUE.equals(value))
         {
             elementDefinition.getCategory().add(refCategory.Get());
@@ -759,38 +727,5 @@ public class BlockDefinitionMappingRule extends MappingRule<ObservableCollection
             this.logger.catching(exception);
             return false;
         }       
-    }
-
-    /**
-     * Gets the contained or the specified element as a collection typed by the specified {@link TReturn}
-     * 
-     * @param <TReturn> The type to return
-     * @param elements the collection of element to parse
-     * @param clazz the {@link TReturn} class 
-     * @return a {@linkplain List} of {@link TReturn}
-     */
-    @SuppressWarnings("unchecked")
-    private <TReturn> List<TReturn> GetElementOfType(List<Element> elements, java.lang.Class<TReturn> clazz)
-    {
-        List<TReturn> result = new ArrayList<TReturn>();
-        
-        if(elements.stream().allMatch(x -> x instanceof Class))
-        {
-            return elements.stream().map(x -> (TReturn) x)
-                    .collect(Collectors.toList());
-        }
-        
-        for (Element element : elements)
-        {
-            for (Element containedElement : element.getOwnedElement())
-            {
-                if(containedElement.getClass().isAssignableFrom(clazz))
-                {
-                    result.add((TReturn)containedElement);
-                }
-            }
-        }
-        
-        return result;
     }
 }

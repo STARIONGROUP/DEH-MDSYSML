@@ -83,6 +83,7 @@
 	<classpathentry kind="lib" path="lib/xalan.jar"/>
 	<classpathentry kind="lib" path="lib/xmlbeans-2.6.0.jar"/>
 	<classpathentry kind="lib" path="lib/y.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.uml2_2.5.1.202003140800.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="src" path=".apt_generated">
 		<attributes>
@@ -91,8 +92,8 @@
 	</classpathentry>
 	<classpathentry kind="src" output="target/test-classes" path=".apt_generated_tests">
 		<attributes>
-			<attribute name="optional" value="true"/>
 			<attribute name="test" value="true"/>
+			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="target/generated-sources/annotations">
@@ -100,5 +101,23 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.core.project.options_18.1.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.core_1.0.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.core.diagram_18.1.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.esi.binary.metamodel_18.1.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.esi.esiproject_18.1.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.esi.uuidmap_18.1.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.foundation_2.0.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.osgi.fragment_1.0.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.security_18.3.0.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw_17.0.5.202003140800.jar"/>
+	<classpathentry kind="lib" path="lib/sysml.jar"/>
+	<classpathentry kind="lib" path="lib/sysml_api.jar"/>
+	<classpathentry kind="lib" path="lib/antlr4-annotations-4.3.jar"/>
+	<classpathentry kind="lib" path="lib/antlr4-runtime-4.3.jar"/>
+	<classpathentry kind="lib" path="lib/antlr-runtime-3.5.jar"/>
+	<classpathentry kind="lib" path="lib/fmu-wrapper-2.25.3.jar"/>
+	<classpathentry kind="lib" path="lib/simple-xml-2.7.1.jar"/>
+	<classpathentry kind="lib" path="lib/javax_jmi-1_0-fr.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
