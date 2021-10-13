@@ -73,4 +73,11 @@ public interface IDstController
      * Gets The {@linkplain ObservableCollection} of dst map result
      */
     ObservableCollection<Thing> GetDstMapResult();
+
+    /**
+     * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub
+     * 
+     * @return a value indicating that all transfer could be completed
+     */
+    boolean TransferToHub();
 }
