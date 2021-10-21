@@ -28,6 +28,7 @@ import java.util.Collection;
 
 import com.nomagic.magicdraw.core.Project;
 
+import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
 import cdp4common.commondata.Thing;
@@ -80,4 +81,18 @@ public interface IDstController
      * @return a value indicating that all transfer could be completed
      */
     boolean TransferToHub();
+
+    /**
+     * Gets the {@linkplain Observable} of {@linkplain MappingDirection} from {@linkplain currentMappingDirection}
+     * 
+     * @return a {@linkplain Observable} of {@linkplain MappingDirection}
+     */
+    Observable<MappingDirection> GetMappingDirection();
+
+    /**
+     * Switches the {@linkplain MappingDirection}
+     * 
+     * @return the new {@linkplain MappingDirection}
+     */
+    MappingDirection ChangeMappingDirection();
 }

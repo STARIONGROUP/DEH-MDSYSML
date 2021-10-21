@@ -270,26 +270,18 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             if(optionalTextSlot.isPresent() && valueSpecification instanceof LiteralString 
                     && StringUtils.isNotBlank(((LiteralString)valueSpecification).getValue()))
             {
-                this.logger.error(String.format("refRequirement.Get().getDefinition().size() %s and content ? %s and getLanguageCode() ? %s", 
-                        refRequirement.Get().getDefinition().size(), refRequirement.Get().getDefinition().size() > 0 ? refRequirement.Get().getDefinition().get(0).getContent() : "NO DEFINITION",
-                                refRequirement.Get().getDefinition().size() > 0 ? refRequirement.Get().getDefinition().get(0).getLanguageCode() : "NO DEFINITION"));
-                
                 Definition definition = refRequirement.Get().getDefinition()
                         .stream()
                         .filter(x -> x.getLanguageCode().toLowerCase().equals("en"))
                         .findFirst()
                         .map(x -> x.clone(true))
                         .orElse(this.createDefinition());
-                
-                this.logger.error(String.format("definition is cloned %s", definition.getOriginal() != null));
-                
+
                 definition.setContent(((LiteralString)valueSpecification).getValue());
                 
                 refRequirement.Get().getDefinition().removeIf(x -> x.getIid().equals(definition.getIid()));
                 
                 refRequirement.Get().getDefinition().add(definition);
-                                                
-                this.logger.error(String.format("refRquirement.Get().getDefinition() %s", refRequirement.Get().getDefinition().get(0) != null ? refRequirement.Get().getDefinition().get(0).getContent() : "NO CONTENT"));
             }
         }
     }

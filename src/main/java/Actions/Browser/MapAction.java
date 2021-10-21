@@ -53,7 +53,7 @@ import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import Utils.Tasks.Task;
-import Views.MDHubBrowserPanel;
+import Views.MagicDrawHubBrowserPanel;
 
 /**
  * The {@link MapAction} is a {@link MDAction} that is to be added to the Cameo/Magic draw element browser context menu
@@ -112,7 +112,7 @@ public class MapAction extends DefaultBrowserAction
     }
 
     /**
-    * Commands the {@link MDHubBrowserPanel} to show or hide
+    * Commands the {@link MagicDrawHubBrowserPanel} to show or hide
     * 
     * @param actionEvent The {@link ActionEvent} that originated the action performed. This parameter is unused.
     */
@@ -123,13 +123,14 @@ public class MapAction extends DefaultBrowserAction
         {
             StopWatch timer = StopWatch.createStarted();
             
-            Task.Run(() -> this.MapSelectedElements() && this.dstController.TransferToHub(), boolean.class)
+            Task.Run(() -> this.MapSelectedElements(), boolean.class)
+                .Observable()
                 .subscribe(x -> 
                 {
                     timer.stop();
-                    this.logger.error(String.format("Mapping action is done with success ? %s in %s ms", x, timer.getTime(TimeUnit.MILLISECONDS)));
+                    this.logger.error(String.format("Mapping action is done with success ? %s in %s ms", x.GetResult(), timer.getTime(TimeUnit.MILLISECONDS)));
                 });
-            
+            this.MapSelectedElements();
         }
         catch (Exception exception) 
         {

@@ -41,15 +41,25 @@ import com.nomagic.actions.ActionsManager;
 import com.nomagic.actions.NMAction;
 import com.nomagic.magicdraw.actions.ActionsID;
 import com.nomagic.magicdraw.actions.BrowserContextAMConfigurator;
+import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.plugins.Plugin;
 import com.nomagic.magicdraw.ui.browser.Tree;
 import com.nomagic.magicdraw.ui.browser.actions.x;
 import com.nomagic.magicdraw.ui.diagrams.symboldiagram.storage.ActionCategory;
+import com.nomagic.task.ProgressStatus;
+import com.nomagic.task.RunnableWithProgress;
 import com.nomagic.magicdraw.actions.ActionsConfiguratorsManager;
 
+import ViewModels.ElementDefinitionImpactViewViewModel;
 import ViewModels.HubBrowserPanelViewModel;
+import ViewModels.MagicDrawImpactViewPanelViewModel;
+import ViewModels.RequirementImpactViewViewModel;
+import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
+import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
+import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import cdp4common.dto.Category;
+import net.sf.ehcache.statistics.extended.ExtendedStatistics.Statistic;
 import Actions.Browser.MapAction;
 import Actions.ToolBar.*;
 import DstController.DstController;
@@ -179,7 +189,6 @@ public class DEHMDSYSMLPlugin extends Plugin
     {
         try
         {
-            AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);
             AppContainer.Container.addConfig("shouldListenForProjectChanges", true);
             AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IDstController.class, DstController.class);
             AppContainer.Container.addConfig(MappingEngineService.AssemblyParameterName, BlockDefinitionMappingRule.class.getPackage());
@@ -187,6 +196,11 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.as(CACHE).addComponent(MapAction.class);
             AppContainer.Container.addComponent(BlockDefinitionMappingRule.class.getName(), BlockDefinitionMappingRule.class);
             AppContainer.Container.addComponent(RequirementMappingRule.class.getName(), RequirementMappingRule.class);
+            
+            AppContainer.Container.addComponent(IElementDefinitionImpactViewViewModel.class, ElementDefinitionImpactViewViewModel.class);
+            AppContainer.Container.addComponent(IRequirementImpactViewViewModel.class, RequirementImpactViewViewModel.class);
+            AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);
+            AppContainer.Container.addComponent(IMagicDrawImpactViewPanelViewModel.class, MagicDrawImpactViewPanelViewModel.class);
         }
         catch (Exception exception) 
         {

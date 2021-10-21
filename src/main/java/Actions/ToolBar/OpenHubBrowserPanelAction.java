@@ -37,7 +37,9 @@ import com.nomagic.magicdraw.ui.MainFrame;
 import App.AppContainer;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
-import Views.MDHubBrowserPanel;
+import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
+import Views.MagicDrawHubBrowserPanel;
+import Views.MagicDrawImpactViewPanel;
 
 /**
  * The {@link OpenHubBrowserPanelAction} is a {@link MDAction} that can be added to one toolbar in Cameo or MagicDraw
@@ -51,9 +53,11 @@ public class OpenHubBrowserPanelAction extends MDAction
     private Logger logger = LogManager.getLogger();
     
     /**
-     * The {@link MDHubBrowserPanel} instance
+     * The {@link MagicDrawHubBrowserPanel} instance
      */
-    private MDHubBrowserPanel hubBrowserPanel;
+    private MagicDrawHubBrowserPanel hubBrowserPanel;
+
+    private MagicDrawImpactViewPanel impactViewPanel;
     
     /**
      * Initializes a new {@link OpenHubBrowserPanelAction}
@@ -62,10 +66,16 @@ public class OpenHubBrowserPanelAction extends MDAction
     {
          super("Hub Browser", "Open/Close the Hub Browser Panel", null, null);
          this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
+
+         this.hubBrowserPanel = new MagicDrawHubBrowserPanel();
+         this.hubBrowserPanel.SetDataContext(AppContainer.Container.getComponent(IHubBrowserPanelViewModel.class));
+
+         this.impactViewPanel = new MagicDrawImpactViewPanel();
+         this.impactViewPanel.SetDataContext(AppContainer.Container.getComponent(IMagicDrawImpactViewPanelViewModel.class));
     }
     
     /**
-    * Commands the {@link MDHubBrowserPanel} to show or hide
+    * Commands the {@link MagicDrawHubBrowserPanel} to show or hide
     * 
     * @param actionEvent The {@link ActionEvent} that originated the action performed. This parameter is unused.
     */
@@ -78,18 +88,33 @@ public class OpenHubBrowserPanelAction extends MDAction
             MainFrame mainFrame = applicationInstance.getMainFrame();
             DockingManager dockingManager = mainFrame.getDockingManager();
             Collection<String> allFrames = dockingManager.getAllFrames();
+            
+            boolean isHubBrowserPanelPresent = false, 
+                    isImpactViewPanelPresent = false;
+            
             for(String key : allFrames)
             {
-                if(key == MDHubBrowserPanel.PanelDockKey)
+                if(key == this.hubBrowserPanel.GetPanelDockKey())
                 {
                     this.hubBrowserPanel.ShowHide(dockingManager);
-                    return;
+                    isHubBrowserPanelPresent = true;
+                }
+                else if(key == this.impactViewPanel.GetPanelDockKey())
+                {
+                    this.impactViewPanel.ShowHide(dockingManager);
+                    isImpactViewPanelPresent = true;
                 }
             }
-                            
-            this.hubBrowserPanel = new MDHubBrowserPanel();
-            this.hubBrowserPanel.SetDataContext(AppContainer.Container.getComponent(IHubBrowserPanelViewModel.class));
-            dockingManager.addFrame(this.hubBrowserPanel);
+            
+            if(!isImpactViewPanelPresent)
+            {
+                dockingManager.addFrame(this.impactViewPanel);
+            }
+            
+            if(!isHubBrowserPanelPresent)
+            {
+                dockingManager.addFrame(this.hubBrowserPanel);
+            }
         }
         catch (Exception exception) 
         {

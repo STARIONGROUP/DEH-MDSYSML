@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.cache.Cache;
 
+import Enumerations.MappingDirection;
 import HubController.HubController;
 import HubController.IHubController;
 import Services.MappingEngineService.IMappingEngineService;
@@ -75,7 +76,6 @@ import cdp4dal.operations.ThingTransaction;
 
 class DstControllerTestFixture
 {
-
     private IHubController hubController;
     private IMappingEngineService mappingEngine;
     private DstController controller;
@@ -205,6 +205,29 @@ class DstControllerTestFixture
         assertEquals(0, this.controller.GetDstMapResult().size());
     }
 
+    @Test
+    public void VerifyChangeMappingDirection()
+    {
+        Ref<Integer> numberOfTimeTheDirectionChanged = new Ref<Integer>(Integer.class, 0);
+        Ref<MappingDirection> mappingDirection = new Ref<MappingDirection>(MappingDirection.class, MappingDirection.FromDstToHub);
+        
+        this.controller.GetMappingDirection().subscribe(x -> 
+        {
+            if(mappingDirection.Get() != x)
+            {
+                mappingDirection.Set(x);
+                numberOfTimeTheDirectionChanged.Set(numberOfTimeTheDirectionChanged.Get() + 1);
+            }
+        });
+        
+        this.controller.ChangeMappingDirection();
+        this.controller.ChangeMappingDirection();
+        this.controller.ChangeMappingDirection();
+        this.controller.ChangeMappingDirection();
+        
+        assertEquals(4, numberOfTimeTheDirectionChanged.Get());
+    }
+    
     private void SetupRequirements()
     {
         RequirementsGroup group0 = new RequirementsGroup();
