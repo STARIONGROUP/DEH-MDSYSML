@@ -112,7 +112,6 @@ public class DEHMDSYSMLPlugin extends Plugin
                     @Override
                     public int getPriority()
                     {
-                        // TODO Auto-generated method stub
                         return 0;
                     }
 
@@ -181,7 +180,8 @@ public class DEHMDSYSMLPlugin extends Plugin
         try
         {
             AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);
-            AppContainer.Container.as(CACHE).addComponent(IDstController.class, DstController.class);
+            AppContainer.Container.addConfig("shouldListenForProjectChanges", true);
+            AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IDstController.class, DstController.class);
             AppContainer.Container.addConfig(MappingEngineService.AssemblyParameterName, BlockDefinitionMappingRule.class.getPackage());
             AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IMappingEngineService.class, MappingEngineService.class);
             AppContainer.Container.as(CACHE).addComponent(MapAction.class);

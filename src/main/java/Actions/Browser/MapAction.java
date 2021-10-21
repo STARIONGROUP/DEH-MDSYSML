@@ -29,10 +29,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.swing.KeyStroke;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,6 +52,7 @@ import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
+import Utils.Tasks.Task;
 import Views.MDHubBrowserPanel;
 
 /**
@@ -107,7 +110,7 @@ public class MapAction extends DefaultBrowserAction
         shouldEnable &= this.getTree() != null && this.getTree().getSelectedNodes().length > 0;
         this.setEnabled(shouldEnable);
     }
-    
+
     /**
     * Commands the {@link MDHubBrowserPanel} to show or hide
     * 
@@ -118,7 +121,15 @@ public class MapAction extends DefaultBrowserAction
     {
         try
         {
-           this.logger.error(String.format("Mapping action is done with success ? %s", this.MapSelectedElements()));
+            StopWatch timer = StopWatch.createStarted();
+            
+            Task.Run(() -> this.MapSelectedElements() && this.dstController.TransferToHub(), boolean.class)
+                .subscribe(x -> 
+                {
+                    timer.stop();
+                    this.logger.error(String.format("Mapping action is done with success ? %s in %s ms", x, timer.getTime(TimeUnit.MILLISECONDS)));
+                });
+            
         }
         catch (Exception exception) 
         {

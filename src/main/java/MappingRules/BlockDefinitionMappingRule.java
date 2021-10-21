@@ -45,6 +45,7 @@ import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.C
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
+import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
@@ -52,12 +53,16 @@ import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Parameter;
+import cdp4common.engineeringmodeldata.ParameterSwitchKind;
+import cdp4common.engineeringmodeldata.ParameterValueSet;
 import cdp4common.engineeringmodeldata.Relationship;
+import cdp4common.engineeringmodeldata.ValueSet;
 import cdp4common.sitedirectorydata.BooleanParameterType;
 import cdp4common.sitedirectorydata.Category;
 import cdp4common.sitedirectorydata.MeasurementScale;
 import cdp4common.sitedirectorydata.NumberSetKind;
 import cdp4common.sitedirectorydata.ParameterType;
+import cdp4common.sitedirectorydata.QuantityKind;
 import cdp4common.sitedirectorydata.RatioScale;
 import cdp4common.sitedirectorydata.ReferenceDataLibrary;
 import cdp4common.sitedirectorydata.SimpleQuantityKind;
@@ -65,6 +70,7 @@ import cdp4common.sitedirectorydata.SimpleUnit;
 import cdp4common.sitedirectorydata.TextParameterType;
 import cdp4common.sitedirectorydata.MeasurementUnit;
 import cdp4common.types.ContainerList;
+import cdp4common.types.ValueArray;
 import cdp4dal.operations.ThingTransaction;
 import cdp4dal.operations.ThingTransactionImpl;
 import cdp4dal.operations.TransactionContextResolver;
@@ -114,11 +120,6 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * The binding connectors category and BinaryRelationship names where pair.item0 is the short name
      */
     private final Pair<String, String> bindingConnectorNames = Pair.of("bindingConnector", "Binding Connector");
-
-    /**
-     * Holds the values the created or updated {@linkplain Parameter} gets assigned
-     */
-    private List<Pair<UUID, Object>> parameterValues = new ArrayList<Pair<UUID, Object>>();
 
     /**
      * Holds the {@linkplain BinaryRelationship} that are to be updated or created
@@ -173,7 +174,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         
         for (Class block : allBlocks)
         {
-            String shortName = block.getName().replaceAll("[^a-zA-Z0-9]|\\s", "");       
+            String shortName = this.GetShortName(block.getName());       
             ElementDefinition elementDefinition;
             
             Optional<ElementDefinition> optionalElementDefinition = this.hubController.GetOpenIteration().getElement().stream()
@@ -207,7 +208,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         
         return result;
     }
-
+    
     /**
      * Creates the {@linkplain BinaryRelationship} specified by {@linkplain connectedElement} 
      */
@@ -303,7 +304,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         for (Property property : block.getOwnedAttribute())
         {
             Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
-                    .filter(x -> x.getParameterType().getName().equals(property.getName()))
+                    .filter(x -> this.AreShortNamesEquals(x.getParameterType(), property.getName()))
                     .findAny();
 
             Ref<ParameterType> refParameterType = new Ref<ParameterType>(ParameterType.class);
@@ -328,13 +329,20 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     parameter.setIid(UUID.randomUUID());
                     parameter.setOwner(this.hubController.GetCurrentDomainOfExpertise());
                     parameter.setParameterType(refParameterType.Get());
+
+                    elementDefinition.getParameter().add(parameter);
+                    
+                    if(refParameterType.Get() instanceof QuantityKind)
+                    {
+                        parameter.setScale(((QuantityKind)refParameterType.Get()).getDefaultScale());
+                    }
                 }
                 else
                 {
                     this.logger.error(String.format("Coulnd create ParameterType %s", property.getName()));
                     continue;
                 }
-            }    
+            }   
             else if (existingParameter.isPresent() && hasValue)
             {
                 parameter = existingParameter.get();
@@ -346,14 +354,42 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             }
 
             this.ProcessBindingConnectors(connectors, property, parameter);
-                                   
-            elementDefinition.getParameter().add(parameter);
             
-            this.parameterValues.add(Pair.of(parameter.getIid(), refValue.Get()));
+            this.UpdateValueSet(parameter, refValue);
+
             this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
         }
         
         this.logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
+    }
+
+    /**
+     * Updates the correct value set depending on the selected @Link
+     * 
+     * @param parameter the {@linkplain Parameter}
+     * @param refValue the {@linkplain Ref} of {@linkplain String} holding the value to assign
+     */
+    private void UpdateValueSet(Parameter parameter, Ref<String> refValue)
+    {
+        ParameterValueSet valueSet = null;
+        
+        if(parameter.getOriginal() != null)
+        {
+            valueSet = (ParameterValueSet) ValueSetUtils.QueryParameterBaseValueSet(parameter, null, null);    
+        }
+        else
+        {
+            valueSet = new ParameterValueSet();
+            valueSet.setIid(UUID.randomUUID());
+            valueSet.setReference(new ValueArray<String>(String.class));
+            valueSet.setFormula(new ValueArray<String>(String.class));
+            valueSet.setPublished(new ValueArray<String>(String.class));
+            valueSet.setComputed(new ValueArray<String>(String.class));
+            valueSet.setValueSwitch(ParameterSwitchKind.MANUAL);
+            parameter.getValueSet().add(valueSet);
+        }
+
+        valueSet.setManual(new ValueArray<String>(Arrays.asList(refValue.Get()), String.class));
     }
 
     /**
@@ -441,9 +477,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     {
         try
         {
-            String shortName = property.getName().replaceAll("[^a-zA-Z0-9]|\\s", "");
+            String shortName = this.GetShortName(property.getName());
             
-            if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(shortName), refParameterType))
+            if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> this.AreShortNamesEquals(x, shortName), refParameterType))
             {
                 ParameterType parameterType = null;
                 ValueSpecification valueSpecification = property.getDefaultValue();
@@ -525,7 +561,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             return false;
         }
         
-        String scaleShortName = scaleAndUnit.getLeft().getName().replaceAll("[^a-zA-Z0-9]|\\s", "");
+        String scaleShortName = this.GetShortName(scaleAndUnit.getLeft().getName());
         
         if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(scaleShortName), refScale))
         {
@@ -602,7 +638,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      */
     private boolean TryCreateOrGetMeasurementUnit(ValueSpecification valueSpecification, String unitName, Ref<MeasurementUnit> refMeasurementUnit)
     {
-        String scaleShortName = unitName.replaceAll("[^a-zA-Z0-9]|\\s", "");
+        String scaleShortName = this.GetShortName(unitName);
         
         if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(scaleShortName), refMeasurementUnit))
         {
@@ -666,13 +702,20 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             }
         }
 
-        if(Boolean.TRUE.equals(value))
+        if(refCategory.HasValue())
         {
-            elementDefinition.getCategory().add(refCategory.Get());
+            if(Boolean.TRUE.equals(value))
+            {
+                elementDefinition.getCategory().add(refCategory.Get());
+            }
+            else
+            {
+                elementDefinition.getCategory().remove(refCategory.Get());
+            }
         }
         else
         {
-            elementDefinition.getCategory().remove(refCategory.Get());
+            this.logger.debug(String.format("The Category %s could not be found or created for the element %s", categoryNames.getLeft(), elementDefinition.getName()));
         }
     }
     

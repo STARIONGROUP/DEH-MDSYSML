@@ -25,9 +25,11 @@ package MappingRules;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
@@ -38,6 +40,7 @@ import HubController.IHubController;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Slot;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
@@ -54,7 +57,7 @@ import cdp4common.types.ContainerList;
 /**
  * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
  */
-public class RequirementMappingRule extends MappingRule<MagicDrawRequirementCollection, List<RequirementsSpecification>>
+public class RequirementMappingRule extends MappingRule<MagicDrawRequirementCollection, ArrayList<RequirementsSpecification>>
 {
     /**
      * The {@linkplain IHubController}
@@ -88,12 +91,12 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      * @return the {@linkplain ArrayList} of {@linkplain ElementDefinition}
      */
     @Override
-    public List<RequirementsSpecification> Transform(Object input)
+    public ArrayList<RequirementsSpecification> Transform(Object input)
     {
         try
         {
             this.Map(this.CastInput(input));
-            return this.requirementsSpecifications;
+            return new ArrayList<RequirementsSpecification>(this.requirementsSpecifications);
         }
         catch (Exception exception)
         {
@@ -224,7 +227,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         
         if(optionalRequirement.isPresent())
         {
-            refRequirement.Set(optionalRequirement.get());
+            refRequirement.Set(optionalRequirement.get().clone(true));
         }
         else
         {
@@ -233,44 +236,74 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             requirement.setName(element.getName());
             requirement.setShortName(this.GetShortName(element));
             requirement.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-
-            Optional<Slot> optionalTextSlot = element.getAppliedStereotypeInstance()
-                    .getSlot()
-                    .stream()
-                    .filter(x -> x.getDefiningFeature().getName().equals("Text"))
-                    .findFirst();
-
-            if(optionalTextSlot.isPresent() && optionalTextSlot.get().getValue().get(0) instanceof LiteralString)
-            {
-                Definition definition = requirement.getDefinition()
-                        .stream()
-                        .filter(x -> x.getLanguageCode().toLowerCase().contains("en"))
-                        .findFirst()
-                        .orElse(this.createDefinition(requirement));
-                
-                definition.setContent(((LiteralString)optionalTextSlot.get().getValue().get(0)).getValue());
-            }
             
             requirement.setGroup(refRequirementsGroup.Get());
             refRequirementsSpecification.Get().getRequirement().add(requirement);
             refRequirement.Set(requirement);
         }
+        this.UpdateOrCreateDefinition(element, refRequirement);
+
+        refRequirementsSpecification.Get().getRequirement().removeIf(x -> x.getIid().equals(refRequirement.Get().getIid()));
+        refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
         
         return refRequirement.HasValue();
     }
 
     /**
+     * Updates or creates the definition according to the provided {@linkplain Class} assignable to the {@linkplain Requirement}  
+     * 
+     * @param element the {@linkplain Class} element that represents the requirement in MagicDraw
+     * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement} to update
+     */
+    private void UpdateOrCreateDefinition(Class element, Ref<Requirement> refRequirement)
+    {
+        if(refRequirement.HasValue())
+        {
+            Optional<Slot> optionalTextSlot = element.getAppliedStereotypeInstance()
+                    .getSlot()
+                    .stream()
+                    .filter(x -> x.getDefiningFeature().getName().equals("Text"))
+                    .findFirst();
+    
+            ValueSpecification valueSpecification = optionalTextSlot.get().getValue().get(0);
+            
+            if(optionalTextSlot.isPresent() && valueSpecification instanceof LiteralString 
+                    && StringUtils.isNotBlank(((LiteralString)valueSpecification).getValue()))
+            {
+                this.logger.error(String.format("refRequirement.Get().getDefinition().size() %s and content ? %s and getLanguageCode() ? %s", 
+                        refRequirement.Get().getDefinition().size(), refRequirement.Get().getDefinition().size() > 0 ? refRequirement.Get().getDefinition().get(0).getContent() : "NO DEFINITION",
+                                refRequirement.Get().getDefinition().size() > 0 ? refRequirement.Get().getDefinition().get(0).getLanguageCode() : "NO DEFINITION"));
+                
+                Definition definition = refRequirement.Get().getDefinition()
+                        .stream()
+                        .filter(x -> x.getLanguageCode().toLowerCase().equals("en"))
+                        .findFirst()
+                        .map(x -> x.clone(true))
+                        .orElse(this.createDefinition());
+                
+                this.logger.error(String.format("definition is cloned %s", definition.getOriginal() != null));
+                
+                definition.setContent(((LiteralString)valueSpecification).getValue());
+                
+                refRequirement.Get().getDefinition().removeIf(x -> x.getIid().equals(definition.getIid()));
+                
+                refRequirement.Get().getDefinition().add(definition);
+                                                
+                this.logger.error(String.format("refRquirement.Get().getDefinition() %s", refRequirement.Get().getDefinition().get(0) != null ? refRequirement.Get().getDefinition().get(0).getContent() : "NO CONTENT"));
+            }
+        }
+    }
+    
+    /**
      * Creates a {@linkplain Definition} to be added to a {@linkplain Requirement}
      * 
-     * @param requirement the {@linkplain Requirement} owner of the definition
      * @return a {@linkplain Definition}
      */
-    private Definition createDefinition(Requirement requirement)
+    private Definition createDefinition()
     {
         Definition definition = new Definition();
         definition.setIid(UUID.randomUUID());
-        definition.setLanguageCode("en-us");
-        requirement.getDefinition().add(definition);
+        definition.setLanguageCode("en");
         return definition;
     }
 
@@ -284,17 +317,11 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      */
     private boolean TryGetOrCreateRequirementGroup(Package currentPackage, Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup)
     {
-        Optional<RequirementsGroup> optionalRequirementsSpecification = this.temporaryRequirementsGroups
-                .stream()
-                .filter(x -> this.AreShortNamesEquals(x, currentPackage))
-                .findFirst();
-
-        if(optionalRequirementsSpecification.isPresent())
+        Ref<RequirementsGroup> refCurrentRequirementsGroup = new Ref<RequirementsGroup>(RequirementsGroup.class);
+        
+        if(this.TryToFindGroup(currentPackage, refRequirementsSpecification, refCurrentRequirementsGroup))
         {
-            refRequirementsGroup.Set(
-                    refRequirementsSpecification.Get().getOriginal() != null 
-                        ? optionalRequirementsSpecification.get().clone(false) 
-                            : optionalRequirementsSpecification.get());
+            refRequirementsGroup.Set(refCurrentRequirementsGroup.Get());
         }
         else
         {
@@ -320,6 +347,31 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         return refRequirementsGroup.HasValue();
     }
     
+    /**
+     * Tries to find the group represented by / representing the provided {@linkplain Package}
+     * 
+     * @param currentPackage the {@linkplain Package}
+     * @param refRequirementsSpecification the {@linkplain Ref} of the current {@linkplain RequirementsSpecification}
+     * @param refRequirementsGroup the {@linkplain Ref} of {@linkplain RequirementsGroup}
+     * @return a value indicating whether the {@linkplain RequirementsGroup} has been found
+     */
+    private boolean TryToFindGroup(Package currentPackage, Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup)
+    {
+        Optional<RequirementsGroup> optionalRequirementsGroup = Stream.concat(this.temporaryRequirementsGroups.stream(), 
+                refRequirementsSpecification.Get().getAllContainedGroups().stream())
+            .filter(x -> this.AreShortNamesEquals(x, currentPackage))
+            .findFirst();
+        
+        if(optionalRequirementsGroup.isPresent())
+        {
+            refRequirementsGroup.Set(optionalRequirementsGroup.get().getRevisionNumber() > 0 
+                    ? optionalRequirementsGroup.get().clone(true)
+                            : optionalRequirementsGroup.get());
+        }
+        
+        return refRequirementsGroup.HasValue();
+    }
+
     /**
      * Try to create the {@linkplain RequirementsSpecification} represented by the provided {@linkplain Package}
      * 
@@ -348,7 +400,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             
             if(optionalRequirementsSpecification.isPresent())
             {
-                refRequirementSpecification.Set(optionalRequirementsSpecification.get().clone(false));
+                refRequirementSpecification.Set(optionalRequirementsSpecification.get().clone(true));
             }
             else
             {
@@ -370,12 +422,12 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      * Compares the two specified things to determine if they have the same shortName
      * 
      * @param shortNamedThing the 10-25 {@linkplain ShortNamedThing}
-     * @param parentPackage the MagicDraw {@linkplain NamedElement}
+     * @param element the element name as {@linkplain NamedElement}
      * @return a value indicating whether the two element have the same short name
      */
-    private boolean AreShortNamesEquals(ShortNamedThing shortNamedThing, NamedElement element)
+    protected boolean AreShortNamesEquals(ShortNamedThing shortNamedThing, NamedElement element)
     {
-        return shortNamedThing.getShortName().compareToIgnoreCase(this.GetShortName(element)) == 0;
+        return this.AreShortNamesEquals(shortNamedThing, element.getName());
     }
 
     /**
@@ -384,9 +436,9 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      * @param element the {@linkplain NamedElement} to get the short name from
      * @return a string containing the short name
      */
-    private String GetShortName(NamedElement element)
+    protected String GetShortName(NamedElement element)
     {
-        return element.getName().replaceAll("[^a-zA-Z0-9]|\\s", "");
+        return this.GetShortName(element.getName()); 
     }
 
     /**
