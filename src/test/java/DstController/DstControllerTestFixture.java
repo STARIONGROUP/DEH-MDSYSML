@@ -27,7 +27,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -185,13 +184,7 @@ class DstControllerTestFixture
         assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection()));
         assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection()));
         assertEquals(4, this.controller.GetDstMapResult().size());
-//
-//        Ref<Parameter> refParameter0 = new Ref<Parameter>(Parameter.class, this.parameter0);
-//        Ref<Parameter> refParameter1 = new Ref<Parameter>(Parameter.class, this.parameter1);
-//        
-//        when(this.hubController.TryGetThingById(this.parameter0.getIid(), refParameter0)).thenReturn(true);
-//        when(this.hubController.TryGetThingById(this.parameter1.getIid(), refParameter1)).thenReturn(true);
-//        
+        
         when(this.hubController.TryGetThingById(eq(this.parameter0.getIid()), any(Ref.class)))
             .thenAnswer(invocation -> 
                 {
