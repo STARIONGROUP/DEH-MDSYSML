@@ -313,7 +313,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             Ref<String> refValue = new Ref<String>(String.class, "");
             boolean hasValue = this.TryGetValueFromProperty(property, refValue);
             
-            if(property.getAppliedStereotypeInstance().getName().toLowerCase().contains("ConnectorProperty")
+            if(property.getAppliedStereotypeInstance() != null && property.getAppliedStereotypeInstance().getName().toLowerCase().contains("ConnectorProperty")
                     && property.getDefaultValue() instanceof ElementValue
                     && ((ElementValue)property.getDefaultValue()) != null)
             {
@@ -381,10 +381,10 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         {
             valueSet = new ParameterValueSet();
             valueSet.setIid(UUID.randomUUID());
-            valueSet.setReference(new ValueArray<String>(String.class));
-            valueSet.setFormula(new ValueArray<String>(String.class));
-            valueSet.setPublished(new ValueArray<String>(String.class));
-            valueSet.setComputed(new ValueArray<String>(String.class));
+            valueSet.setReference(new ValueArray<String>(Arrays.asList(""), String.class));
+            valueSet.setFormula(new ValueArray<String>(Arrays.asList(""),String.class));
+            valueSet.setPublished(new ValueArray<String>(Arrays.asList(""),String.class));
+            valueSet.setComputed(new ValueArray<String>(Arrays.asList(""),String.class));
             valueSet.setValueSwitch(ParameterSwitchKind.MANUAL);
             parameter.getValueSet().add(valueSet);
         }

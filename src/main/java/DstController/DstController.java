@@ -31,13 +31,16 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openxmlformats.schemas.drawingml.x2006.main.ThemeDocument;
 
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
 
+import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
+import Reactive.ObservableValue;
 import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
@@ -134,6 +137,38 @@ public final class DstController implements IDstController
     }
     
     /**
+     * Backing field for {@linkplain GeMappingDirection}
+     */
+    private ObservableValue<MappingDirection> currentMappingDirection = new ObservableValue<MappingDirection>(MappingDirection.FromDstToHub, MappingDirection.class);
+    
+    /**
+     * Gets the {@linkplain Observable} of {@linkplain MappingDirection} from {@linkplain currentMappingDirection}
+     * 
+     * @return a {@linkplain Observable} of {@linkplain MappingDirection}
+     */
+    @Override
+    public Observable<MappingDirection> GetMappingDirection()
+    {
+        return this.currentMappingDirection.Observable();
+    }
+
+    /**
+     * Switches the {@linkplain MappingDirection}
+     * 
+     * @return the new {@linkplain MappingDirection}
+     */
+    @Override
+    public MappingDirection ChangeMappingDirection()
+    {
+        this.currentMappingDirection.Value(
+                this.currentMappingDirection.Value() == MappingDirection.FromDstToHub 
+                ? MappingDirection.FromHubToDst
+                : MappingDirection.FromDstToHub);
+        
+        return this.currentMappingDirection.Value();
+    }
+    
+    /**
      * Initializes a new {@linkplain DstController}
      * 
      * @param mappingEngine the {@linkplain IMappingEngine} instance
@@ -171,6 +206,12 @@ public final class DstController implements IDstController
 
             if(!resultAsCollection.isEmpty())
             {
+                this.dstMapResult.removeAll(this.dstMapResult.stream()
+                        .filter(x -> resultAsCollection.stream()
+                                .filter(d -> d != null)
+                                .anyMatch(d -> d.getIid().equals(x.getIid())))
+                        .collect(Collectors.toList()));
+                
                 return this.dstMapResult.addAll(resultAsCollection);
             }
         }
