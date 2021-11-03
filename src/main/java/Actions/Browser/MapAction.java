@@ -127,10 +127,13 @@ public class MapAction extends DefaultBrowserAction
                 .Observable()
                 .subscribe(x -> 
                 {
-                    timer.stop();
+                    if(timer.isStarted())
+                    {
+                        timer.stop();
+                    }
+                    
                     this.logger.error(String.format("Mapping action is done with success ? %s in %s ms", x.GetResult(), timer.getTime(TimeUnit.MILLISECONDS)));
-                });
-            this.MapSelectedElements();
+                }, x -> this.logger.catching(x));
         }
         catch (Exception exception) 
         {

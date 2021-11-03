@@ -26,10 +26,11 @@ package ViewModels;
 import org.netbeans.swing.outline.OutlineModel;
 
 import DstController.IDstController;
+import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Utils.Ref;
+import static Utils.Operators.Operators.AreTheseEquals;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
-import ViewModels.ObjectBrowser.Rows.OwnedDefinedThingRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
 
@@ -38,7 +39,6 @@ import cdp4common.engineeringmodeldata.Iteration;
  * such as the {@linkplain RequirementImpactViewViewModel} and the {@linkplain ElementDefinitionImpactViewViewModel}
  * 
  * @param <TThing> the type of {@linkplain Thing} the concrete class deals with
- * @param <TRootViewModel> the type of root view model the concrete class has
  */
 public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends ObjectBrowserViewModel
 {
@@ -59,12 +59,21 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      * @param dstController the {@linkplain IDstController} instance
      * @param clazz the {@linkplain Class} of the {@linkplain TThing} for future check
      */
-    public ImpactViewBaseViewModel(IHubController hubController, IDstController dstController, Class<TThing> clazz)
+    protected ImpactViewBaseViewModel(IHubController hubController, IDstController dstController, Class<TThing> clazz)
     {
         super(hubController);
         this.DstController = dstController;
         this.clazz = clazz;
 
+        this.InitializesObservables();
+    }
+
+    /**
+     * Initializes the needed subscription on {@linkplain Observable}
+     */
+    @SuppressWarnings("unchecked")
+    private void InitializesObservables()
+    {
         this.DstController.GetDstMapResult()
             .ItemsAdded()
             .subscribe(x -> this.ComputeDifferences(), e -> this.logger.catching(e));
@@ -77,9 +86,59 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
                 {
                     this.UpdateBrowserTrees(this.hubController.GetIsSessionOpen());
                 }
-            });        
+            });
+
+        this.DstController.GetSelectedDstMapResultForTransfer()
+            .ItemsAdded()
+            .filter(x -> x.stream().allMatch(t -> this.clazz.isInstance(t)))
+            .subscribe(x ->
+            {
+                for(Thing thing : x)
+                {
+                    this.SwitchIsSelected((TThing)thing, true);
+                }
+                
+                this.shouldRefreshTree.Value(true);
+            });
+
+        this.DstController.GetSelectedDstMapResultForTransfer()
+            .ItemRemoved()
+            .filter(x -> this.clazz.isInstance(x))
+            .subscribe(x -> 
+            {
+                this.SwitchIsSelected((TThing)x, false);
+                this.shouldRefreshTree.Value(true);
+            });
     }
 
+    /**
+     * Sets is selected property on the row view model that represents the provided {@linkplain Thing}
+     * 
+     * @param thing The {@linkplain Thing} to find the corresponding row view model
+     * @param shouldSelect A value indicating whether the row view model should set as selected
+     */
+    private void SwitchIsSelected(TThing thing, boolean shouldSelect)
+    {
+        IThingRowViewModel<TThing> viewModel = this.GetRowViewModelFromThing((TThing)thing);
+        
+        if(!viewModel.GetIsSelected() && shouldSelect)
+        {
+            viewModel.SetIsSelected(true);
+        }
+        else if(viewModel.GetIsSelected() && !shouldSelect)
+        {
+            viewModel.SetIsSelected(false);            
+        }
+    }
+
+    /**
+     * Gets the {@linkplain IThingRowViewModel} that represent the {@linkplain Thing}
+     * 
+     * @param thing the {@linkplain TThing} 
+     * @return the {@linkplain IThingRowViewModel} of {@linkplain TThing}
+     */
+    protected abstract IThingRowViewModel<TThing> GetRowViewModelFromThing(TThing thing);
+    
     /**
      * Updates this view model {@linkplain TreeModel}
      * 
@@ -105,7 +164,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      */
     protected boolean DoTheseThingsRepresentTheSameThing(Thing thing0, Thing thing1)
     {
-        return thing1.getIid().equals(thing0.getIid());
+        return AreTheseEquals(thing0, thing1);
     }
 
     /**
@@ -116,11 +175,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      */
     protected <TCurrentThing extends Thing> boolean IsThingNewOrModified(Thing thing, Class<TCurrentThing> clazz)
     {
-        boolean result = thing.getOriginal() != null || !this.hubController.TryGetThingById(thing.getIid(), new Ref<TCurrentThing>(clazz));
-        
-        this.logger.debug(String.format("IsThingNewOrModified = thing.getOriginal() != null || !this.hubController.TryGetThingById(thing.getIid(), new Ref<TCurrentThing>(clazz)) ? %s", result));
-        
-        return result;        
+        return thing.getOriginal() != null || !this.hubController.TryGetThingById(thing.getIid(), new Ref<TCurrentThing>(clazz));
     }
         
     /**
@@ -166,13 +221,37 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         this.browserTreeModel.Value(this.CreateNewModel(iteration));
     }
-    
+
     /**
-     * Handles changes in the row selections in the tree
+     * Compute eligible rows where the represented {@linkplain Thing} can be transfered,
+     * and return the filtered collection for feedback application on the tree
      * 
-     * @param parentRowViewModel
-     * @param rowViewModel the view model {@linkplain IThingRowViewModel} of the selected row
+     * @param selectedRow the collection of selected view model {@linkplain IThingRowViewModel}
      */
     @Override
-    public void OnSelectionChanged(IThingRowViewModel<?> rowViewModel) { }
+    public void OnSelectionChanged(IThingRowViewModel<?> selectedRow) 
+    {        
+        if(selectedRow != null && this.DstController.GetDstMapResult().stream()
+                .anyMatch(r -> AreTheseEquals(r, selectedRow.GetThing())))
+        {
+            this.AddOrRemoveSelectedRowToTransfer(selectedRow);
+        }
+    }
+
+    /**
+     * Adds or remove the {@linkplain Thing} to/from the relevant collection depending on the {@linkplain MappingDirection}
+     * 
+     * @param thing the {@linkplain Thing} to add or remove
+     */
+    private void AddOrRemoveSelectedRowToTransfer(IThingRowViewModel<?> x)
+    {
+        if(x.SwitchIsSelectedValue())
+        {
+            this.DstController.GetSelectedDstMapResultForTransfer().add(x.GetThing());
+        }
+        else
+        {
+            this.DstController.GetSelectedDstMapResultForTransfer().Remove(x.GetThing());
+        }
+    }
 }

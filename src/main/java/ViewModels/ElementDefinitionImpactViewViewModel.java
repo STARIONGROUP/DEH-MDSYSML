@@ -23,15 +23,21 @@
  */
 package ViewModels;
 
+import java.util.Optional;
+
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
 import DstController.IDstController;
 import HubController.IHubController;
 import Utils.Ref;
+import static Utils.Operators.Operators.AreTheseEquals;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeViewModel;
+import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowViewModel;
+import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.IterationElementDefinitionRowViewModel;
+import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Iteration;
@@ -83,23 +89,32 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
     }    
 
     /**
-     * Updates this view model {@linkplain TreeModel}
+     * Creates a new {@linkplain OutlineModel} based on the provided {@linkplain Iteration}
      * 
-     * @param isConnected a value indicating whether the session is open
+     * @param iteration the {@linkplain Iteration}
      */
-    @Override
-    protected void SetOutlineModel(Iteration iteration)
-    {
-        this.browserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
-                new ElementDefinitionBrowserTreeViewModel(iteration), 
-                new ElementDefinitionBrowserTreeRowViewModel(), true));
-    }
-    
     @Override
     protected OutlineModel CreateNewModel(Iteration iteration)
     {
         return DefaultOutlineModel.createOutlineModel(
                 new ElementDefinitionBrowserTreeViewModel(iteration), 
                 new ElementDefinitionBrowserTreeRowViewModel(), true);
+    }
+    
+    /**
+     * Gets the {@linkplain IThingRowViewModel} that represent the {@linkplain Thing}
+     * 
+     * @param thing the {@linkplain ElementDefinition} 
+     * @return the {@linkplain IThingRowViewModel} of {@linkplain ElementDefinition}
+     */
+    @Override
+    protected IThingRowViewModel<ElementDefinition> GetRowViewModelFromThing(ElementDefinition thing)
+    {
+        IterationElementDefinitionRowViewModel iterationRowViewModel = (IterationElementDefinitionRowViewModel) this.browserTreeModel.Value().getRoot();
+        
+        return iterationRowViewModel.GetContainedRows().stream()
+            .filter(x -> AreTheseEquals(thing.getIid(), x.GetThing().getIid()))
+            .findFirst()
+            .orElse(null);
     }
 }

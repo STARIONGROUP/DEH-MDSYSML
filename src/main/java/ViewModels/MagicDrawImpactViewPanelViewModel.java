@@ -32,8 +32,10 @@ import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
+import ViewModels.Interfaces.IImpactViewContextMenuViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
+import ViewModels.Interfaces.ITransferControlViewModel;
 import io.reactivex.Observable;
 
 /**
@@ -67,12 +69,45 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     {
         return elementDefinitionImpactViewViewModel;
     }
+
+    /**
+     * The {@linkplain ITransferControlViewModel}
+     */
+    private ITransferControlViewModel transferControlViewModel;
+
+    /**
+     * Gets the {@linkplain ITransferControlViewModel}
+     * 
+     * @return a {@linkplain ITransferControlViewModel}
+     */
+    @Override
+    public ITransferControlViewModel GetTransferControlViewModel()
+    {
+        return this.transferControlViewModel;
+    }
+
+    /**
+     * The {@linkplain IImpactViewContextMenuViewModel}
+     */
+    private IImpactViewContextMenuViewModel contextMenuViewModel;    
+    
+
+    /**
+     * Gets the {@linkplain IImpactViewContextMenuViewModel} view model for the context menus
+     * 
+     * @return a {@linkplain IImpactViewContextMenuViewModel}
+     */
+    @Override
+    public IImpactViewContextMenuViewModel GetContextMenuViewModel()
+    {
+        return this.contextMenuViewModel;
+    }
     
     /**
      * The {@linkplain IRequirementImpactViewViewModel}
      */
     private IRequirementImpactViewViewModel requirementDefinitionImpactViewViewModel;
-
+    
     /**
      * Gets the {@linkplain IRequirementImpactViewViewModel} requirementDefinitionImpactViewViewModel
      * 
@@ -102,12 +137,17 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * @param dstController the {@linkplain IDstController}
      * @param elementDefinitionImpactViewModel the {@linkplain IElementDefinitionImpactViewViewModel}
      * @param requirementImpactViewModel the {@linkplain IRequirementImpactViewViewModel}
+     * @param transferControlViewModel the {@linkplain ITransferControlViewModel}
+     * @param contextMenuViewModel the {@linkplain IImpactViewContextMenuViewModel}
      */
     public MagicDrawImpactViewPanelViewModel(IHubController hubController, IDstController dstController, 
-            IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel)
+            IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel,
+            ITransferControlViewModel transferControlViewModel, IImpactViewContextMenuViewModel contextMenuViewModel)
     {
         super(hubController);
         this.dstController = dstController;
+        this.transferControlViewModel = transferControlViewModel;
+        this.contextMenuViewModel = contextMenuViewModel;
         this.isSessionOpen = this.HubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;

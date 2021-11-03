@@ -54,10 +54,12 @@ import ViewModels.ElementDefinitionImpactViewViewModel;
 import ViewModels.HubBrowserPanelViewModel;
 import ViewModels.MagicDrawImpactViewPanelViewModel;
 import ViewModels.RequirementImpactViewViewModel;
+import ViewModels.TransferControlViewModel;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
+import ViewModels.Interfaces.ITransferControlViewModel;
 import cdp4common.dto.Category;
 import net.sf.ehcache.statistics.extended.ExtendedStatistics.Statistic;
 import Actions.Browser.MapAction;
@@ -69,6 +71,7 @@ import MappingRules.BlockDefinitionMappingRule;
 import MappingRules.RequirementMappingRule;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
+import Utils.ImageLoader.ImageLoader;
 
 public class DEHMDSYSMLPlugin extends Plugin
 {
@@ -128,24 +131,13 @@ public class DEHMDSYSMLPlugin extends Plugin
                     @Override
                     public void configure(ActionsManager manager, Tree tree)
                     {
-                        NMAction action = null;
-                        List<NMAction> allActions = manager.getAllActions();
-                        for (NMAction nMAction : allActions)
-                        {
-                            if(nMAction.getName().equals("Simulation"))
-                            {
-                                action = nMAction;
-                                break;
-                            }
-                        }
-
-                        if( action != null )
-                        {
-                            ActionsCategory category = (ActionsCategory)manager.getActionParent(action);
-                            List<NMAction> actionsInCategory = category.getActions();
-                            actionsInCategory.add(actionsInCategory.size(), mapAction);
-                            category.setActions(actionsInCategory);
-                        }
+                        ActionsCategory category = new ActionsCategory();
+                        category.setName("DEH-MDSYSML action category");
+                        category.setSmallIcon(ImageLoader.GetIcon("icon16.png"));
+                        manager.addCategory(manager.getCategories().size(), category);
+                        List<NMAction> actionsInCategory = category.getActions();
+                        actionsInCategory.add(actionsInCategory.size(), mapAction);
+                        category.setActions(actionsInCategory);
                     }
                 };
                 
@@ -166,7 +158,7 @@ public class DEHMDSYSMLPlugin extends Plugin
     @Override
     public boolean close()
     {
-        AppContainer.Container.getComponent(IHubBrowserPanelViewModel.class).Disconnect();
+        AppContainer.Container.getComponent(IHubController.class).Close();
         AppContainer.Container.stop();
         return true;
     }
@@ -201,6 +193,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(IRequirementImpactViewViewModel.class, RequirementImpactViewViewModel.class);
             AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);
             AppContainer.Container.addComponent(IMagicDrawImpactViewPanelViewModel.class, MagicDrawImpactViewPanelViewModel.class);
+            AppContainer.Container.addComponent(ITransferControlViewModel.class, TransferControlViewModel.class);
         }
         catch (Exception exception) 
         {

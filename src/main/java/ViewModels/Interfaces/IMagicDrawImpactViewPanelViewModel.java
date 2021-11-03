@@ -69,4 +69,18 @@ public interface IMagicDrawImpactViewPanelViewModel extends IViewModel
      * @return the {@linkplain IElementDefinitionImpactViewViewModel}
      */
     IElementDefinitionImpactViewViewModel GetElementDefinitionImpactViewViewModel();
+
+    /**
+     * Gets the {@linkplain ITransferControlViewModel}
+     * 
+     * @return a {@linkplain ITransferControlViewModel}
+     */
+    ITransferControlViewModel GetTransferControlViewModel();
+
+    /**
+     * Gets the {@linkplain IImpactViewContextMenuViewModel} view model for the context menus
+     * 
+     * @return a {@linkplain IImpactViewContextMenuViewModel}
+     */
+    IImpactViewContextMenuViewModel GetContextMenuViewModel();
 }
