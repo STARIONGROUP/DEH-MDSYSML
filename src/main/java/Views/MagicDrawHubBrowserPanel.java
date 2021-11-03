@@ -56,26 +56,7 @@ public class MagicDrawHubBrowserPanel extends MagicDrawBasePanel<IHubBrowserPane
     @Override
     public void Bind()
     {
-        this.View.ConnectButton().addActionListener(new ActionListener() 
-        {
-            public void actionPerformed(ActionEvent e)
-            {
-                if(!DataContext.GetIsConnected())
-                {
-                    Boolean connectionDialogResult= DataContext.Connect();
-                    if(connectionDialogResult != null && connectionDialogResult)
-                    {
-                        View.ConnectButton().setText("Disconnect");
-                    }
-                }
-                else
-                {
-                    DataContext.Disconnect();
-                    View.ConnectButton().setText("Connect");
-                }
-            }
-        });
-        
+        this.View.GetSessionControlPanel().SetDataContext(this.DataContext.GetSessionControlViewModel());
         this.View.getHubBrowserHeader().SetDataContext(this.DataContext.GetHubBrowserHeaderViewModel());
         this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionBrowserViewModel());
         this.View.GetRequirementBrowser().SetDataContext(this.DataContext.GetRequirementBrowserViewModel());

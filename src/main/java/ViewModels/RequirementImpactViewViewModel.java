@@ -23,6 +23,8 @@
  */
 package ViewModels;
 
+import java.util.Optional;
+
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
@@ -31,6 +33,9 @@ import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Utils.Ref;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
+import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowViewModel;
+import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.IterationElementDefinitionRowViewModel;
+import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import ViewModels.ObjectBrowser.RequirementTree.RequirementBrowserTreeRowViewModel;
 import ViewModels.ObjectBrowser.RequirementTree.RequirementBrowserTreeViewModel;
 import ViewModels.ObjectBrowser.RequirementTree.Rows.IterationRequirementRowViewModel;
@@ -38,7 +43,9 @@ import ViewModels.ObjectBrowser.RequirementTree.Rows.RequirementBaseTreeElementV
 import ViewModels.ObjectBrowser.RequirementTree.Rows.RequirementGroupRowViewModel;
 import ViewModels.ObjectBrowser.RequirementTree.Rows.RequirementRowViewModel;
 import ViewModels.ObjectBrowser.RequirementTree.Rows.RequirementSpecificationRowViewModel;
+import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
 import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
@@ -89,7 +96,7 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
             }
         }
     }
-    
+        
     /**
      * Creates a new {@linkplain OutlineModel} based on the provided {@linkplain Iteration}
      * 
@@ -101,5 +108,29 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
         return DefaultOutlineModel.createOutlineModel(
             new RequirementBrowserTreeViewModel(iteration),
             new RequirementBrowserTreeRowViewModel(), true);
+    }
+
+    /**
+     * Gets the {@linkplain IThingRowViewModel} that represent the {@linkplain Thing}
+     * 
+     * @param thing the {@linkplain ElementDefinition} 
+     * @return the {@linkplain IThingRowViewModel} of {@linkplain ElementDefinition}
+     */
+    @Override
+    protected IThingRowViewModel<RequirementsSpecification> GetRowViewModelFromThing(RequirementsSpecification thing)
+    {
+
+        IterationRequirementRowViewModel iterationRowViewModel = (IterationRequirementRowViewModel) this.browserTreeModel.Value().getRoot();
+        
+        Optional<RequirementSpecificationRowViewModel> optionalDefinition = iterationRowViewModel.GetContainedRows().stream()
+            .filter(x -> x.GetThing().getIid().equals(thing.getIid()))
+            .findFirst();
+        
+        if(optionalDefinition.isPresent())
+        {
+            return optionalDefinition.get();
+        }
+        
+        return null;
     }
 }

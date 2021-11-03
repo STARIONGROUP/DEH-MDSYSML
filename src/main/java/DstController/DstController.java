@@ -26,12 +26,12 @@ package DstController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.openxmlformats.schemas.drawingml.x2006.main.ThemeDocument;
 
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
@@ -44,6 +44,8 @@ import Reactive.ObservableValue;
 import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
+import static Utils.Operators.Operators.AreTheseEquals;
+import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -59,10 +61,7 @@ import cdp4common.engineeringmodeldata.ValueSet;
 import cdp4common.types.ContainerList;
 import cdp4dal.exceptions.TransactionException;
 import cdp4dal.operations.ThingTransaction;
-import cdp4dal.operations.ThingTransactionImpl;
-import cdp4dal.operations.TransactionContextResolver;
 import io.reactivex.Observable;
-import io.reactivex.internal.observers.ForEachWhileObserver;
 
 /**
  * The {@linkplain DstController} is a class that manage transfer and connection to attached running instance of Cameo/MagicDraw
@@ -129,11 +128,45 @@ public final class DstController implements IDstController
 
     /**
      * Gets The {@linkplain ObservableCollection} of dst map result
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
      */
     @Override
     public ObservableCollection<Thing> GetDstMapResult()
     {
         return this.dstMapResult;
+    }
+    
+    /**
+     * Backing field for {@linkplain GetSelectedHubMapResultForTransfer}
+     */    
+    private ObservableCollection<Thing> selectedHubMapResultForTransfer = new ObservableCollection<Thing>(Thing.class);
+    
+    /**
+     * Gets the {@linkplain ObservableCollection} of that are selected for transfer to the Cameo/MagicDraw
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     */
+    @Override
+    public ObservableCollection<Thing> GetSelectedHubMapResultForTransfer()
+    {
+        return this.selectedHubMapResultForTransfer;
+    }
+    
+    /**
+     * Backing field for {@linkplain GetSelectedDstMapResultForTransfer}
+     */
+    private ObservableCollection<Thing> selectedDstMapResultForTransfer = new ObservableCollection<Thing>(Thing.class);
+    
+    /**
+     * Gets the {@linkplain ObservableCollection} of {@linkplain Thing} that are selected for transfer to the Hub
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     */
+    @Override
+    public ObservableCollection<Thing> GetSelectedDstMapResultForTransfer()
+    {
+        return this.selectedDstMapResultForTransfer;
     }
     
     /**
@@ -150,6 +183,17 @@ public final class DstController implements IDstController
     public Observable<MappingDirection> GetMappingDirection()
     {
         return this.currentMappingDirection.Observable();
+    }
+
+    /**
+     * Gets the current {@linkplain MappingDirection} from {@linkplain currentMappingDirection}
+     * 
+     * @return the {@linkplain MappingDirection}
+     */
+    @Override
+    public MappingDirection CurrentMappingDirection()
+    {
+        return this.currentMappingDirection.Value();
     }
 
     /**
@@ -205,18 +249,36 @@ public final class DstController implements IDstController
             ArrayList<? extends Thing> resultAsCollection = (ArrayList<? extends Thing>) resultAsObject;
 
             if(!resultAsCollection.isEmpty())
-            {
-                this.dstMapResult.removeAll(this.dstMapResult.stream()
-                        .filter(x -> resultAsCollection.stream()
-                                .filter(d -> d != null)
-                                .anyMatch(d -> d.getIid().equals(x.getIid())))
-                        .collect(Collectors.toList()));
-                
-                return this.dstMapResult.addAll(resultAsCollection);
+            {                
+                this.dstMapResult.removeIf(x -> resultAsCollection.stream()
+                                .anyMatch(d -> AreTheseEquals(d.getIid(), x.getIid())));
+                                
+                this.selectedHubMapResultForTransfer.clear();
+                this.selectedDstMapResultForTransfer.clear();
+                return  this.dstMapResult.addAll(resultAsCollection);
             }
         }
         
         return false;
+    }
+    
+    /**
+     * Transfers the selected things to be transfered depending on the current {@linkplain MappingDirection}
+     * 
+     * @return a value indicating that all transfer could be completed
+     */
+    @Override
+    public boolean Transfer()
+    {
+        switch(this.CurrentMappingDirection())
+        {
+            case FromDstToHub:
+                return this.TransferToHub();
+            case FromHubToDst:
+                return true;
+            default:
+                return false;        
+        }
     }
     
     /**
@@ -249,6 +311,7 @@ public final class DstController implements IDstController
         finally
         {
             this.dstMapResult.clear();
+            this.selectedDstMapResultForTransfer.clear();
         }
     }
     
@@ -313,7 +376,7 @@ public final class DstController implements IDstController
      */
     private void PrepareThingsForTransfer(Iteration iterationClone, ThingTransaction transaction) throws TransactionException
     {
-        for (Thing thing : this.dstMapResult)
+        for (Thing thing : this.selectedDstMapResultForTransfer)
         {
             switch(thing.getClassKind())
             {
@@ -418,5 +481,41 @@ public final class DstController implements IDstController
         }
         
         transaction.createOrUpdate(thing);
+    }
+
+    /**
+     * Adds or Removes all {@linkplain TElement} from/to the relevant selected things to transfer depending on the current {@linkplain MappingDirection}
+     * 
+     * @param classKind the {@linkplain ClassKind} of the {@linkplain Thing}s to add or remove depending on which impact view it has been called from
+     * @param shouldRemove a value indicating whether the things are to be removed
+     */
+    @Override
+    public void AddOrRemoveAllFromSelectedThingsToTransfer(ClassKind classKind, boolean shouldRemove)
+    {
+        if(this.CurrentMappingDirection() == MappingDirection.FromDstToHub)
+        {
+            this.AddOrRemoveAllFromSelectedDstMapResultForTransfer(classKind, shouldRemove);
+        }
+    }
+    
+    /**
+     * Adds or Removes all {@linkplain TElement} from/to the relevant selected things to transfer depending on the current {@linkplain MappingDirection}
+     * 
+     * @param classKind the {@linkplain ClassKind} of the {@linkplain Thing}s to add or remove depending on which impact view it has been called from
+     * @param shouldRemove a value indicating whether the things are to be removed
+     */
+    private void AddOrRemoveAllFromSelectedDstMapResultForTransfer(ClassKind classKind, boolean shouldRemove)
+    {
+        Predicate<? super Thing> predicateClassKind = x -> x.getClassKind() == classKind;
+        
+        this.selectedDstMapResultForTransfer.removeIf(predicateClassKind);
+        
+        if(!shouldRemove)
+        {
+            this.selectedDstMapResultForTransfer.addAll(
+                    this.dstMapResult.stream()
+                        .filter(predicateClassKind)
+                        .collect(Collectors.toList()));
+        }
     }
 }

@@ -23,7 +23,6 @@
  */
 package DstController;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 import com.nomagic.magicdraw.core.Project;
@@ -32,13 +31,12 @@ import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
 import cdp4common.commondata.Thing;
-import cdp4common.engineeringmodeldata.ElementDefinition;
 import io.reactivex.Observable;
 
 /**
  * The {@linkplain IDstController} is the interface definition for the {@linkplain DstController}
  */
-public interface IDstController
+public interface IDstController extends IDstControllerBase
 {
     /**
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
@@ -72,6 +70,8 @@ public interface IDstController
 
     /**
      * Gets The {@linkplain ObservableCollection} of dst map result
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
      */
     ObservableCollection<Thing> GetDstMapResult();
 
@@ -95,4 +95,32 @@ public interface IDstController
      * @return the new {@linkplain MappingDirection}
      */
     MappingDirection ChangeMappingDirection();
+
+    /**
+     * Gets the {@linkplain ObservableCollection} of {@linkplain Thing} that are selected for transfer to the Hub
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     */
+    ObservableCollection<Thing> GetSelectedDstMapResultForTransfer();
+    
+    /**
+     * Gets the {@linkplain ObservableCollection} of that are selected for transfer to the Cameo/MagicDraw
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     */
+    ObservableCollection<Thing> GetSelectedHubMapResultForTransfer();
+
+    /**
+     * Gets the current {@linkplain MappingDirection} from {@linkplain currentMappingDirection}
+     * 
+     * @return the {@linkplain MappingDirection}
+     */
+    MappingDirection CurrentMappingDirection();
+
+    /**
+     * Transfers the selected things to be transfered depending on the current {@linkplain MappingDirection}
+     * 
+     * @return a value indicating that all transfer could be completed
+     */
+    boolean Transfer();
 }
