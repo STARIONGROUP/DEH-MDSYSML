@@ -24,6 +24,7 @@
 package MappingRules;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,17 +43,20 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Slot;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
+import Enumerations.MappingDirection;
+import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
+import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
+import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.ShortNamedThing;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
-import cdp4common.types.ContainerList;
 
 /**
  * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
@@ -63,6 +67,11 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      * The {@linkplain IHubController}
      */
     private IHubController hubController;
+    
+    /**
+     * The {@linkplain IMagicDrawMappingConfigurationService}
+     */
+    private IMagicDrawMappingConfigurationService mappingConfiguration;
 
     /**
      * The collection of {@linkplain RequirementsSpecification} that are being mapped
@@ -73,15 +82,17 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      * The collection of {@linkplain RequirementsGroup} that are being mapped
      */
     private ArrayList<RequirementsGroup> temporaryRequirementsGroups = new ArrayList<RequirementsGroup>();
-    
+
     /**
      * Initializes a new {@linkplain RequirementMappingRule}
      * 
      * @param hubController the {@linkplain IHubController}
+     * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      */
-    public RequirementMappingRule(IHubController hubController)
+    public RequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
     {
         this.hubController = hubController;
+        this.mappingConfiguration = mappingConfiguration;
     }    
     
     /**
@@ -95,8 +106,10 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
     {
         try
         {
-            this.Map(this.CastInput(input));
-            return new ArrayList<RequirementsSpecification>(this.requirementsSpecifications);
+            MagicDrawRequirementCollection mappedElements = this.CastInput(input);
+            this.Map(mappedElements);
+            this.SaveMappingConfiguration(mappedElements);
+            return new ArrayList<RequirementsSpecification>(mappedElements.stream().map(x -> x.GetHubElement()).collect(Collectors.toList()));
         }
         catch (Exception exception)
         {
@@ -111,44 +124,67 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
     }
     
     /**
+     * Saves the mapping configuration
+     * 
+     * @param elements the {@linkplain MagicDrawBlockCollection}
+     */
+    private void SaveMappingConfiguration(MagicDrawRequirementCollection elements)
+    {
+        for (MappedRequirementsSpecificationRowViewModel mappedRequirementsSpecification : elements)
+        {
+            this.mappingConfiguration.AddToExternalIdentifierMap(
+                    mappedRequirementsSpecification.GetHubElement().getIid(), mappedRequirementsSpecification.GetDstElement().getID(), MappingDirection.FromDstToHub);
+        }
+    }
+    
+    /**
      * Maps the provided collection of block
      * 
-     * @param allRequirements the collection of {@linkplain Class} or requirements to map
+     * @param mappedRequirements the collection of {@linkplain Class} or requirements to map
      */
-    private void Map(MagicDrawRequirementCollection allRequirements)
+    private void Map(MagicDrawRequirementCollection mappedRequirements)
     {
-        for (Class requirement : allRequirements)
+        for (MappedRequirementsSpecificationRowViewModel mappedRequirement : mappedRequirements)
         {
             try
             {
-                Element parentPackage = requirement.getOwner();
+                Element parentPackage = mappedRequirement.GetDstElement().getOwner();
                 
                 Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<RequirementsSpecification>(RequirementsSpecification.class);
                    
-                while (!(this.CanBeARequirementSpecification(parentPackage)
-                        && parentPackage != null && parentPackage instanceof Package
-                        && this.TryGetOrCreateRequirementSpecification((Package)parentPackage, refRequirementsSpecification)))
+                if(mappedRequirement.GetHubElement() != null)
                 {
-                    parentPackage = parentPackage.getOwner();
+                    refRequirementsSpecification.Set(mappedRequirement.GetHubElement());
+                }
+                else
+                {
+                    while (!(this.CanBeARequirementSpecification(parentPackage)
+                            && parentPackage != null && parentPackage instanceof Package
+                            && this.TryGetOrCreateRequirementSpecification((Package)parentPackage, refRequirementsSpecification)))
+                    {
+                        parentPackage = parentPackage.getOwner();
+                    }
                 }
                 
                 if(!refRequirementsSpecification.HasValue())
                 {
                     this.logger.error(
                             String.format("The mapping of the current requirement %s is no possible, because no eligible parent could be found current package name %s", 
-                                    requirement.getName(), requirement.getOwner().getHumanName()));
+                                    mappedRequirement.GetDstElement().getName(), mappedRequirement.GetDstElement().getOwner().getHumanName()));
                     
                     continue;
                 }
     
+                mappedRequirement.SetHubElement(refRequirementsSpecification.Get());
+                
                 Ref<RequirementsGroup> refRequirementsGroup = new Ref<RequirementsGroup>(RequirementsGroup.class);
                 Ref<Requirement> refRequirement = new Ref<Requirement>(Requirement.class);
                 
                 Collection<Element> parentElements = parentPackage.getOwnedElement();
                 
-                if(!TryCreateRelevantGroupsAndTheRequirement(requirement, parentElements, refRequirementsSpecification, refRequirementsGroup, refRequirement))
+                if(!TryCreateRelevantGroupsAndTheRequirement(mappedRequirement.GetDstElement(), parentElements, refRequirementsSpecification, refRequirementsGroup, refRequirement))
                 {
-                    this.logger.error(String.format("Could not map requirement %s", requirement.getName()));
+                    this.logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
                 }
             }
             catch(Exception exception)
@@ -403,7 +439,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
                 requirementsSpecification.setOwner(this.hubController.GetCurrentDomainOfExpertise());
                 refRequirementSpecification.Set(requirementsSpecification);             
             }
-
+        
             this.requirementsSpecifications.add(refRequirementSpecification.Get());
         }
         

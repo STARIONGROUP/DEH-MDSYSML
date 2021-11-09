@@ -26,6 +26,7 @@ package DstController;
 import java.util.Collection;
 
 import com.nomagic.magicdraw.core.Project;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
@@ -43,9 +44,10 @@ public interface IDstController extends IDstControllerBase
      * and assign the map result to the dstMapResult or the hubMapResult
      * 
      * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
+     * @param mappingDirection the {@linkplain MappingDirection} towards the {@linkplain IMappableThingCollection} maps to
      * @return a {@linkplain boolean} indicating whether the mapping operation went well
      */
-    boolean Map(IMappableThingCollection input);
+    boolean Map(IMappableThingCollection input, MappingDirection mappingDirection);
 
     /**
      * Gets a value indicating if Cameo/MagicDraw has an open document
@@ -74,6 +76,13 @@ public interface IDstController extends IDstControllerBase
      * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
      */
     ObservableCollection<Thing> GetDstMapResult();
+    
+    /**
+     * Gets The {@linkplain ObservableCollection} of Hub map result
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Class}
+     */
+    ObservableCollection<Class> GetHubMapResult();
 
     /**
      * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub
@@ -106,9 +115,9 @@ public interface IDstController extends IDstControllerBase
     /**
      * Gets the {@linkplain ObservableCollection} of that are selected for transfer to the Cameo/MagicDraw
      * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
-    ObservableCollection<Thing> GetSelectedHubMapResultForTransfer();
+    ObservableCollection<Class> GetSelectedHubMapResultForTransfer();
 
     /**
      * Gets the current {@linkplain MappingDirection} from {@linkplain currentMappingDirection}
@@ -123,4 +132,11 @@ public interface IDstController extends IDstControllerBase
      * @return a value indicating that all transfer could be completed
      */
     boolean Transfer();
+
+    /**
+     * Loads the saved mapping and applies the mapping rule to the loaded things
+     * 
+     * @return the number of mapped things loaded
+     */
+    void LoadMapping();
 }

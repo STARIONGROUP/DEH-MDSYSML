@@ -30,6 +30,9 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Utils.Ref;
 import static Utils.Operators.Operators.AreTheseEquals;
+
+import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
+import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
@@ -55,7 +58,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     /**
      * Initializes a new {@linkplain ImpactViewBaseViewModel}
      * 
-     * @param hubController the {@linkplain IHubController} instance
+     * @param HubController the {@linkplain IHubController} instance
      * @param dstController the {@linkplain IDstController} instance
      * @param clazz the {@linkplain Class} of the {@linkplain TThing} for future check
      */
@@ -219,7 +222,36 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      */
     protected void SetOutlineModel(Iteration iteration)
     {
-        this.browserTreeModel.Value(this.CreateNewModel(iteration));
+        OutlineModel model = this.CreateNewModel(iteration);
+        this.UpdateHighlightOnRows(model);
+        this.browserTreeModel.Value(model);
+    }
+
+    /**
+     * Updates the <code>IsHighlighted</code> property on each row of the specified model
+     * 
+     * @param model the {@linkplain OutlineModel}
+     */
+    @SuppressWarnings("unchecked")
+    private void UpdateHighlightOnRows(OutlineModel model)
+    {
+        Object root = model.getRoot();
+        
+        if(root instanceof IHaveContainedRows)
+        {
+            for (IRowViewModel row : ((IHaveContainedRows<IRowViewModel>)root).GetContainedRows())
+            {
+                if(row instanceof IThingRowViewModel)
+                {
+                    IThingRowViewModel<?> thingRowViewModel = (IThingRowViewModel<?>)row;
+                    
+                    boolean isHighlighted = this.DstController.GetDstMapResult().stream()
+                            .anyMatch(r -> AreTheseEquals(r.getIid(), thingRowViewModel.GetThing().getIid()));
+                    
+                    thingRowViewModel.SetIsHighlighted(isHighlighted);
+                }
+            }
+        }
     }
 
     /**
@@ -230,9 +262,9 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      */
     @Override
     public void OnSelectionChanged(IThingRowViewModel<?> selectedRow) 
-    {        
-        if(selectedRow != null && this.DstController.GetDstMapResult().stream()
-                .anyMatch(r -> AreTheseEquals(r, selectedRow.GetThing())))
+    {
+        if(selectedRow != null && selectedRow.GetThing() != null && this.DstController.GetDstMapResult().stream()
+                .anyMatch(r -> AreTheseEquals(r.getIid(), selectedRow.GetThing().getIid())))
         {
             this.AddOrRemoveSelectedRowToTransfer(selectedRow);
         }

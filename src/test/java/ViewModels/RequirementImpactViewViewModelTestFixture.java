@@ -45,7 +45,6 @@ import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import cdp4common.sitedirectorydata.DomainOfExpertise;
-import io.reactivex.Observable;
 
 class RequirementImpactViewViewModelTestFixture
 {

@@ -69,6 +69,8 @@ import DstController.IDstController;
 import HubController.IHubController;
 import MappingRules.BlockDefinitionMappingRule;
 import MappingRules.RequirementMappingRule;
+import Services.MappingConfiguration.IMappingConfigurationService;
+import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
 import Utils.ImageLoader.ImageLoader;
@@ -188,7 +190,9 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.as(CACHE).addComponent(MapAction.class);
             AppContainer.Container.addComponent(BlockDefinitionMappingRule.class.getName(), BlockDefinitionMappingRule.class);
             AppContainer.Container.addComponent(RequirementMappingRule.class.getName(), RequirementMappingRule.class);
-            
+
+            AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
+
             AppContainer.Container.addComponent(IElementDefinitionImpactViewViewModel.class, ElementDefinitionImpactViewViewModel.class);
             AppContainer.Container.addComponent(IRequirementImpactViewViewModel.class, RequirementImpactViewViewModel.class);
             AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);

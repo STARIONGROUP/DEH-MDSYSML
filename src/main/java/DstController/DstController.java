@@ -26,9 +26,11 @@ package DstController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,13 +39,25 @@ import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
 
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
+import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
+import Utils.Stereotypes.HubElementCollection;
+import Utils.Stereotypes.HubRequirementsSpecificationCollection;
+import Utils.Stereotypes.MagicDrawBlockCollection;
+import Utils.Stereotypes.MagicDrawRequirementCollection;
+import ViewModels.Interfaces.IMappedElementRowViewModel;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
+import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+
 import static Utils.Operators.Operators.AreTheseEquals;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
@@ -69,7 +83,12 @@ import io.reactivex.Observable;
 public final class DstController implements IDstController
 {
     /**
-     * The current class logger
+     * Gets this running DST adapter name
+     */
+    public static String ThisToolName = "DEH-MDSYSML";
+
+    /**
+     * The current class Logger
      */
     private final Logger logger = LogManager.getLogger();
     
@@ -88,6 +107,11 @@ public final class DstController implements IDstController
      */
     private final IHubController hubController;
 
+    /**
+     * The {@linkplain IMappingConfigurationService} instance
+     */
+    private IMagicDrawMappingConfigurationService mappingConfigurationService;
+    
     /**
      * Gets the open Document ({@linkplain Project}) from the running instance of Cameo/MagicDraw
      * 
@@ -124,10 +148,26 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
+    private ObservableCollection<Class> hubMapResult = new ObservableCollection<Class>(Class.class);
+    
+    /**
+     * Gets The {@linkplain ObservableCollection} of Hub map result
+     * 
+     * @return an {@linkplain ObservableCollection} of {@linkplain Class}
+     */
+    @Override
+    public ObservableCollection<Class> GetHubMapResult()
+    {
+        return this.hubMapResult;
+    }    
+    
+    /**
+     * Backing field for {@linkplain GetDstMapResult}
+     */
     private ObservableCollection<Thing> dstMapResult = new ObservableCollection<Thing>(Thing.class);
 
     /**
-     * Gets The {@linkplain ObservableCollection} of dst map result
+     * Gets The {@linkplain ObservableCollection} of DST map result
      * 
      * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
      */
@@ -140,15 +180,15 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetSelectedHubMapResultForTransfer}
      */    
-    private ObservableCollection<Thing> selectedHubMapResultForTransfer = new ObservableCollection<Thing>(Thing.class);
+    private ObservableCollection<Class> selectedHubMapResultForTransfer = new ObservableCollection<Class>(Class.class);
     
     /**
      * Gets the {@linkplain ObservableCollection} of that are selected for transfer to the Cameo/MagicDraw
      * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
     @Override
-    public ObservableCollection<Thing> GetSelectedHubMapResultForTransfer()
+    public ObservableCollection<Class> GetSelectedHubMapResultForTransfer()
     {
         return this.selectedHubMapResultForTransfer;
     }
@@ -173,7 +213,7 @@ public final class DstController implements IDstController
      * Backing field for {@linkplain GeMappingDirection}
      */
     private ObservableValue<MappingDirection> currentMappingDirection = new ObservableValue<MappingDirection>(MappingDirection.FromDstToHub, MappingDirection.class);
-    
+
     /**
      * Gets the {@linkplain Observable} of {@linkplain MappingDirection} from {@linkplain currentMappingDirection}
      * 
@@ -216,13 +256,15 @@ public final class DstController implements IDstController
      * Initializes a new {@linkplain DstController}
      * 
      * @param mappingEngine the {@linkplain IMappingEngine} instance
-     * @param hubController the {@linkplain IHubController} instance
+     * @param HubController the {@linkplain IHubController} instance
+     * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService} instance
      * @param shouldListenForProjectChanges indicates whether the {@linkplain DstController} should watch projects
      */
-    public DstController(IMappingEngineService mappingEngine, IHubController hubController, boolean shouldListenForProjectChanges)
+    public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawMappingConfigurationService mappingConfigurationService, boolean shouldListenForProjectChanges)
     {
         this.mappingEngine = mappingEngine;
         this.hubController = hubController;
+        this.mappingConfigurationService = mappingConfigurationService;
         
         if(shouldListenForProjectChanges)
         {
@@ -232,31 +274,135 @@ public final class DstController implements IDstController
     }
     
     /**
+     * Loads the saved mapping and applies the mapping rule to the loaded things
+     * 
+     * @return the number of mapped things loaded
+     */
+    @Override
+    public void LoadMapping()
+    {
+        StopWatch timer = StopWatch.createStarted();
+        
+        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.OpenDocument().getAllElements()
+                .stream()
+                .filter(x -> x instanceof Class)
+                .map(x -> (Class)x)
+                .collect(Collectors.toList()));
+        
+        MagicDrawBlockCollection allMappedMagicDrawElement = new MagicDrawBlockCollection();
+        MagicDrawRequirementCollection allMappedMagicDrawRequirements = new MagicDrawRequirementCollection();
+        
+        HubElementCollection allMappedHubElement = new HubElementCollection();
+        HubRequirementsSpecificationCollection allMappedHubRequirements = new HubRequirementsSpecificationCollection();
+        
+        things.stream()
+            .filter(x -> x.GetMappingDirection() == MappingDirection.FromDstToHub)
+            .forEach(x -> SortMappedElementByType(allMappedMagicDrawElement, allMappedMagicDrawRequirements, x));
+        
+        things.stream()
+            .filter(x -> x.GetMappingDirection() == MappingDirection.FromHubToDst)
+            .forEach(x -> SortMappedElementByType(allMappedHubElement, allMappedHubRequirements, x));
+        
+        boolean result = true;
+        
+        this.dstMapResult.clear();
+        this.hubMapResult.clear();
+        
+        if(!allMappedMagicDrawElement.isEmpty())
+        {
+            result &= this.Map(allMappedMagicDrawElement, MappingDirection.FromDstToHub);
+        }
+        if(!allMappedMagicDrawRequirements.isEmpty())
+        {
+            result &= this.Map(allMappedMagicDrawRequirements, MappingDirection.FromDstToHub);
+        }
+        if(!allMappedHubElement.isEmpty())
+        {
+            result &= this.Map(allMappedHubElement, MappingDirection.FromHubToDst);
+        }
+        if(!allMappedHubRequirements.isEmpty())
+        {
+            result &= this.Map(allMappedHubRequirements, MappingDirection.FromHubToDst);
+        }
+        
+        timer.stop();
+        
+        if(!result)
+        {
+            this.logger.error(String.format("Could not map %s saved mapped things for some reason, check the log for details", things.size()));
+            things.clear();
+            return;
+        }
+        
+        this.logger.info(String.format("Loaded %s saved mapping, done in %s ms", things.size(), timer.getTime(TimeUnit.MILLISECONDS)));
+    }
+
+    /**
+     * Sorts the {@linkplain IMappedElementRowViewModel} and adds it to the relevant collection of one of the two provided
+     * 
+     * @param allMappedElement the {@linkplain Collection} of {@linkplain MappedElementDefinitionRowViewModel}
+     * @param allMappedRequirements the {@linkplain Collection} of {@linkplain MappedRequirementsSpecificationRowViewModel}
+     * @param mappedRowViewModel the {@linkplain IMappedElementRowViewModel} to sort
+     */
+    private void SortMappedElementByType(ArrayList<MappedElementDefinitionRowViewModel> allMappedElement,
+            ArrayList<MappedRequirementsSpecificationRowViewModel> allMappedRequirements, IMappedElementRowViewModel mappedRowViewModel)
+    {
+        if(mappedRowViewModel.GetTThingClass().isAssignableFrom(ElementDefinition.class))
+        {
+            allMappedElement.add((MappedElementDefinitionRowViewModel) mappedRowViewModel);
+        }
+        else if(mappedRowViewModel.GetTThingClass().isAssignableFrom(RequirementsSpecification.class))
+        {
+            allMappedRequirements.add((MappedRequirementsSpecificationRowViewModel) mappedRowViewModel);
+        }
+    }
+    
+    /**
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
      * and assign the map result to the dstMapResult or the hubMapResult
      * 
      * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
+     * @param mappingDirection the {@linkplain MappingDirection} towards the {@linkplain IMappableThingCollection} maps to
      * @return a {@linkplain boolean} indicating whether the mapping operation went well
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean Map(IMappableThingCollection input)
-    {        
+    public boolean Map(IMappableThingCollection input, MappingDirection mappingDirection)
+    {
+        if(mappingDirection == null)
+        {
+            mappingDirection = this.CurrentMappingDirection();
+        }
+        
         Object resultAsObject = this.mappingEngine.Map(input);
 
-        if(resultAsObject instanceof ArrayList<?>)
+        if(!(resultAsObject instanceof ArrayList<?>))
         {
-            @SuppressWarnings("unchecked")
-            ArrayList<? extends Thing> resultAsCollection = (ArrayList<? extends Thing>) resultAsObject;
+            return false;
+        }
 
-            if(!resultAsCollection.isEmpty())
-            {                
+        ArrayList<?> resultAsCollection = (ArrayList<?>) resultAsObject;
+        
+        if(!resultAsCollection.isEmpty())
+        {
+            if (mappingDirection == MappingDirection.FromDstToHub
+                    && resultAsCollection.stream().allMatch(x -> x instanceof Thing))
+            {
                 this.dstMapResult.removeIf(x -> resultAsCollection.stream()
-                                .anyMatch(d -> AreTheseEquals(d.getIid(), x.getIid())));
-                                
-                this.selectedHubMapResultForTransfer.clear();
-                this.selectedDstMapResultForTransfer.clear();
-                return  this.dstMapResult.addAll(resultAsCollection);
+                        .anyMatch(d -> AreTheseEquals(((Thing) d).getIid(), x.getIid())));
+    
+                this.selectedDstMapResultForTransfer.clear();                
+                return this.dstMapResult.addAll((Collection<? extends Thing>) resultAsCollection);
             }
+            else if (mappingDirection == MappingDirection.FromHubToDst
+                    && resultAsCollection.stream().allMatch(x -> x instanceof Class))
+            {
+                this.hubMapResult.removeIf(x -> resultAsCollection.stream()
+                        .anyMatch(d -> AreTheseEquals(((Class)d).getID(), x.getID())));
+
+                this.selectedHubMapResultForTransfer.clear();
+                return this.hubMapResult.addAll((Collection<? extends Class>) resultAsCollection);
+            }            
         }
         
         return false;
@@ -270,15 +416,21 @@ public final class DstController implements IDstController
     @Override
     public boolean Transfer()
     {
+        boolean result;
+        
         switch(this.CurrentMappingDirection())
         {
             case FromDstToHub:
-                return this.TransferToHub();
+                result = this.TransferToHub();
             case FromHubToDst:
-                return true;
+                result = true;
             default:
-                return false;        
+                result = false;        
         }
+        
+        this.LoadMapping();
+        
+        return result;
     }
     
     /**
@@ -296,7 +448,8 @@ public final class DstController implements IDstController
             ThingTransaction transaction = iterationTransaction.getRight();
 
             this.PrepareThingsForTransfer(iterationClone, transaction);
-            
+
+            this.mappingConfigurationService.PersistExternalIdentifierMap(transaction, iterationClone);
             transaction.createOrUpdate(iterationClone);
             boolean result = this.hubController.TryWrite(transaction);
             result &= this.hubController.Refresh();

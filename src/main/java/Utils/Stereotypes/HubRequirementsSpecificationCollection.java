@@ -1,5 +1,5 @@
 /*
- * package-info.java
+ * HubRequirementsSpecificationCollection.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,4 +21,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ViewModels;
+package Utils.Stereotypes;
+
+import java.util.ArrayList;
+
+import Services.MappingEngineService.IMappableThingCollection;
+import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+
+/**
+ * The {@linkplain HubElementCollection} represents a collection {@linkplain MappedRequirementsSpecificationRowViewModel} usable by the {@linkplain MappingEngine}
+ */
+@SuppressWarnings("serial")
+public class HubRequirementsSpecificationCollection extends ArrayList<MappedRequirementsSpecificationRowViewModel> implements IMappableThingCollection { }

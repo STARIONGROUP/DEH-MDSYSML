@@ -25,6 +25,7 @@ package ViewModels.Interfaces;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import Enumerations.MappingDirection;
 import ViewModels.MagicDrawImpactViewPanelViewModel;
@@ -35,6 +36,15 @@ import io.reactivex.Observable;
  */
 public interface IMagicDrawImpactViewPanelViewModel extends IViewModel
 {
+    /**
+     * Executes when the Save/Load configuration is pressed.
+     * Creates a new configuration or loads an existing one based on its name
+     * 
+     * @param configurationName the name of the configuration to load or create
+     * @return a {@linkplain boolean} indicating whether the configuration is a new one
+     */
+    boolean OnSaveLoadMappingConfiguration(String configurationName);
+
     /**
      * Gets the {@linkplain Observable} of {@linkplain Boolean} indicating whether the session to the hub is open 
      * 
@@ -83,4 +93,11 @@ public interface IMagicDrawImpactViewPanelViewModel extends IViewModel
      * @return a {@linkplain IImpactViewContextMenuViewModel}
      */
     IImpactViewContextMenuViewModel GetContextMenuViewModel();
+
+    /**
+     * Gets the {@linkplain Observable} of {@linkplain Boolean} indicating whether MagicDraw
+     * 
+     * @return the {@linkplain Observable} of {@linkplain Boolean}
+     */
+    Observable<Boolean> GetHasOneMagicDrawModelOpen();
 }
