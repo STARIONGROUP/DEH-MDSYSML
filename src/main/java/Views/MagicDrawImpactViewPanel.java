@@ -25,6 +25,8 @@ package Views;
 
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
+import io.reactivex.Observable;
+
 /**
  * The {@linkplain MagicDrawImpactViewPanel} is the {@linkplain HubBrowserPanel} for the MagicDraw / Cameo software
  */
@@ -56,9 +58,15 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
        {     
            this.View.SetSavedMappingconfigurationCollection(this.DataContext.GetSavedMappingconfigurationCollection());
        });
+
+       Observable.zip(this.DataContext.GetHasOneMagicDrawModelOpen(), this.DataContext.GetIsSessionOpen(),
+               (hasOneMagicDrawModelOpen, isHubSessionOpen) -> hasOneMagicDrawModelOpen && isHubSessionOpen)
+           .subscribe(x -> this.View.SetLoadMappingControlsIsEnable(x));
+       
+       this.View.AttachOnSaveLoadMappingConfiguration(x -> this.DataContext.OnSaveLoadMappingConfiguration(x));
        
        this.View.AttachOnChangeDirection(this.DataContext.GetOnChangeMappingDirectionCallable());
-       
+
        this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionImpactViewViewModel());
        this.View.GetRequirementBrowser().SetDataContext(this.DataContext.GetRequirementDefinitionImpactViewViewModel());
        this.View.BindNumberOfSelectedThingToTransfer(this.DataContext.GetTransferControlViewModel().GetNumberOfSelectedThing());

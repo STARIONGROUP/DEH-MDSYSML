@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -42,11 +43,14 @@ import HubController.IHubController;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
 
+import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
+import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
@@ -56,7 +60,7 @@ import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterSwitchKind;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
 import cdp4common.engineeringmodeldata.Relationship;
-import cdp4common.engineeringmodeldata.ValueSet;
+
 import cdp4common.sitedirectorydata.BooleanParameterType;
 import cdp4common.sitedirectorydata.Category;
 import cdp4common.sitedirectorydata.MeasurementScale;
@@ -90,6 +94,11 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * The {@linkplain IHubController}
      */
     private IHubController hubController;
+
+    /**
+     * The {@linkplain IMagicDrawMappingConfigurationService} instance
+     */
+    private IMagicDrawMappingConfigurationService mappingConfiguration;
     
     /**
      * The isLeaf category names where pair.item0 is the short name
@@ -134,11 +143,13 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     /**
      * Initializes a new {@linkplain BlockDefinitionMappingRule}
      * 
-     * @param hubController the {@linkplain IHubController}
+     * @param HubController the {@linkplain IHubController}
+     * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      */
-    public BlockDefinitionMappingRule(IHubController hubController)
+    public BlockDefinitionMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
     {
         this.hubController = hubController;
+        this.mappingConfiguration = mappingConfiguration;
     }
     
     /**
@@ -153,7 +164,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         try
         {
             MagicDrawBlockCollection elements = this.CastInput(input);
-            return this.Map(elements);
+            MagicDrawBlockCollection mappedElements = this.Map(elements);
+            this.SaveMappingConfiguration(elements);
+            return new ArrayList<ElementDefinition>(mappedElements.stream().map(x -> x.GetHubElement()).collect(Collectors.toList()));
         }
         catch (Exception exception)
         {
@@ -163,50 +176,67 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     }
     
     /**
+     * Saves the mapping configuration
+     * 
+     * @param elements the {@linkplain MagicDrawBlockCollection}
+     */
+    private void SaveMappingConfiguration(MagicDrawBlockCollection elements)
+    {
+        for (MappedElementDefinitionRowViewModel mappedElement : elements)
+        {
+            this.mappingConfiguration.AddToExternalIdentifierMap(
+                    mappedElement.GetHubElement().getIid(), mappedElement.GetDstElement().getID(), MappingDirection.FromDstToHub);
+        }
+    }
+
+    /**
      * Maps the provided collection of block
      * 
-     * @param allBlocks the collection of {@linkplain Class} or block to map 
+     * @param mappedElementDefinitions the collection of {@linkplain Class} or block to map 
      * @return a collection of {@linkplain ElementDefinition}
      */
-    private ArrayList<ElementDefinition> Map(List<Class> allBlocks)
-    {
-        ArrayList<ElementDefinition> result = new ArrayList<ElementDefinition>();
-        
-        for (Class block : allBlocks)
+    private MagicDrawBlockCollection Map(MagicDrawBlockCollection mappedElementDefinitions)
+    {        
+        for (MappedElementDefinitionRowViewModel mappedElement : mappedElementDefinitions)
         {
-            String shortName = this.GetShortName(block.getName());       
-            ElementDefinition elementDefinition;
+            String shortName = this.GetShortName(mappedElement.GetDstElement().getName());
             
-            Optional<ElementDefinition> optionalElementDefinition = this.hubController.GetOpenIteration().getElement().stream()
-                    .filter(x -> x.getShortName().equals(shortName))
-                    .findFirst();
+            ElementDefinition elementDefinition = mappedElement.GetHubElement();
             
-            if(optionalElementDefinition.isPresent())
+            if(elementDefinition == null)
             {
-                elementDefinition = optionalElementDefinition.get().clone(true);
-            }
-            else
-            {
-                elementDefinition = new ElementDefinition();
-                elementDefinition.setName(block.getName());
-                elementDefinition.setShortName(shortName);
-                elementDefinition.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-                Definition definition = new Definition();
-                definition.setIid(UUID.randomUUID());
-                definition.setContent(block.getID());
-                definition.setLanguageCode(MDIID);
-                elementDefinition.getDefinition().add(definition);
+                Optional<ElementDefinition> optionalElementDefinition = this.hubController.GetOpenIteration().getElement().stream()
+                        .filter(x -> x.getShortName().equals(shortName))
+                        .findFirst();
+                
+                if(optionalElementDefinition.isPresent())
+                {
+                    elementDefinition = optionalElementDefinition.get().clone(true);
+                }
+                else
+                {
+                    elementDefinition = new ElementDefinition();
+                    elementDefinition.setIid(UUID.randomUUID());
+                    elementDefinition.setName(mappedElement.GetDstElement().getName());
+                    elementDefinition.setShortName(shortName);
+                    elementDefinition.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+                    Definition definition = new Definition();
+                    definition.setIid(UUID.randomUUID());
+                    definition.setContent(mappedElement.GetDstElement().getID());
+                    definition.setLanguageCode(MDIID);
+                    elementDefinition.getDefinition().add(definition);
+                }               
+                
+                mappedElement.SetHubElement(elementDefinition);
             }
             
-            this.MapCategories(elementDefinition, block);            
-            this.MapProperties(elementDefinition, block);
-            
-            result.add(elementDefinition);
+            this.MapCategories(elementDefinition, mappedElement.GetDstElement());            
+            this.MapProperties(elementDefinition, mappedElement.GetDstElement());
         }
         
         this.ProcessConnectorProperties();
         
-        return result;
+        return mappedElementDefinitions;
     }
     
     /**

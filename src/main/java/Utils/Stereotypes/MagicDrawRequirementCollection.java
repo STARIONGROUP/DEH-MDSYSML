@@ -27,8 +27,14 @@ import java.util.ArrayList;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Services.MappingEngineService.IMappableThingCollection;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
+import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
 
 /**
+ * The {@linkplain MagicDrawRequirementCollection} class represents a collection of {@linkplain MappedRequirementsSpecificationRowViewModel}.
+ * The {@linkplain MagicDrawRequirementCollection} is usable by the {@linkplain MappingEngine} and 
+ * each item of the collection represents a mapping in the {@linkplain MappingDirection.FromDstToHub}
+ * 
  * The purpose of this {@linkplain MagicDrawRequirementCollection} is to type the requirements from Cameo/MagicDraw. 
  * e.g. Since the only obvious differences between Blocks and Requirements for instance are from their names and stereotypes, 
  * and there is no type difference in the MagicDraw API; they are both {@linkplain Class}.
@@ -38,4 +44,4 @@ import Services.MappingEngineService.IMappableThingCollection;
  * Meaning that defining a rule that takes as input a {@linkplain ArrayList} of any type isn't supported because of the java generic implementation.
  */
 @SuppressWarnings("serial")
-public class MagicDrawRequirementCollection extends ArrayList<Class> implements IMappableThingCollection { }
+public class MagicDrawRequirementCollection extends ArrayList<MappedRequirementsSpecificationRowViewModel> implements IMappableThingCollection { }

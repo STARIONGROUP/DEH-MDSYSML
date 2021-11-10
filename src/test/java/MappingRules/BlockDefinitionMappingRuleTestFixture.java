@@ -35,11 +35,13 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import HubController.IHubController;
 import Reactive.ObservableCollection;
+import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 
 class BlockDefinitionMappingRuleTestFixture
 {
     private IHubController hubController;
     private BlockDefinitionMappingRule rule;
+    private IMagicDrawMappingConfigurationService mappingConfigurationService;
 
     /**
      * @throws java.lang.Exception
@@ -48,7 +50,8 @@ class BlockDefinitionMappingRuleTestFixture
     void setUp() throws Exception
     {
         this.hubController = mock(IHubController.class);
-        this.rule = new BlockDefinitionMappingRule(this.hubController);
+        this.mappingConfigurationService = mock(IMagicDrawMappingConfigurationService.class);
+        this.rule = new BlockDefinitionMappingRule(this.hubController, this.mappingConfigurationService);
     }
 
     @Test

@@ -47,6 +47,8 @@ import com.google.common.cache.Cache;
 import Enumerations.MappingDirection;
 import HubController.HubController;
 import HubController.IHubController;
+import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawBlockCollection;
@@ -91,6 +93,7 @@ class DstControllerTestFixture
     private Assembler assembler;
     private Parameter parameter0;
     private Parameter parameter1;
+    private IMagicDrawMappingConfigurationService mappingConfigurationService;
 
     /**
      * @throws java.lang.Exception
@@ -100,6 +103,7 @@ class DstControllerTestFixture
     {
         this.mappingEngine = mock(IMappingEngineService.class);
         this.hubController = mock(HubController.class);
+        this.mappingConfigurationService = mock(IMagicDrawMappingConfigurationService.class);
 
         this.uri = URI.create("http://t.est");
         this.cache = com.google.common.cache.CacheBuilder.newBuilder().build();
@@ -125,7 +129,7 @@ class DstControllerTestFixture
         when(this.hubController.Refresh()).thenReturn(true);
         when(this.hubController.TryWrite(any(ThingTransaction.class))).thenReturn(true);
 
-        this.controller = new DstController(this.mappingEngine, this.hubController, false);
+        this.controller = new DstController(this.mappingEngine, this.hubController, this.mappingConfigurationService, false);
     }
 
     private void SetSession() throws Exception
@@ -146,8 +150,8 @@ class DstControllerTestFixture
     @Test
     void VerifyMap()
     {
-        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection()));
-        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection()));
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection(), MappingDirection.FromDstToHub));
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection(), MappingDirection.FromDstToHub));
         assertEquals(0, this.controller.GetDstMapResult().size());
 
         when(this.mappingEngine.Map(any(MagicDrawBlockCollection.class)))
@@ -156,9 +160,9 @@ class DstControllerTestFixture
         when(this.mappingEngine.Map(any(MagicDrawRequirementCollection.class)))
             .thenReturn(new ArrayList<>(Arrays.asList(new RequirementsSpecification(), new RequirementsSpecification())));
 
-        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection()));
-        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection()));
-        assertEquals(4, this.controller.GetDstMapResult().size());
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection(), MappingDirection.FromDstToHub));
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection(), MappingDirection.FromDstToHub));
+        assertEquals(2, this.controller.GetDstMapResult().size());
     }
 
     @SuppressWarnings("unchecked")
@@ -181,8 +185,8 @@ class DstControllerTestFixture
         when(this.mappingEngine.Map(any(MagicDrawRequirementCollection.class)))
             .thenReturn(new ArrayList<>(Arrays.asList(this.requirementsSpecification0, this.requirementsSpecification1)));
 
-        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection()));
-        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection()));
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection(), MappingDirection.FromDstToHub));
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection(), MappingDirection.FromDstToHub));
         assertEquals(4, this.controller.GetDstMapResult().size());
         
         when(this.hubController.TryGetThingById(eq(this.parameter0.getIid()), any(Ref.class)))

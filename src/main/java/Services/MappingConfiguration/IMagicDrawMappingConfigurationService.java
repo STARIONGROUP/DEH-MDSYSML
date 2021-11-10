@@ -1,5 +1,5 @@
 /*
- * package-info.java
+ * IMagicDrawMappingConfigurationService.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,4 +21,24 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ViewModels;
+package Services.MappingConfiguration;
+
+import java.util.Collection;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+
+import ViewModels.Interfaces.IMappedElementRowViewModel;
+
+/**
+ * The {@linkplain IMagicDrawMappingConfigurationService} is the main interface definition for the {@linkplain MagicDrawMappingConfigurationService}
+ */
+public interface IMagicDrawMappingConfigurationService extends IMappingConfigurationService
+{
+    /**
+     * Loads the mapping configuration and generates the map result respectively
+     * 
+     * @param elements a {@linkplain Collection} of {@code TDstElement}
+     * @return a {@linkplain Collection} of {@linkplain IMappedElementRowViewModel}
+     */
+    Collection<IMappedElementRowViewModel> LoadMapping(Collection<Class> elements);
+}

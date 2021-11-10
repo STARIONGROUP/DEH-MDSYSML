@@ -45,6 +45,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import DstController.IDstController;
+import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MappingEngineService.IMappableThingCollection;
 import Utils.ImageLoader.ImageLoader;
@@ -53,6 +54,8 @@ import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import Utils.Tasks.Task;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
+import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
 import Views.MagicDrawHubBrowserPanel;
 
 /**
@@ -155,7 +158,7 @@ public class MapAction extends DefaultBrowserAction
         
         for (IMappableThingCollection elements : mappableElements.stream().filter(x -> !x.isEmpty()).collect(Collectors.toList()))
         {
-            result &= this.dstController.Map(elements);
+            result &= this.dstController.Map(elements, MappingDirection.FromDstToHub);
         }
 
         return result;
@@ -198,11 +201,11 @@ public class MapAction extends DefaultBrowserAction
                 
                 if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
                 {
-                    blocks.add(classElement);
+                    blocks.add(new MappedElementDefinitionRowViewModel(classElement, MappingDirection.FromDstToHub));
                 }
                 else if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
                 {
-                    requirements.add(classElement);
+                    requirements.add(new MappedRequirementsSpecificationRowViewModel(classElement, MappingDirection.FromDstToHub));
                 }
             }
             else if(element instanceof Package)
