@@ -71,7 +71,7 @@
 	<classpathentry kind="lib" path="lib/xmlbeans-2.6.0.jar"/>
 	<classpathentry kind="lib" path="lib/y.jar"/>
 	<classpathentry kind="lib" path="lib/com.nomagic.magicdraw.uml2_2.5.1.202003140800.jar"/>
-	<classpathentry kind="lib" path="C:/CODE/DEHP/DEH-MDSYSML/lib/requirements_api.jar"/>
+	<classpathentry kind="lib" path="lib/requirements_api.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="src" path=".apt_generated">
 		<attributes>
