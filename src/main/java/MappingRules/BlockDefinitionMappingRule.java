@@ -31,17 +31,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.*;
+import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 
 import HubController.IHubController;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
@@ -82,7 +83,7 @@ import cdp4dal.operations.TransactionContextResolver;
 /**
  * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain Element} to {@linkplain ElementDefinition}
  */
-public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollection, ArrayList<ElementDefinition>>
+public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollection, ArrayList<MappedElementDefinitionRowViewModel>>
 {
     /**
      * The string that indicates the language code for the {@linkplain Definition} for {@linkplain ElementDefinition}s
@@ -156,22 +157,22 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * Transforms an {@linkplain MagicDrawBlockCollection} of type {@linkplain Class} to an {@linkplain ArrayList} of {@linkplain ElementDefinition}
      * 
      * @param input the {@linkplain ObservableCollection} of type {@linkplain Element} to transform
-     * @return the {@linkplain ArrayList} of {@linkplain ElementDefinition}
+     * @return the {@linkplain ArrayList} of {@linkplain MappedElementDefinitionRowViewModel}
      */
     @Override
-    public ArrayList<ElementDefinition> Transform(Object input)
+    public ArrayList<MappedElementDefinitionRowViewModel> Transform(Object input)
     {
         try
         {
             MagicDrawBlockCollection elements = this.CastInput(input);
             MagicDrawBlockCollection mappedElements = this.Map(elements);
             this.SaveMappingConfiguration(elements);
-            return new ArrayList<ElementDefinition>(mappedElements.stream().map(x -> x.GetHubElement()).collect(Collectors.toList()));
+            return new ArrayList<MappedElementDefinitionRowViewModel>(mappedElements);
         }
         catch (Exception exception)
         {
             this.logger.catching(exception);
-            return new ArrayList<ElementDefinition>();
+            return new ArrayList<MappedElementDefinitionRowViewModel>();
         }
     }
     
@@ -584,7 +585,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     @SuppressWarnings("resource")
     private boolean TryCreateOrGetMeasurementScale(ValueSpecification valueSpecification, Property property, Ref<MeasurementScale> refScale)
     {
-        Pair<Property, Property> scaleAndUnit = this.GetScaleAndUnit(property); 
+        Pair<Stereotype, Stereotype> scaleAndUnit = this.GetScaleAndUnit(property); 
         
         if(scaleAndUnit.getLeft() == null && scaleAndUnit.getRight() == null)
         {
@@ -635,25 +636,15 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * @param property the {@linkplain Property}
      * @return a {@linkplain Pair} of {@linkplain Property} where left is the scale and right is the unit
      */
-    private Pair<Property, Property> GetScaleAndUnit(Property property)
+    private Pair<Stereotype, Stereotype> GetScaleAndUnit(Property property)
     {
-        Type dataType = property.getDatatype() != null ? property.getDatatype() : property.getType();
-                
-        if(dataType != null)
-        {
-            Property quantityKind = StereotypesHelper.findStereotypePropertyFor(dataType, "quantityKind");
-            Property scale = null;
+        MDCustomizationForSysMLProfile instance = MDCustomizationForSysMLProfile.getInstance(property);
 
-            if(quantityKind != null)
-            {
-                scale = StereotypesHelper.findStereotypePropertyFor(quantityKind, "scale");
-            }
-            
-            Property unit = StereotypesHelper.findStereotypePropertyFor(dataType, "Unit");
-            
-            return Pair.of(scale, unit);
+        if(instance != null)
+        {
+            return Pair.of(instance.getQuantityKind(), instance.getUnit());
         }
-        
+
         return Pair.of(null, null);
     }
 

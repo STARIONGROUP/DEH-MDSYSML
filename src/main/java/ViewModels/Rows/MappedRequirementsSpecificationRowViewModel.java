@@ -26,8 +26,6 @@ package ViewModels.Rows;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Enumerations.MappingDirection;
-import cdp4common.commondata.Thing;
-import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
 
 /**
@@ -56,5 +54,41 @@ public class MappedRequirementsSpecificationRowViewModel extends MappedElementRo
     public MappedRequirementsSpecificationRowViewModel(Class dstElement, MappingDirection mappingDirection)
     {
         super(RequirementsSpecification.class, dstElement, mappingDirection);
+    }
+    
+    /**
+     * Gets the string representation of the represented DST element
+     * 
+     * @return a {@linkplain String}
+     */
+    @Override
+    public String GetDstElementRepresentation()
+    {
+        if(this.GetDstElement() == null)
+        {
+            return this.ShouldCreateNewTargetElement.Value() && this.GetMappingDirection() == MappingDirection.FromHubToDst 
+                    ? "new [Requirement]"
+                    : "-";
+        }
+        
+        return String.format("[Requirement] %s", this.GetDstElement().getName());
+    }
+    
+    /**
+     * Gets the string representation of the represented DST element
+     * 
+     * @return a {@linkplain String}
+     */
+    @Override
+    public String GetHubElementRepresentation()
+    {
+        if(this.GetHubElement() == null)
+        {
+            return this.ShouldCreateNewTargetElement.Value() && this.GetMappingDirection() == MappingDirection.FromDstToHub 
+                    ? "new [RequirementsSpecification]"
+                    : "-";
+        }
+        
+        return String.format("%s", this.GetHubElement().getName()); 
     }
 }

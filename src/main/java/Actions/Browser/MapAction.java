@@ -44,19 +44,27 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
+import App.AppContainer;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MappingEngineService.IMappableThingCollection;
+import Services.NavigationService.INavigationService;
 import Utils.ImageLoader.ImageLoader;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import Utils.Tasks.Task;
+import ViewModels.Dialogs.Interfaces.IDstMappingConfigurationDialogViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
+import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
 import Views.MagicDrawHubBrowserPanel;
+import Views.Dialogs.DstMappingConfigurationDialog;
+import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.RequirementsSpecification;
 
 /**
  * The {@link MapAction} is a {@link MDAction} that is to be added to the Cameo/Magic draw element browser context menu
@@ -75,22 +83,29 @@ public class MapAction extends DefaultBrowserAction
     private IDstController dstController;
 
     /**
-     * the {@linkplain IHubController}
+     * The {@linkplain IHubController}
      */
     private IHubController hubController;
+
+    /**
+     * The {@linkplain INavigationService}
+     */
+    private INavigationService navigationService;
         
     /**
      * Initializes a new {@linkplain MapAction}
      * 
      * @param hubController the {@linkplain IHubController} 
      * @param dstController the {@linkplain IDstController}
+     * @param navigationService the {@linkplain INavigationService}
      */
-    public MapAction(IHubController hubController, IDstController dstController) 
+    public MapAction(IHubController hubController, IDstController dstController, INavigationService navigationService) 
     {
         super("Map Selection", "Map the current selection", KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK, true), null);
         this.setSmallIcon(ImageLoader.GetIcon("icon16.png"));
         this.dstController = dstController;
         this.hubController = hubController;
+        this.navigationService = navigationService;
         this.hubController.GetIsSessionOpenObservable().subscribe(x -> this.updateState());
     }
 
@@ -124,9 +139,29 @@ public class MapAction extends DefaultBrowserAction
     {
         try
         {
+            IDstMappingConfigurationDialogViewModel viewModel = AppContainer.Container.getComponent(IDstMappingConfigurationDialogViewModel.class);
+            
+            List<Element> elements = Arrays.asList(this.getTree().getSelectedNodes())
+                    .stream()
+                    .filter(x -> x.getUserObject() instanceof Element)
+                    .map(x -> (Element)x.getUserObject())
+                    .collect(Collectors.toList());
+
+            viewModel.SetMappedElement(elements);
+            
+            if(!this.navigationService.ShowDialog(new DstMappingConfigurationDialog(), viewModel))
+            {
+                return;
+            }
+            
+            List<MappedElementRowViewModel<? extends Thing, Class>> validMappedElements = viewModel.GetMappedElementCollection()
+                    .stream()
+                    .filter(x -> x.GetIsValid())
+                    .collect(Collectors.toList());
+                        
             StopWatch timer = StopWatch.createStarted();
             
-            Task.Run(() -> this.MapSelectedElements(), boolean.class)
+            Task.Run(() -> this.MapSelectedElements(validMappedElements), boolean.class)
                 .Observable()
                 .subscribe(x -> 
                 {
@@ -141,83 +176,38 @@ public class MapAction extends DefaultBrowserAction
         catch (Exception exception) 
         {
             this.logger.error(String.format("MapAction actionPerformed has thrown an exception %s", exception));
-            throw exception;
         }
     }
     
     /**
      * Asynchronously maps the selected elements from the current tree
      * 
+     * @param mappableElements The collection of {@linkplain MappedElementRowViewModel}  
      * @return a value indicating whether the mapping operation succeeded
      */
-    private boolean MapSelectedElements()
+    private boolean MapSelectedElements(List<MappedElementRowViewModel<? extends Thing, Class>> mappableElements)
     {
-        ArrayList<IMappableThingCollection> mappableElements = this.SortSelectedElements();
-        
         boolean result = true;
+                
+        MagicDrawBlockCollection mappedElements = new MagicDrawBlockCollection();
         
-        for (IMappableThingCollection elements : mappableElements.stream().filter(x -> !x.isEmpty()).collect(Collectors.toList()))
-        {
-            result &= this.dstController.Map(elements, MappingDirection.FromDstToHub);
-        }
+        mappedElements.addAll(mappableElements.stream()
+                .filter(x -> x.GetTThingClass().isAssignableFrom(ElementDefinition.class))
+                .map(x -> (MappedElementDefinitionRowViewModel)x)
+                .collect(Collectors.toList()));
+                
+        result &= this.dstController.Map(mappedElements, MappingDirection.FromDstToHub);
+        
+        MagicDrawRequirementCollection mappedRequirements = new MagicDrawRequirementCollection();
+        
+        mappedRequirements.addAll(mappableElements.stream()
+                .filter(x -> x.GetTThingClass().isAssignableFrom(RequirementsSpecification.class))
+                .map(x -> (MappedRequirementsSpecificationRowViewModel)x)
+                .collect(Collectors.toList()));
 
+        result &= this.dstController.Map(mappedRequirements, MappingDirection.FromDstToHub);
+        
         return result;
     }
-
-    /**
-     * Sorts the selected element from the tree and return the correct sequence depending on what have been selected
-     */
-    private ArrayList<IMappableThingCollection> SortSelectedElements()
-    {
-        MagicDrawBlockCollection blocks = new MagicDrawBlockCollection();
-        MagicDrawRequirementCollection requirements = new MagicDrawRequirementCollection();
-        
-        List<Element> elements = Arrays.asList(this.getTree().getSelectedNodes())
-                .stream()
-                .filter(x -> x.getUserObject() instanceof Element)
-                .map(x -> (Element)x.getUserObject())
-                .collect(Collectors.toList());
-
-        this.SortElement(elements, blocks, requirements);
-        
-        return new ArrayList<IMappableThingCollection>(Arrays.asList(blocks, requirements));
-    }
-
-    /**
-     * Parses and sorts the provided {@linkplain Element} collection and add these to the respective out collections.
-     * Can be recursive.
-     * 
-     * @param elements the element collection to sort
-     * @param blocks the Block collection
-     * @param requirements the requirements collection
-     */
-    private void SortElement(Collection<Element> elements, MagicDrawBlockCollection blocks, MagicDrawRequirementCollection requirements)
-    {
-        for (Element element : elements)
-        {
-            if (element instanceof Class)
-            {
-                Class classElement = (Class)element;
-                
-                if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
-                {
-                    blocks.add(new MappedElementDefinitionRowViewModel(classElement, MappingDirection.FromDstToHub));
-                }
-                else if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
-                {
-                    requirements.add(new MappedRequirementsSpecificationRowViewModel(classElement, MappingDirection.FromDstToHub));
-                }
-            }
-            else if(element instanceof Package)
-            {
-                Package packageElement = (Package)element;
-                
-                if(!elements.stream().anyMatch(x -> packageElement.getOwnedElement().stream().anyMatch(e -> e.equals(x))))
-                {
-                    this.SortElement(packageElement.getOwnedElement(), blocks, requirements);
-                }
-            }
-        }
-    }    
 }
 

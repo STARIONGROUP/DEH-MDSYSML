@@ -24,14 +24,18 @@
 package ViewModels;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import DstController.IDstController;
 import HubController.IHubController;
@@ -39,6 +43,7 @@ import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
 import Utils.Ref;
 import ViewModels.ObjectBrowser.RequirementTree.Rows.IterationRequirementRowViewModel;
+import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Requirement;
@@ -51,7 +56,7 @@ class RequirementImpactViewViewModelTestFixture
     private IHubController hubController;
     private IDstController dstController;
     private RequirementImpactViewViewModel viewModel;
-    private ObservableCollection<Thing> dstMapResult;
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> dstMapResult;
     private ObservableCollection<Thing> selectedDstMapResultForTransfer;
     private ObservableValue<Boolean> isSessionOpen;
     private ObservableValue<Boolean> sessionEvent;
@@ -71,7 +76,7 @@ class RequirementImpactViewViewModelTestFixture
         when(this.hubController.GetOpenIteration()).thenReturn(this.GetIteration());
         when(this.hubController.GetSessionEventObservable()).thenReturn(this.sessionEvent.Observable());
 
-        this.dstMapResult = new ObservableCollection<Thing>(Thing.class);
+        this.dstMapResult = new ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>>();
         when(this.dstController.GetDstMapResult()).thenReturn(this.dstMapResult);
         this.selectedDstMapResultForTransfer = new ObservableCollection<Thing>(Thing.class);
         when(this.dstController.GetSelectedDstMapResultForTransfer()).thenReturn(this.selectedDstMapResultForTransfer);
@@ -82,13 +87,13 @@ class RequirementImpactViewViewModelTestFixture
     @Test
     void VerifyComputeDifferences()
     {
-        assertEquals(null, this.viewModel.browserTreeModel.Value());
+        assertEquals(null, this.viewModel.BrowserTreeModel.Value());
         this.isSessionOpen.Value(true);
         this.viewModel.SetOutlineModel(this.hubController.GetOpenIteration());
-        assertNotNull(this.viewModel.browserTreeModel);
-        assertNotNull(this.viewModel.browserTreeModel.Value());
-        assertEquals(IterationRequirementRowViewModel.class, this.viewModel.browserTreeModel.Value().getRoot().getClass());
-        assertEquals(1, ((IterationRequirementRowViewModel)this.viewModel.browserTreeModel.Value().getRoot()).GetContainedRows().size());
+        assertNotNull(this.viewModel.BrowserTreeModel);
+        assertNotNull(this.viewModel.BrowserTreeModel.Value());
+        assertEquals(IterationRequirementRowViewModel.class, this.viewModel.BrowserTreeModel.Value().getRoot().getClass());
+        assertEquals(1, ((IterationRequirementRowViewModel)this.viewModel.BrowserTreeModel.Value().getRoot()).GetContainedRows().size());
     }
 
     @Test
@@ -98,7 +103,7 @@ class RequirementImpactViewViewModelTestFixture
         this.viewModel.GetShouldRefreshTree().subscribe(x -> refreshHasBeenTriggered.Set(x));
         
         this.viewModel.SetOutlineModel(this.hubController.GetOpenIteration());
-        this.selectedDstMapResultForTransfer.addAll(dstMapResult);
+        this.selectedDstMapResultForTransfer.addAll(dstMapResult.stream().map(x -> x.GetHubElement()).collect(Collectors.toList()));
         assertTrue(refreshHasBeenTriggered.Get());
     }
     

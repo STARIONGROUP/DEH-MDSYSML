@@ -56,4 +56,40 @@ public class MappedElementDefinitionRowViewModel extends MappedElementRowViewMod
     {
         super(ElementDefinition.class, dstElement, mappingDirection);
     }
+
+    /**
+     * Gets the string representation of the represented DST element
+     * 
+     * @return a {@linkplain String}
+     */
+    @Override
+    public String GetDstElementRepresentation()
+    {
+        if(this.GetDstElement() == null)
+        {
+            return this.ShouldCreateNewTargetElement.Value().booleanValue() && this.GetMappingDirection() == MappingDirection.FromHubToDst 
+                    ? "new [Block]"
+                    : "-";
+        }
+        
+        return String.format("[Block] %s", this.GetDstElement().getName());
+    }
+    
+    /**
+     * Gets the string representation of the represented DST element
+     * 
+     * @return a {@linkplain String}
+     */
+    @Override
+    public String GetHubElementRepresentation()
+    {
+        if(this.GetHubElement() == null)
+        {
+            return this.ShouldCreateNewTargetElement.Value().booleanValue() && this.GetMappingDirection() == MappingDirection.FromDstToHub 
+                    ? "new [ElementDefinition]"
+                    : "-";
+        }
+        
+        return String.format("%s", this.GetHubElement().getName()); 
+    }
 }

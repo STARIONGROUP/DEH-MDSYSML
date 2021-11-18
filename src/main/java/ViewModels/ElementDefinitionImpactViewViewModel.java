@@ -23,7 +23,7 @@
  */
 package ViewModels;
 
-import java.util.Optional;
+import static Utils.Operators.Operators.AreTheseEquals;
 
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
@@ -31,11 +31,9 @@ import org.netbeans.swing.outline.OutlineModel;
 import DstController.IDstController;
 import HubController.IHubController;
 import Utils.Ref;
-import static Utils.Operators.Operators.AreTheseEquals;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeViewModel;
-import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.IterationElementDefinitionRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import cdp4common.commondata.Thing;
@@ -66,25 +64,32 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
      */
     @Override
     protected void ComputeDifferences(Iteration iteration, ElementDefinition thing)
-    {        
-        if(thing.getOriginal() == null)
-        {            
-            iteration.getElement().add(thing);
-        }
-        else
+    {
+        try
         {
-            Ref<Integer> index = new Ref<Integer>(Integer.class, null);
-            
-            iteration.getElement()
-                    .stream()
-                    .filter(x -> this.DoTheseThingsRepresentTheSameThing(x, thing))
-                    .findFirst()
-                    .ifPresent(x -> index.Set(iteration.getElement().indexOf(x)));
-            
-            if(index.HasValue() && iteration.getElement().removeIf(x -> this.DoTheseThingsRepresentTheSameThing(thing, x)))
-            {
-                iteration.getElement().add(index.Get(), thing);
+            if(thing.getOriginal() == null && iteration.getElement().stream().noneMatch(x -> this.DoTheseThingsRepresentTheSameThing(x, thing)))
+            {            
+                iteration.getElement().add(thing);
             }
+            else
+            {
+                Ref<Integer> index = new Ref<Integer>(Integer.class, null);
+                
+                iteration.getElement()
+                        .stream()
+                        .filter(x -> this.DoTheseThingsRepresentTheSameThing(x, thing))
+                        .findFirst()
+                        .ifPresent(x -> index.Set(iteration.getElement().indexOf(x)));
+                
+                if(index.HasValue() && iteration.getElement().removeIf(x -> this.DoTheseThingsRepresentTheSameThing(thing, x)))
+                {
+                    iteration.getElement().add(index.Get(), thing);
+                }
+            }
+        }
+        catch(Exception exception)
+        {
+            this.Logger.catching(exception);
         }
     }    
 
@@ -110,7 +115,7 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
     @Override
     protected IThingRowViewModel<ElementDefinition> GetRowViewModelFromThing(ElementDefinition thing)
     {
-        IterationElementDefinitionRowViewModel iterationRowViewModel = (IterationElementDefinitionRowViewModel) this.browserTreeModel.Value().getRoot();
+        IterationElementDefinitionRowViewModel iterationRowViewModel = (IterationElementDefinitionRowViewModel) this.BrowserTreeModel.Value().getRoot();
         
         return iterationRowViewModel.GetContainedRows().stream()
             .filter(x -> AreTheseEquals(thing.getIid(), x.GetThing().getIid()))

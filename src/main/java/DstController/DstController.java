@@ -56,6 +56,7 @@ import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
+import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
 
 import static Utils.Operators.Operators.AreTheseEquals;
@@ -148,7 +149,8 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<Class> hubMapResult = new ObservableCollection<Class>(Class.class);
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> hubMapResult
+                                            = new ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>>();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
@@ -156,7 +158,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
     @Override
-    public ObservableCollection<Class> GetHubMapResult()
+    public ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetHubMapResult()
     {
         return this.hubMapResult;
     }    
@@ -164,15 +166,16 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<Thing> dstMapResult = new ObservableCollection<Thing>(Thing.class);
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> dstMapResult 
+                                            = new ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>>();
 
     /**
      * Gets The {@linkplain ObservableCollection} of DST map result
      * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
     @Override
-    public ObservableCollection<Thing> GetDstMapResult()
+    public ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetDstMapResult()
     {
         return this.dstMapResult;
     }
@@ -381,27 +384,27 @@ public final class DstController implements IDstController
             return false;
         }
 
-        ArrayList<?> resultAsCollection = (ArrayList<?>) resultAsObject;
+        ArrayList<MappedElementRowViewModel<? extends Thing, Class>> resultAsCollection = (ArrayList<MappedElementRowViewModel<? extends Thing, Class>>) resultAsObject;
         
         if(!resultAsCollection.isEmpty())
         {
             if (mappingDirection == MappingDirection.FromDstToHub
-                    && resultAsCollection.stream().allMatch(x -> x instanceof Thing))
+                    && resultAsCollection.stream().allMatch(x -> x.GetHubElement() instanceof Thing))
             {
                 this.dstMapResult.removeIf(x -> resultAsCollection.stream()
-                        .anyMatch(d -> AreTheseEquals(((Thing) d).getIid(), x.getIid())));
+                        .anyMatch(d -> AreTheseEquals(((Thing) d.GetHubElement()).getIid(), x.GetHubElement().getIid())));
     
                 this.selectedDstMapResultForTransfer.clear();                
-                return this.dstMapResult.addAll((Collection<? extends Thing>) resultAsCollection);
+                return this.dstMapResult.addAll(resultAsCollection);
             }
             else if (mappingDirection == MappingDirection.FromHubToDst
                     && resultAsCollection.stream().allMatch(x -> x instanceof Class))
             {
                 this.hubMapResult.removeIf(x -> resultAsCollection.stream()
-                        .anyMatch(d -> AreTheseEquals(((Class)d).getID(), x.getID())));
+                        .anyMatch(d -> AreTheseEquals(((Class)d.GetDstElement()).getID(), x.GetDstElement().getID())));
 
                 this.selectedHubMapResultForTransfer.clear();
-                return this.hubMapResult.addAll((Collection<? extends Class>) resultAsCollection);
+                return this.hubMapResult.addAll(resultAsCollection);
             }            
         }
         
@@ -481,8 +484,8 @@ public final class DstController implements IDstController
         ThingTransaction transaction = iterationTransaction.getRight();
 
         List<Parameter> allParameters = this.dstMapResult.stream()
-                .filter(x -> x instanceof ElementDefinition)
-                .flatMap(x -> ((ElementDefinition)x).getParameter().stream())
+                .filter(x -> x.GetHubElement() instanceof ElementDefinition)
+                .flatMap(x -> ((ElementDefinition)x.GetHubElement()).getParameter().stream())
                 .collect(Collectors.toList());
         
         for(Parameter parameter : allParameters)
@@ -667,6 +670,7 @@ public final class DstController implements IDstController
         {
             this.selectedDstMapResultForTransfer.addAll(
                     this.dstMapResult.stream()
+                        .map(x -> x.GetHubElement())
                         .filter(predicateClassKind)
                         .collect(Collectors.toList()));
         }
