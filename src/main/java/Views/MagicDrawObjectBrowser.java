@@ -30,9 +30,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.netbeans.swing.outline.Outline;
 
 import Renderers.MagicDrawObjectBrowserRenderDataProvider;
-import ViewModels.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.Interfaces.IViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import Views.ContextMenu.ContextMenu;

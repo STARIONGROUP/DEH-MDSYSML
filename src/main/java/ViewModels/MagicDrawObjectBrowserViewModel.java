@@ -32,10 +32,10 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import Reactive.ObservableValue;
-import ViewModels.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
@@ -55,7 +55,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel 
     private ObservableValue<ClassRowViewModel> selectedElement = new ObservableValue<ClassRowViewModel>(ClassRowViewModel.class);
     
     /**
-     * Gets the {@linkplain Observable} of {@linkplain IElementRowViewModel} that yields the selected element
+     * Gets the {@linkplain Observable} of {@linkplain ClassRowViewModel} that yields the selected element
      * 
      * @return an {@linkplain Observable} of {@linkplain ClassRowViewModel}
      */

@@ -86,6 +86,16 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
      * This view attached {@linkplain IViewModel}
      */
     private IDstMappingConfigurationDialogViewModel dataContext;
+    
+    /**
+     * The {@linkplain ObjectBrowser} view for {@linkplain ElementDefinition}
+     */
+    private ObjectBrowser elementDefinitionBrowser;
+
+    /**
+     * The {@linkplain ObjectBrowser} view for {@linkplain RequirementsSpecification}
+     */
+    private ObjectBrowser requirementBrowser;
 
     /**
      * View components declarations
@@ -102,10 +112,6 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
     private JPanel panel;
     private JTabbedPane hubBrowserTreeViewsContainer;
     private JCheckBox mapToNewHubElementCheckBox;
-
-    private ObjectBrowser elementDefinitionBrowser;
-
-    private ObjectBrowser requirementBrowser;
     
     /**
      * Initializes a new {@linkplain DstMappingConfigurationDialog}

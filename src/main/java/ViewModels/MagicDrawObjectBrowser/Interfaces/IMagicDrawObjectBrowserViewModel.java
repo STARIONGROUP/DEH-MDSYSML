@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ViewModels.Interfaces;
+package ViewModels.MagicDrawObjectBrowser.Interfaces;
 
 import java.util.Collection;
 
@@ -29,7 +29,7 @@ import org.netbeans.swing.outline.OutlineModel;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
-import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
+import ViewModels.Interfaces.IObjectBrowserBaseViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import io.reactivex.Observable;
 
@@ -55,9 +55,9 @@ public interface IMagicDrawObjectBrowserViewModel extends IObjectBrowserBaseView
     void BuildTree(String name, Collection<Element> elements);
 
     /**
-     * Gets the {@linkplain Observable} of {@linkplain IElementRowViewModel} that yields the selected element
+     * Gets the {@linkplain Observable} of {@linkplain ClassRowViewModel} that yields the selected element
      * 
-     * @return an {@linkplain Observable} of {@linkplain IElementRowViewModel}
+     * @return an {@linkplain Observable} of {@linkplain ClassRowViewModel}
      */
     Observable<ClassRowViewModel> GetSelectedElement();
 }
