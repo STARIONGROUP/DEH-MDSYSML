@@ -25,6 +25,7 @@ package ViewModels.Dialogs.Interfaces;
 
 import java.util.Collection;
 
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
@@ -67,7 +68,7 @@ public interface IDstMappingConfigurationDialogViewModel extends IViewModel
     /**
      * Sets the mappedElement picked to open this dialog and sets the DST tree
      * 
-     * @param selectedElement the collection of {@linkplain IMappableThingCollection}
+     * @param selectedElement the collection of {@linkplain Element}
      */
     void SetMappedElement(Collection<Element> selectedElement);
 

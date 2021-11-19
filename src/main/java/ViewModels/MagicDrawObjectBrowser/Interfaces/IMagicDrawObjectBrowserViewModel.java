@@ -27,6 +27,7 @@ import java.util.Collection;
 
 import org.netbeans.swing.outline.OutlineModel;
 
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import ViewModels.Interfaces.IObjectBrowserBaseViewModel;

@@ -26,7 +26,9 @@ package DstController;
 import java.util.Collection;
 
 import com.nomagic.magicdraw.core.Project;
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
@@ -140,4 +142,18 @@ public interface IDstController extends IDstControllerBase
      * @return the number of mapped things loaded
      */
     void LoadMapping();
+
+    /**
+     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating the subscribers whenever the open document gets saved
+     * 
+     * @return an {@linkplain Observable} of {@linkplain Boolean}
+     */
+    Observable<Boolean> OpenDocumentHasBeenSaved();
+
+    /**
+     * Gets the open project element
+     * 
+     * @return a {@linkplain Collection} of {@linkplain BaseElement}
+     */
+    Collection<Element> GetProjectElements();
 }

@@ -38,8 +38,9 @@ import org.apache.logging.log4j.Logger;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
-
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -122,6 +123,17 @@ public final class DstController implements IDstController
     public Project OpenDocument() 
     {
         return this.projectEventListener.OpenDocumentObservable.Value();
+    }
+    
+    /**
+     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating the subscribers whenever the open document gets saved
+     * 
+     * @return an {@linkplain Observable} of {@linkplain Boolean}
+     */
+    @Override
+    public Observable<Boolean> OpenDocumentHasBeenSaved() 
+    {
+        return this.projectEventListener.projectSavedObservable.Observable();
     }
 
     /**
@@ -640,7 +652,8 @@ public final class DstController implements IDstController
     }
 
     /**
-     * Adds or Removes all {@linkplain TElement} from/to the relevant selected things to transfer depending on the current {@linkplain MappingDirection}
+     * Adds or Removes all {@linkplain TElement} from/to the relevant selected things to transfer
+     * depending on whether the {@linkplain ClassKind} was specified
      * 
      * @param classKind the {@linkplain ClassKind} of the {@linkplain Thing}s to add or remove depending on which impact view it has been called from
      * @param shouldRemove a value indicating whether the things are to be removed
@@ -648,14 +661,18 @@ public final class DstController implements IDstController
     @Override
     public void AddOrRemoveAllFromSelectedThingsToTransfer(ClassKind classKind, boolean shouldRemove)
     {
-        if(this.CurrentMappingDirection() == MappingDirection.FromDstToHub)
+        if(classKind == null)
+        {
+            this.AddOrRemoveAllFromSelectedHubMapResultForTransfer(shouldRemove);
+        }
+        else
         {
             this.AddOrRemoveAllFromSelectedDstMapResultForTransfer(classKind, shouldRemove);
         }
     }
     
     /**
-     * Adds or Removes all {@linkplain TElement} from/to the relevant selected things to transfer depending on the current {@linkplain MappingDirection}
+     * Adds or Removes all {@linkplain Thing} from/to the relevant selected things to transfer
      * 
      * @param classKind the {@linkplain ClassKind} of the {@linkplain Thing}s to add or remove depending on which impact view it has been called from
      * @param shouldRemove a value indicating whether the things are to be removed
@@ -674,5 +691,33 @@ public final class DstController implements IDstController
                         .filter(predicateClassKind)
                         .collect(Collectors.toList()));
         }
+    }
+
+    /**
+     * Adds or Removes all {@linkplain Class} from/to the relevant selected things to transfer
+     * 
+     * @param shouldRemove a value indicating whether the things are to be removed
+     */
+    private void AddOrRemoveAllFromSelectedHubMapResultForTransfer(boolean shouldRemove)
+    {
+        this.selectedHubMapResultForTransfer.clear();
+        
+        if(!shouldRemove)
+        {
+            this.selectedHubMapResultForTransfer.addAll(this.hubMapResult.stream()
+                    .map(x -> x.GetDstElement())
+                    .collect(Collectors.toList()));
+        }
+    }
+    
+    /**
+     * Gets the open project element
+     * 
+     * @return a {@linkplain Collection} of {@linkplain Element}
+     */
+    @Override
+    public Collection<Element> GetProjectElements()
+    {
+        return this.OpenDocument().getPrimaryModel().getPackagedElement().stream().map(x -> (Element)x).collect(Collectors.toList());
     }
 }

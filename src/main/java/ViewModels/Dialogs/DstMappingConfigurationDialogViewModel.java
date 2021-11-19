@@ -31,6 +31,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
@@ -276,7 +277,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
     /**
      * Sets the mappedElement picked to open this dialog and sets the DST tree
      * 
-     * @param selectedElement the collection of {@linkplain IMappableThingCollection}
+     * @param selectedElement the collection of {@linkplain Element}
      */
     @Override
     public void SetMappedElement(Collection<Element> selectedElement)

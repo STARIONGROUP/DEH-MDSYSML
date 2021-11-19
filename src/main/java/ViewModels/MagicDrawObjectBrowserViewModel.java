@@ -25,9 +25,12 @@ package ViewModels;
 
 import java.util.Collection;
 
+import javax.swing.tree.TreeModel;
+
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
@@ -78,7 +81,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel 
             this.selectedElement.Value(selectedRow);
         }            
     }
-    
+            
     /**
      * Creates the {@linkplain OutlineModel} tree from the provided {@linkplain Collection} of {@linkplain Class}
      * 
@@ -93,5 +96,15 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel 
                 new MagicDrawObjectBrowserTreeRowViewModel(), true));
     
         this.IsTheTreeVisible.Value(true);
+    }
+
+
+    /**
+     * Updates this view model {@linkplain TreeModel}
+     * 
+     * @param isConnected a value indicating whether the session is open
+     */
+    protected void UpdateBrowserTrees(Boolean isConnected)
+    {
     }
 }

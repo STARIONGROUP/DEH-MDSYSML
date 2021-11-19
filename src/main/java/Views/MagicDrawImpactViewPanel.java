@@ -25,6 +25,8 @@ package Views;
 
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
+import Views.ContextMenu.ImpactViewContextMenu;
+import cdp4common.commondata.ClassKind;
 import io.reactivex.Observable;
 
 /**
@@ -33,6 +35,16 @@ import io.reactivex.Observable;
 @SuppressWarnings("serial")
 public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpactViewPanelViewModel, ImpactViewPanel>
 {
+    /**
+     * The {@linkplain MagicDrawObjectBrowser} to display impact on SysML model
+     */
+    private MagicDrawObjectBrowser magicDrawObjectBrowser;
+    
+    /**
+     * The {@linkplain ImpactViewContextMenu} context menu view for the MagicDraw impact view
+     */
+    private ImpactViewContextMenu magicDrawContextMenu;
+
     /**
      * Initializes a new {@linkplain MagicDrawImpactViewPanel}
      */
@@ -44,6 +56,9 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
         this.setDefaultCloseAction(CLOSE_ACTION_TO_HIDE);
         this.View = new ImpactViewPanel();
         this.getRootPane().getContentPane().add(this.View);
+        this.magicDrawObjectBrowser = new MagicDrawObjectBrowser();
+        this.View.SetMagicDrawImpactView(this.magicDrawObjectBrowser);
+        this.magicDrawContextMenu = new ImpactViewContextMenu();
     }
 
     /**
@@ -69,6 +84,9 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
 
        this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionImpactViewViewModel());
        this.View.GetRequirementBrowser().SetDataContext(this.DataContext.GetRequirementDefinitionImpactViewViewModel());
+       this.magicDrawObjectBrowser.SetDataContext(this.DataContext.GetMagicDrawImpactViewViewModel());
+       this.magicDrawContextMenu.SetDataContext(this.DataContext.GetContextMenuViewModel());
+       this.magicDrawObjectBrowser.SetContextMenu(this.magicDrawContextMenu);
        this.View.BindNumberOfSelectedThingToTransfer(this.DataContext.GetTransferControlViewModel().GetNumberOfSelectedThing());
        this.View.SetContextMenuDataContext(this.DataContext.GetContextMenuViewModel());
        this.View.AttachOnTransfer(this.DataContext.GetTransferControlViewModel().GetOnTransferCallable());

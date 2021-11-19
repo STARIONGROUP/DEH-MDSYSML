@@ -39,7 +39,7 @@ public class RequirementRowViewModel extends ClassRowViewModel
      * @param parent the {@linkplain IElementRowViewModel} parent view model of this row view model
      * @param element the {@linkplain Class} represented
      */
-    public RequirementRowViewModel(IElementRowViewModel parent, Class element)
+    public RequirementRowViewModel(IElementRowViewModel<?> parent, Class element)
     {
         super(parent, element);
     }
@@ -53,5 +53,10 @@ public class RequirementRowViewModel extends ClassRowViewModel
     public Stereotypes GetClassKind()
     {
         return Stereotypes.Requirement;
+    }
+
+    @Override
+    public void ComputeContainedRows()
+    {
     }
 }

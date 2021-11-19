@@ -38,3 +38,7 @@ hs_err_pid*
 /target/
 /.apt_generated/
 /.apt_generated_tests/
+
+jgoodies-forms-1.8.0.jar
+
+miglayout15-swing.jar

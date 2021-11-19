@@ -25,6 +25,7 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import java.util.Collection;
 
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
@@ -33,7 +34,7 @@ import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 /**
  * The {@linkplain RootRowViewModel} represents the root element in one containment tree
  */
-public class RootRowViewModel extends PackageRowViewModel implements IHaveContainedRows<IElementRowViewModel>
+public class RootRowViewModel extends PackageRowViewModel implements IHaveContainedRows<IElementRowViewModel<?>>
 {
     /**
      * The {@linkplain Collection} of {@linkplain Element} that the {@linkplain containedRows} should contain 
