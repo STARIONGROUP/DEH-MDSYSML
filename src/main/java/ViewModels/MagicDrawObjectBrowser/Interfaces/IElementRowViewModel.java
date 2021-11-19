@@ -1,5 +1,5 @@
 /*
- * Stereotypes.java
+ * IClassRowViewModel.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,25 +21,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Utils.Stereotypes;
+package ViewModels.MagicDrawObjectBrowser.Interfaces;
+
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
+import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 
 /**
- * The {@linkplain Stereotype} {@linkplain enum} provides base names for MgicDraw/Cameo stereotypes
+ * The {@linkplain IElementRowViewModel} is the interface definition for all {@linkplain ElementRowViewModel}
  */
-public enum Stereotypes
+public interface IElementRowViewModel extends IRowViewModel
 {
-    /**
-     * The block identifier used in MagicDraw HumanType on {@linkplain Class}
-     */
-    Block,
-    
-    /**
-     * The requirement identifier used in MagicDraw HumanType on {@linkplain Class}
-     */
-    Requirement,
-    
-    /**
-     * The package identifier used in MagicDraw for {@linkplain Package}
-     */
-    Package
 }

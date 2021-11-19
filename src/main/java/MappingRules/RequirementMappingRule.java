@@ -38,6 +38,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
 import HubController.IHubController;
 
+import com.nomagic.requirements.util.RequirementUtilities;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Slot;
@@ -61,7 +62,7 @@ import cdp4common.engineeringmodeldata.RequirementsSpecification;
 /**
  * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
  */
-public class RequirementMappingRule extends MappingRule<MagicDrawRequirementCollection, ArrayList<RequirementsSpecification>>
+public class RequirementMappingRule extends MappingRule<MagicDrawRequirementCollection, ArrayList<MappedRequirementsSpecificationRowViewModel>>
 {
     /**
      * The {@linkplain IHubController}
@@ -99,22 +100,22 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      * Transforms an {@linkplain MagicDrawRequirementCollection} of type {@linkplain Class} to an {@linkplain ArrayList} of {@linkplain RequirementsSpecification}
      * 
      * @param input the {@linkplain MagicDrawRequirementCollection} to transform
-     * @return the {@linkplain ArrayList} of {@linkplain ElementDefinition}
+     * @return the {@linkplain ArrayList} of {@linkplain MappedRequirementsSpecificationRowViewModel}
      */
     @Override
-    public ArrayList<RequirementsSpecification> Transform(Object input)
+    public ArrayList<MappedRequirementsSpecificationRowViewModel> Transform(Object input)
     {
         try
         {
             MagicDrawRequirementCollection mappedElements = this.CastInput(input);
             this.Map(mappedElements);
             this.SaveMappingConfiguration(mappedElements);
-            return new ArrayList<RequirementsSpecification>(mappedElements.stream().map(x -> x.GetHubElement()).collect(Collectors.toList()));
+            return new ArrayList<MappedRequirementsSpecificationRowViewModel>(mappedElements);
         }
         catch (Exception exception)
         {
             this.logger.catching(exception);
-            return new ArrayList<RequirementsSpecification>();
+            return new ArrayList<MappedRequirementsSpecificationRowViewModel>();
         }
         finally
         {
@@ -294,31 +295,19 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
     private void UpdateOrCreateDefinition(Class element, Ref<Requirement> refRequirement)
     {
         if(refRequirement.HasValue())
-        {
-            Optional<Slot> optionalTextSlot = element.getAppliedStereotypeInstance()
-                    .getSlot()
+        {            
+            Definition definition = refRequirement.Get().getDefinition()
                     .stream()
-                    .filter(x -> x.getDefiningFeature().getName().equals("Text"))
-                    .findFirst();
-    
-            ValueSpecification valueSpecification = optionalTextSlot.get().getValue().get(0);
-            
-            if(optionalTextSlot.isPresent() && valueSpecification instanceof LiteralString 
-                    && StringUtils.isNotBlank(((LiteralString)valueSpecification).getValue()))
-            {
-                Definition definition = refRequirement.Get().getDefinition()
-                        .stream()
-                        .filter(x -> x.getLanguageCode().toLowerCase().equals("en"))
-                        .findFirst()
-                        .map(x -> x.clone(true))
-                        .orElse(this.createDefinition());
+                    .filter(x -> x.getLanguageCode().toLowerCase().equals("en"))
+                    .findFirst()
+                    .map(x -> x.clone(true))
+                    .orElse(this.createDefinition());
 
-                definition.setContent(((LiteralString)valueSpecification).getValue());
-                
-                refRequirement.Get().getDefinition().removeIf(x -> x.getIid().equals(definition.getIid()));
-                
-                refRequirement.Get().getDefinition().add(definition);
-            }
+            definition.setContent(RequirementUtilities.getRequirementText(element));
+            
+            refRequirement.Get().getDefinition().removeIf(x -> x.getIid().equals(definition.getIid()));
+            
+            refRequirement.Get().getDefinition().add(definition);
         }
     }
     

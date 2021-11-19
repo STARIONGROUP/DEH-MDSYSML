@@ -31,6 +31,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
+import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 import io.reactivex.Observable;
 
@@ -73,16 +74,16 @@ public interface IDstController extends IDstControllerBase
     /**
      * Gets The {@linkplain ObservableCollection} of dst map result
      * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain Thing}
+     * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
-    ObservableCollection<Thing> GetDstMapResult();
+    ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetDstMapResult();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
      * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain Class}
+     * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
-    ObservableCollection<Class> GetHubMapResult();
+    ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetHubMapResult();
 
     /**
      * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub

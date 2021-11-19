@@ -76,24 +76,31 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
     @Override
     protected void ComputeDifferences(Iteration iteration, RequirementsSpecification thing)
     {
-        if(thing.getOriginal() == null)
-        {            
-            iteration.getRequirementsSpecification().add(thing);
-        }
-        else
+        try
         {
-            Ref<Integer> index = new Ref<Integer>(Integer.class, null);
-            
-            iteration.getRequirementsSpecification()
-                    .stream()
-                    .filter(x -> this.DoTheseThingsRepresentTheSameThing(x, thing))
-                    .findFirst()
-                    .ifPresent(x -> index.Set(iteration.getRequirementsSpecification().indexOf(x)));
-            
-            if(index.HasValue() && iteration.getRequirementsSpecification().removeIf(x -> this.DoTheseThingsRepresentTheSameThing(thing, x)))
+            if(thing.getOriginal() == null && iteration.getRequirementsSpecification().stream().noneMatch(x -> this.DoTheseThingsRepresentTheSameThing(x, thing)))
             {
-                iteration.getRequirementsSpecification().add(index.Get(), thing);
+                iteration.getRequirementsSpecification().add(thing);
             }
+            else
+            {
+                Ref<Integer> index = new Ref<Integer>(Integer.class, null);
+                
+                iteration.getRequirementsSpecification()
+                        .stream()
+                        .filter(x -> this.DoTheseThingsRepresentTheSameThing(x, thing))
+                        .findFirst()
+                        .ifPresent(x -> index.Set(iteration.getRequirementsSpecification().indexOf(x)));
+                
+                if(index.HasValue() && iteration.getRequirementsSpecification().removeIf(x -> this.DoTheseThingsRepresentTheSameThing(thing, x)))
+                {
+                    iteration.getRequirementsSpecification().add(index.Get(), thing);
+                }
+            }
+        }
+        catch(Exception exception)
+        {
+            this.Logger.catching(exception);
         }
     }
         
@@ -120,7 +127,7 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
     protected IThingRowViewModel<RequirementsSpecification> GetRowViewModelFromThing(RequirementsSpecification thing)
     {
 
-        IterationRequirementRowViewModel iterationRowViewModel = (IterationRequirementRowViewModel) this.browserTreeModel.Value().getRoot();
+        IterationRequirementRowViewModel iterationRowViewModel = (IterationRequirementRowViewModel) this.BrowserTreeModel.Value().getRoot();
         
         Optional<RequirementSpecificationRowViewModel> optionalDefinition = iterationRowViewModel.GetContainedRows().stream()
             .filter(x -> x.GetThing().getIid().equals(thing.getIid()))

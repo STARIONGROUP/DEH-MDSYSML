@@ -53,13 +53,17 @@ import com.nomagic.magicdraw.actions.ActionsConfiguratorsManager;
 import ViewModels.ElementDefinitionImpactViewViewModel;
 import ViewModels.HubBrowserPanelViewModel;
 import ViewModels.MagicDrawImpactViewPanelViewModel;
+import ViewModels.MagicDrawObjectBrowserViewModel;
 import ViewModels.RequirementImpactViewViewModel;
 import ViewModels.TransferControlViewModel;
+import ViewModels.Dialogs.DstMappingConfigurationDialogViewModel;
+import ViewModels.Dialogs.Interfaces.IDstMappingConfigurationDialogViewModel;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
+import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import cdp4common.dto.Category;
 import net.sf.ehcache.statistics.extended.ExtendedStatistics.Statistic;
 import Actions.Browser.MapAction;
@@ -198,6 +202,8 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);
             AppContainer.Container.addComponent(IMagicDrawImpactViewPanelViewModel.class, MagicDrawImpactViewPanelViewModel.class);
             AppContainer.Container.addComponent(ITransferControlViewModel.class, TransferControlViewModel.class);
+            AppContainer.Container.addComponent(IDstMappingConfigurationDialogViewModel.class, DstMappingConfigurationDialogViewModel.class);
+            AppContainer.Container.addComponent(IMagicDrawObjectBrowserViewModel.class, MagicDrawObjectBrowserViewModel.class);
         }
         catch (Exception exception) 
         {

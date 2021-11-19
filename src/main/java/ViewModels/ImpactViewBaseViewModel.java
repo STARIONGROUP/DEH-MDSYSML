@@ -31,9 +31,12 @@ import HubController.IHubController;
 import Utils.Ref;
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.stream.Collectors;
+
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
+import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
 
@@ -79,7 +82,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         this.DstController.GetDstMapResult()
             .ItemsAdded()
-            .subscribe(x -> this.ComputeDifferences(), e -> this.logger.catching(e));
+            .subscribe(x -> this.ComputeDifferences(), e -> this.Logger.catching(e));
         
         this.DstController.GetDstMapResult()
             .IsEmpty()
@@ -155,7 +158,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
             this.SetOutlineModel(this.hubController.GetOpenIteration());
         }
     
-        this.isTheTreeVisible.Value(isConnected);
+        this.IsTheTreeVisible.Value(isConnected);
     }
     
     /**
@@ -189,7 +192,8 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         Iteration iteration = this.hubController.GetOpenIteration().clone(false);
         
-        for (Thing thing : this.DstController.GetDstMapResult())
+        for (Thing thing : this.DstController.GetDstMapResult()
+                .stream().map(x -> x.GetHubElement()).collect(Collectors.toList()))
         {
             if(this.clazz.isInstance(thing))
             {
@@ -224,7 +228,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         OutlineModel model = this.CreateNewModel(iteration);
         this.UpdateHighlightOnRows(model);
-        this.browserTreeModel.Value(model);
+        this.BrowserTreeModel.Value(model);
     }
 
     /**
@@ -246,7 +250,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
                     IThingRowViewModel<?> thingRowViewModel = (IThingRowViewModel<?>)row;
                     
                     boolean isHighlighted = this.DstController.GetDstMapResult().stream()
-                            .anyMatch(r -> AreTheseEquals(r.getIid(), thingRowViewModel.GetThing().getIid()));
+                            .anyMatch(r -> AreTheseEquals(r.GetHubElement().getIid(), thingRowViewModel.GetThing().getIid()));
                     
                     thingRowViewModel.SetIsHighlighted(isHighlighted);
                 }
@@ -261,10 +265,10 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      * @param selectedRow the collection of selected view model {@linkplain IThingRowViewModel}
      */
     @Override
-    public void OnSelectionChanged(IThingRowViewModel<?> selectedRow) 
+    public void OnSelectionChanged(ThingRowViewModel<?> selectedRow) 
     {
         if(selectedRow != null && selectedRow.GetThing() != null && this.DstController.GetDstMapResult().stream()
-                .anyMatch(r -> AreTheseEquals(r.getIid(), selectedRow.GetThing().getIid())))
+                .anyMatch(r -> AreTheseEquals(r.GetHubElement().getIid(), selectedRow.GetThing().getIid())))
         {
             this.AddOrRemoveSelectedRowToTransfer(selectedRow);
         }
