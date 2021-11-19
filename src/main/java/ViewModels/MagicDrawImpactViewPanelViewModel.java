@@ -39,6 +39,7 @@ import Utils.Tasks.Task;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.Interfaces.IImpactViewContextMenuViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
+import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
 import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
@@ -63,6 +64,27 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      */
     private IDstController dstController;
 
+    /**
+     * The {@linkplain IMagicDrawMappingConfigurationService}
+     */
+    private IMagicDrawMappingConfigurationService mappingConfigurationService;
+
+    /**
+     * The {@linkplain IElementDefinitionImpactViewViewModel}
+     */
+    private IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel;
+
+    /**
+     * Gets the {@linkplain IElementDefinitionImpactViewViewModel} elementDefinitionImpactViewViewModel
+     * 
+     * @return the {@linkplain IElementDefinitionImpactViewViewModel}
+     */
+    @Override
+    public IMagicDrawImpactViewViewModel GetMagicDrawImpactViewViewModel()
+    {
+        return magicDrawImpactViewViewModel;
+    }
+    
     /**
      * The {@linkplain IElementDefinitionImpactViewViewModel}
      */
@@ -100,7 +122,6 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      */
     private IImpactViewContextMenuViewModel contextMenuViewModel;    
     
-
     /**
      * Gets the {@linkplain IImpactViewContextMenuViewModel} view model for the context menus
      * 
@@ -116,11 +137,6 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * The {@linkplain IRequirementImpactViewViewModel}
      */
     private IRequirementImpactViewViewModel requirementDefinitionImpactViewViewModel;
-
-    /**
-     * The {@linkplain IMagicDrawMappingConfigurationService}
-     */
-    private IMagicDrawMappingConfigurationService mappingConfigurationService;
     
     /**
      * Gets the {@linkplain IRequirementImpactViewViewModel} requirementDefinitionImpactViewViewModel
@@ -165,17 +181,19 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * @param transferControlViewModel the {@linkplain ITransferControlViewModel}
      * @param contextMenuViewModel the {@linkplain IImpactViewContextMenuViewModel}
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService}
+     * @param magicDrawImpactViewViewModel the {@linkplain IMagicDrawImpactViewViewModel}
      */
     public MagicDrawImpactViewPanelViewModel(IHubController hubController, IDstController dstController, 
             IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel,
             ITransferControlViewModel transferControlViewModel, IImpactViewContextMenuViewModel contextMenuViewModel,
-            IMagicDrawMappingConfigurationService mappingConfigurationService)
+            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel)
     {
         super(hubController);
         this.dstController = dstController;
         this.transferControlViewModel = transferControlViewModel;
         this.contextMenuViewModel = contextMenuViewModel;
         this.mappingConfigurationService = mappingConfigurationService;
+        this.magicDrawImpactViewViewModel = magicDrawImpactViewViewModel;
         this.isSessionOpen = this.HubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;

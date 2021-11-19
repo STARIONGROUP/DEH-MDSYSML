@@ -38,6 +38,7 @@ import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import Views.ContextMenu.ContextMenu;
 import Views.ObjectBrowser.ObjectBrowser;
 import cdp4common.commondata.Thing;
+import java.awt.GridBagLayout;
 
 /**
  * The {@linkplain MagicDrawObjectBrowser}

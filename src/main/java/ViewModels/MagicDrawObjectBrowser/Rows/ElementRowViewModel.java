@@ -25,6 +25,12 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
@@ -34,7 +40,7 @@ import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
  * 
  * @param TElement the type of {@linkplain Element} this row view model represents
  */
-public abstract class ElementRowViewModel<TElement extends Element> implements IElementRowViewModel
+public abstract class ElementRowViewModel<TElement extends Element> implements IElementRowViewModel<TElement>
 {
     /**
      * The value indicating whether this row should be highlighted as "selected for transfer"
@@ -109,8 +115,9 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
     /**
      * Gets the name of the {@linkplain Element} represented by this row view model
      * 
-     * @return
+     * @return the represented {@linkplain Element}
      */
+    @Override
     public TElement GetElement()
     {
         return this.element;
@@ -180,7 +187,7 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
      * @param parent the {@linkplain IElementRowViewModel} parent view model of this row view model
      * @param element the {@linkplain TElement} {@linkplain Element} which is represented
      */
-    public ElementRowViewModel(IElementRowViewModel parent, TElement element)
+    public ElementRowViewModel(IElementRowViewModel<?> parent, TElement element)
     {
         this.element = element;
         this.parent = parent;
@@ -204,7 +211,27 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
     {
         if(element != null)
         {
-            this.name = this.element.getHumanName();
+            if(this.element instanceof Package)
+            {
+                this.name = ((Package)this.element).getName();
+            }
+            else if(this.element instanceof Class)
+            {
+                this.name = ((Class)this.element).getName();
+            }
+            else if(this.element instanceof Property)
+            {
+                this.name = ((Property)this.element).getName();
+                
+                if(StringUtils.isBlank(this.name))
+                {
+                    this.name = String.format(": %s", ((Property)this.element).getType().getName());
+                }
+            }
+            else
+            {
+                this.name = this.element.getHumanName();
+            }
         }
     }
 
@@ -213,5 +240,6 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
      * 
      * @return a {@linkplain Stereotypes}
      */
+    @Override
     public abstract Stereotypes GetClassKind();
 }

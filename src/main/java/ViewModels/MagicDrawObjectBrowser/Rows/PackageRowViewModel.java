@@ -23,6 +23,7 @@
  */
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
@@ -37,12 +38,12 @@ import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 /**
  * The {@linkplain PackageRowViewModel} is the row view model that represents a {@linkplain Package}
  */
-public class PackageRowViewModel extends ElementRowViewModel<Package> implements IHaveContainedRows<IElementRowViewModel>
+public class PackageRowViewModel extends ElementRowViewModel<Package> implements IHaveContainedRows<IElementRowViewModel<?>>
 {
     /**
      * The {@linkplain ObservableCollection} of {@linkplain IElementRowViewModel}
      */
-    private ObservableCollection<IElementRowViewModel> containedRows = new ObservableCollection<IElementRowViewModel>();
+    private ObservableCollection<IElementRowViewModel<?>> containedRows = new ObservableCollection<IElementRowViewModel<?>>();
 
     /**
      * Gets the contained row the implementing view model has
@@ -50,7 +51,7 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
      * @return An {@linkplain ObservableCollection} of {@linkplain IElementRowViewModel}
      */
     @Override
-    public ObservableCollection<IElementRowViewModel> GetContainedRows()
+    public ObservableCollection<IElementRowViewModel<?>> GetContainedRows()
     {
         return this.containedRows;
     }
@@ -61,7 +62,7 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
      * @param parent the {@linkplain IRowViewModel} parent of this view model
      * {@linkplain package}
      */
-    public PackageRowViewModel(IElementRowViewModel parent, Package element)
+    public PackageRowViewModel(IElementRowViewModel<?> parent, Package element)
     {
         super(parent, element);
         this.ComputeContainedRows();
@@ -84,7 +85,7 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
      * 
      * @param element the {@linkplain Element}
      */
-    protected void ComputeContainedRow(Element element)
+    protected void ComputeContainedRow(BaseElement element)
     {
         if (element instanceof Class)
         {

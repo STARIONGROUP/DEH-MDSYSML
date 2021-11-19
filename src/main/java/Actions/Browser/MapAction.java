@@ -25,9 +25,7 @@ package Actions.Browser;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -40,21 +38,18 @@ import org.apache.logging.log4j.Logger;
 
 import com.nomagic.magicdraw.actions.MDAction;
 import com.nomagic.magicdraw.ui.browser.actions.DefaultBrowserAction;
+import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import App.AppContainer;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
-import Services.MappingEngineService.IMappableThingCollection;
 import Services.NavigationService.INavigationService;
 import Utils.ImageLoader.ImageLoader;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
-import Utils.Stereotypes.StereotypeUtils;
-import Utils.Stereotypes.Stereotypes;
 import Utils.Tasks.Task;
 import ViewModels.Dialogs.Interfaces.IDstMappingConfigurationDialogViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;

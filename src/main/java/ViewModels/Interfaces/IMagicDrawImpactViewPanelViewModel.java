@@ -100,4 +100,11 @@ public interface IMagicDrawImpactViewPanelViewModel extends IViewModel
      * @return the {@linkplain Observable} of {@linkplain Boolean}
      */
     Observable<Boolean> GetHasOneMagicDrawModelOpen();
+
+    /**
+     * Gets the {@linkplain IElementDefinitionImpactViewViewModel} elementDefinitionImpactViewViewModel
+     * 
+     * @return the {@linkplain IElementDefinitionImpactViewViewModel}
+     */
+    IMagicDrawImpactViewViewModel GetMagicDrawImpactViewViewModel();
 }

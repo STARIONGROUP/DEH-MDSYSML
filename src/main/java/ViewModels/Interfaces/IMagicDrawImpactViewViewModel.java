@@ -1,5 +1,5 @@
 /*
- * Stereotypes.java
+ * IMagicDrawImpactViewViewModel.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,35 +21,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Utils.Stereotypes;
+package ViewModels.Interfaces;
+
+import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 
 /**
- * The {@linkplain Stereotype} {@linkplain enum} provides base names for MgicDraw/Cameo stereotypes
+ * The {@linkplain IMagicDrawImpactViewViewModel} is the interface definition for the {@linkplain MagicDrawImpactViewViewModel}
  */
-public enum Stereotypes
+public interface IMagicDrawImpactViewViewModel extends IMagicDrawObjectBrowserViewModel
 {
-    /**
-     * The block identifier used in MagicDraw HumanType on {@linkplain Class}
-     */
-    Block,
-    
-    /**
-     * The requirement identifier used in MagicDraw HumanType on {@linkplain Class}
-     */
-    Requirement,
-    
-    /**
-     * The package identifier used in MagicDraw for {@linkplain Package}
-     */
-    Package,
-    
-    /**
-     * The ReferenceProperty represents a reference property, that references other properties
-     */
-    ReferenceProperty,
-    
-    /**
-     * The ValueProperty represents a value property
-     */
-    ValueProperty
 }

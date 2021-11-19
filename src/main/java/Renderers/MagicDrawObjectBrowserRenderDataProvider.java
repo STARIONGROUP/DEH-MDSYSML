@@ -30,6 +30,7 @@ import javax.swing.Icon;
 import Utils.ImageLoader.ImageLoader;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.PropertyRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.Parameters.ActualFiniteStateRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.Parameters.OptionRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.Parameters.ParameterValueRowViewModel;
@@ -148,6 +149,10 @@ public class MagicDrawObjectBrowserRenderDataProvider extends ObjectBrowserRende
             else if(element.GetClassKind() == Stereotypes.Requirement)
             {
                 return ImageLoader.GetIcon(ClassKind.Requirement);
+            }
+            else if(element instanceof PropertyRowViewModel)
+            {
+                return ImageLoader.GetIcon(ClassKind.Parameter);
             }
         }
         

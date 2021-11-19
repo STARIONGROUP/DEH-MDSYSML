@@ -37,11 +37,28 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
      * Gets a reactive value indicating if Cameo/MagicDraw has an open document
      */
     protected final ObservableValue<Boolean> HasOneDocumentOpenObservable = new ObservableValue<Boolean>(false, Boolean.class);
+
+    /**
+     * Gets a reactive value indicating that the open document has been saved
+     */
+    protected final ObservableValue<Boolean> projectSavedObservable = new ObservableValue<Boolean>(false, Boolean.class);
     
     /**
      * Gets a reactive {@linkplain Project} of type {@linkplain ObservableValue} of type {@linkplain Project}
      */
     protected final ObservableValue<Project> OpenDocumentObservable = new ObservableValue<Project>(Project.class);
+    
+    /**
+     * Occurs when the project gets saved
+     * 
+     * @param project the current open project
+     * @param isSaved a value indicating whether the project has been saved
+     */
+    @Override
+    public void projectSaved(Project project, boolean isSaved) 
+    {
+        this.projectSavedObservable.Value(isSaved);
+    }
     
     /**
      * Occurs when the project gets closed
@@ -72,8 +89,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectOpened(Project project)
     {
-        this.HasOneDocumentOpenObservable.Value(true);
         this.OpenDocumentObservable.Value(project);
+        this.HasOneDocumentOpenObservable.Value(true);
     }
 
     /**
@@ -83,8 +100,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectOpenedFromGUI(Project project)
     {
-        this.HasOneDocumentOpenObservable.Value(true);
         this.OpenDocumentObservable.Value(project);
+        this.HasOneDocumentOpenObservable.Value(true);
     }
 
     /**
@@ -94,8 +111,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectReplaced(Project project, Project project2)
     {
+        this.OpenDocumentObservable.Value(project2);
         this.HasOneDocumentOpenObservable.Value(true);
-        this.OpenDocumentObservable.Value(project2);    
     }
 
     /**
@@ -151,10 +168,4 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
      */
     @Override
     public void projectPreSaved(Project project, boolean isSaved) { }
-
-    /**
-     * Occurs when the project gets saved. Unused
-     */
-    @Override
-    public void projectSaved(Project project, boolean isSaved) { }
 }

@@ -1,5 +1,5 @@
 /*
- * BlockRowViewModel.java
+ * ValuePropertyRowViewModel.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -23,7 +23,6 @@
  */
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
@@ -31,20 +30,20 @@ import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 
 /**
- * The {@linkplain BlockRowViewModel} is the row view model that represents a SysML block
+ * The {@linkplain ValuePropertyRowViewModel} is a concrete row view model of {@linkplain PropertyRowViewModel}
+ * that represents a reference property
  */
-public class BlockRowViewModel extends ClassRowViewModel
+public class ValuePropertyRowViewModel extends PropertyRowViewModel
 {
     /**
-     * Initializes a new {@linkplain BlockRowViewModel}
+     * Initializes a new {@linkplain ReferencePropertyRowViewModel}
      * 
-     * @param parent the {@linkplain IElementRowViewModel} parent view model of this row view model
-     * @param element the {@linkplain Class} represented
+     * @param parent the parent {@linkplain IElementRowViewModel} view model
+     * @param property the represented {@linkplain Property}
      */
-    public BlockRowViewModel(IElementRowViewModel<?> parent, Class element)
+    public ValuePropertyRowViewModel(IElementRowViewModel<Class> parent, Property property)
     {
-        super(parent, element);
-        this.ComputeContainedRows();
+        super(parent, property);
     }
 
     /**
@@ -55,25 +54,6 @@ public class BlockRowViewModel extends ClassRowViewModel
     @Override
     public Stereotypes GetClassKind()
     {
-        return Stereotypes.Block;
-    }
-        
-    /**
-     * Computes this row view model contained rows
-     */
-    @Override
-    public void ComputeContainedRows()
-    {
-        for (Property property : this.GetElement().getOwnedAttribute())
-        {
-            if(MDCustomizationForSysMLProfile.isReferenceProperty(property))
-            {
-                this.GetContainedRows().add(new ReferencePropertyRowViewModel(this, property));
-            }
-            else if(MDCustomizationForSysMLProfile.isValueProperty(property))
-            {
-                this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
-            }
-        }        
+        return Stereotypes.ValueProperty;
     }
 }
