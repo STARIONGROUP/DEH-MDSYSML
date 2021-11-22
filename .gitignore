@@ -1,0 +1,44 @@
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
+
+# Eclipse
+.settings/
+
+# Log file
+*.log
+
+# jar and class file
+/bin/*
+
+# lib
+
+/lib/*
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+
+**/target/**
+/target/
+/.apt_generated/
+/.apt_generated_tests/
+
+jgoodies-forms-1.8.0.jar
+
+miglayout15-swing.jar
