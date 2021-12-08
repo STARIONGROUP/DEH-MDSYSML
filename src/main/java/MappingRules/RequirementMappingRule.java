@@ -114,7 +114,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         }
         catch (Exception exception)
         {
-            this.logger.catching(exception);
+            this.Logger.catching(exception);
             return new ArrayList<MappedRequirementsSpecificationRowViewModel>();
         }
         finally
@@ -169,7 +169,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
                 
                 if(!refRequirementsSpecification.HasValue())
                 {
-                    this.logger.error(
+                    this.Logger.error(
                             String.format("The mapping of the current requirement %s is no possible, because no eligible parent could be found current package name %s", 
                                     mappedRequirement.GetDstElement().getName(), mappedRequirement.GetDstElement().getOwner().getHumanName()));
                     
@@ -185,12 +185,12 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
                 
                 if(!TryCreateRelevantGroupsAndTheRequirement(mappedRequirement.GetDstElement(), parentElements, refRequirementsSpecification, refRequirementsGroup, refRequirement))
                 {
-                    this.logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
+                    this.Logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
                 }
             }
             catch(Exception exception)
             {
-                this.logger.catching(exception);
+                this.Logger.catching(exception);
             }
         }
     }
@@ -220,7 +220,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
                 {                
                     if(!this.TryGetOrCreateRequirementGroup((Package)element, refRequirementsSpecification, refRequirementsGroup))
                     {
-                        this.logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
+                        this.Logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
                                 requirement.getName(), ((Package)element).getName()));
                         
                         break;

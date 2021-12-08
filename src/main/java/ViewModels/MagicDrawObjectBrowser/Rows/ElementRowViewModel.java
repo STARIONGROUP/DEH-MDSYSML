@@ -26,6 +26,8 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
@@ -42,6 +44,11 @@ import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
  */
 public abstract class ElementRowViewModel<TElement extends Element> implements IElementRowViewModel<TElement>
 {
+    /**
+     * The current class Logger
+     */
+    protected final Logger Logger = LogManager.getLogger();
+    
     /**
      * The value indicating whether this row should be highlighted as "selected for transfer"
      */
@@ -137,6 +144,17 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
     {
         return this.name;
     }
+    
+    /**
+     * Sets the name of this row view model
+     * 
+     * @param name the new name
+     */
+    protected void SetName(String name)
+    {
+        this.name = name;
+    }
+
     
     /**
      * The {@linkplain IRowViewModel} parent of this row view model

@@ -25,6 +25,7 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 
@@ -39,7 +40,7 @@ public abstract class PropertyRowViewModel extends ElementRowViewModel<Property>
      * @param parent the parent {@linkplain IElementRowViewModel} view model
      * @param property the represented {@linkplain Property}
      */
-    public PropertyRowViewModel(IElementRowViewModel<Class> parent, Property property)
+    public PropertyRowViewModel(IElementRowViewModel<?> parent, Property property)
     {
         super(parent, property);
     }

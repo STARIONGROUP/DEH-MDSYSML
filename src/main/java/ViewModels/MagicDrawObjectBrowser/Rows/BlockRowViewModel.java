@@ -74,6 +74,10 @@ public class BlockRowViewModel extends ClassRowViewModel
             {
                 this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
             }
+            else if(MDCustomizationForSysMLProfile.isPartProperty(property))
+            {
+                this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
+            }
         }        
     }
 }

@@ -23,6 +23,8 @@
  */
 package DstController;
 
+import static Utils.Operators.Operators.AreTheseEquals;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +40,7 @@ import org.apache.logging.log4j.Logger;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
-import com.nomagic.magicdraw.uml.BaseElement;
+import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
@@ -46,6 +48,7 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappableThingCollection;
@@ -59,12 +62,11 @@ import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
-
-import static Utils.Operators.Operators.AreTheseEquals;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.ElementUsage;
 import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
@@ -108,6 +110,11 @@ public final class DstController implements IDstController
      * The {@linkplain IHubController} instance
      */
     private final IHubController hubController;
+
+    /**
+     * The {@linkplain IMagicDrawUILogService} instance
+     */
+    private IMagicDrawUILogService logService;
 
     /**
      * The {@linkplain IMappingConfigurationService} instance
@@ -272,13 +279,16 @@ public final class DstController implements IDstController
      * 
      * @param mappingEngine the {@linkplain IMappingEngine} instance
      * @param HubController the {@linkplain IHubController} instance
+     * @param logService the {@linkplain IMagicDrawUILogService} instance
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService} instance
      * @param shouldListenForProjectChanges indicates whether the {@linkplain DstController} should watch projects
      */
-    public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawMappingConfigurationService mappingConfigurationService, boolean shouldListenForProjectChanges)
+    public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawUILogService logService, 
+            IMagicDrawMappingConfigurationService mappingConfigurationService, boolean shouldListenForProjectChanges)
     {
         this.mappingEngine = mappingEngine;
         this.hubController = hubController;
+        this.logService = logService;
         this.mappingConfigurationService = mappingConfigurationService;
         
         if(shouldListenForProjectChanges)
@@ -344,12 +354,12 @@ public final class DstController implements IDstController
         
         if(!result)
         {
-            this.logger.error(String.format("Could not map %s saved mapped things for some reason, check the log for details", things.size()));
+            this.logService.Append(String.format("Could not map %s saved mapped things for some reason, check the log for details", things.size()), NotificationSeverity.ERROR);
             things.clear();
             return;
         }
         
-        this.logger.info(String.format("Loaded %s saved mapping, done in %s ms", things.size(), timer.getTime(TimeUnit.MILLISECONDS)));
+        this.logService.Append(String.format("Loaded %s saved mapping, done in %s ms", things.size(), timer.getTime(TimeUnit.MILLISECONDS)));
     }
 
     /**
@@ -437,14 +447,16 @@ public final class DstController implements IDstController
         {
             case FromDstToHub:
                 result = this.TransferToHub();
+                break;
             case FromHubToDst:
                 result = true;
+                break;
             default:
-                result = false;        
+                result = false;
+                break;        
         }
         
         this.LoadMapping();
-        
         return result;
     }
     
@@ -461,24 +473,25 @@ public final class DstController implements IDstController
             Pair<Iteration, ThingTransaction> iterationTransaction = this.hubController.GetIterationTransaction();
             Iteration iterationClone = iterationTransaction.getLeft();
             ThingTransaction transaction = iterationTransaction.getRight();
-
+            
             this.PrepareThingsForTransfer(iterationClone, transaction);
 
             this.mappingConfigurationService.PersistExternalIdentifierMap(transaction, iterationClone);
             transaction.createOrUpdate(iterationClone);
-            boolean result = this.hubController.TryWrite(transaction);
-            result &= this.hubController.Refresh();
-            result &= this.UpdateParameterValueSets();
+            
+            this.hubController.Write(transaction);            
+            boolean result = this.hubController.Refresh();
+            this.UpdateParameterValueSets();
             return result && this.hubController.Refresh();
-        } 
+        }
         catch (Exception exception)
         {
-            this.logger.error(exception);
+            this.logService.Append(exception.toString(), NotificationSeverity.ERROR);
+            this.logger.catching(exception);
             return false;
         }
         finally
         {
-            this.dstMapResult.clear();
             this.selectedDstMapResultForTransfer.clear();
         }
     }
@@ -487,9 +500,11 @@ public final class DstController implements IDstController
      * Updates the {@linkplain ValueSet} with the new values
      * 
      * @return a value indicating whether the operation went OK
+     * @return a {@linkplain Pair} of a value indicating whether the transaction has been committed with success
+     * and a string of the exception if any
      * @throws TransactionException
      */
-    public boolean UpdateParameterValueSets() throws TransactionException
+    public void UpdateParameterValueSets() throws TransactionException
     {
         Pair<Iteration, ThingTransaction> iterationTransaction = this.hubController.GetIterationTransaction();
         Iteration iterationClone = iterationTransaction.getLeft();
@@ -520,7 +535,7 @@ public final class DstController implements IDstController
         }
         
         transaction.createOrUpdate(iterationClone);
-        return this.hubController.TryWrite(transaction);
+        this.hubController.Write(transaction);
     }    
 
     /**
@@ -556,7 +571,12 @@ public final class DstController implements IDstController
                     break;
                 default:
                     break;
-            }            
+            }
+            
+            if(thing.getContainer() == null)
+            {
+                this.logService.Append("thing %s has a null container how ??????", NotificationSeverity.ERROR, thing.getUserFriendlyName());
+            }
         }
     }
 
@@ -573,12 +593,18 @@ public final class DstController implements IDstController
     {
         this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
         
-        for(Parameter parameter : elementDefinition.getParameter())
+        for (ElementUsage elementUsage : elementDefinition.getContainedElement())
         {
+            this.AddOrUpdateIterationAndTransaction(elementUsage.getElementDefinition(), iterationClone.getElement(), transaction);
+            this.AddOrUpdateIterationAndTransaction(elementUsage, elementDefinition.getContainedElement(), transaction);
+        }
+        
+        for(Parameter parameter : elementDefinition.getParameter())
+        {            
             transaction.createOrUpdate(parameter);
             
             for (Relationship relationship : parameter.getRelationships())
-            {
+            {                
                 transaction.createOrUpdate(relationship);
             }
         }
@@ -643,11 +669,11 @@ public final class DstController implements IDstController
      */
     private <T extends Thing> void AddOrUpdateIterationAndTransaction(T thing, ContainerList<T> containerList, ThingTransaction transaction) throws TransactionException
     {
-        if(!containerList.stream().anyMatch(x -> x.getIid().equals(thing.getIid())))
+        if(containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
         {
             containerList.add(thing);
         }
-        
+
         transaction.createOrUpdate(thing);
     }
 

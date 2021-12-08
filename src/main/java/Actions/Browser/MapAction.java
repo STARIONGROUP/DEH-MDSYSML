@@ -37,8 +37,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.nomagic.magicdraw.actions.MDAction;
+import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.ui.browser.actions.DefaultBrowserAction;
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
@@ -46,6 +46,7 @@ import App.AppContainer;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.NavigationService.INavigationService;
 import Utils.ImageLoader.ImageLoader;
 import Utils.Stereotypes.MagicDrawBlockCollection;
@@ -86,6 +87,11 @@ public class MapAction extends DefaultBrowserAction
      * The {@linkplain INavigationService}
      */
     private INavigationService navigationService;
+
+    /**
+     * The {@linkplain IMagicDrawUILogService}
+     */
+    private IMagicDrawUILogService uILogService;
         
     /**
      * Initializes a new {@linkplain MapAction}
@@ -94,9 +100,10 @@ public class MapAction extends DefaultBrowserAction
      * @param dstController the {@linkplain IDstController}
      * @param navigationService the {@linkplain INavigationService}
      */
-    public MapAction(IHubController hubController, IDstController dstController, INavigationService navigationService) 
+    public MapAction(IHubController hubController, IDstController dstController, INavigationService navigationService, IMagicDrawUILogService uILogService) 
     {
         super("Map Selection", "Map the current selection", KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK, true), null);
+        this.uILogService = uILogService;
         this.setSmallIcon(ImageLoader.GetIcon("icon16.png"));
         this.dstController = dstController;
         this.hubController = hubController;
@@ -164,8 +171,9 @@ public class MapAction extends DefaultBrowserAction
                     {
                         timer.stop();
                     }
+
+                    this.uILogService.Append(String.format("Mapping action is done in %s ms", timer.getTime(TimeUnit.MILLISECONDS), x.GetResult().booleanValue()));
                     
-                    this.logger.error(String.format("Mapping action is done with success ? %s in %s ms", x.GetResult(), timer.getTime(TimeUnit.MILLISECONDS)));
                 }, x -> this.logger.catching(x));
         }
         catch (Exception exception) 
@@ -190,8 +198,12 @@ public class MapAction extends DefaultBrowserAction
                 .filter(x -> x.GetTThingClass().isAssignableFrom(ElementDefinition.class))
                 .map(x -> (MappedElementDefinitionRowViewModel)x)
                 .collect(Collectors.toList()));
-                
-        result &= this.dstController.Map(mappedElements, MappingDirection.FromDstToHub);
+
+        if(!mappedElements.isEmpty())
+        {
+            this.uILogService.Append(String.format("Mapping of %s Blocks in progress...", mappedElements.size()));
+            result &= this.dstController.Map(mappedElements, MappingDirection.FromDstToHub);
+        }
         
         MagicDrawRequirementCollection mappedRequirements = new MagicDrawRequirementCollection();
         
@@ -200,7 +212,11 @@ public class MapAction extends DefaultBrowserAction
                 .map(x -> (MappedRequirementsSpecificationRowViewModel)x)
                 .collect(Collectors.toList()));
 
-        result &= this.dstController.Map(mappedRequirements, MappingDirection.FromDstToHub);
+        if(!mappedRequirements.isEmpty())
+        {
+            this.uILogService.Append(String.format("Mapping of %s Requirements in progress...", mappedRequirements.size()));
+            result &= this.dstController.Map(mappedRequirements, MappingDirection.FromDstToHub);
+        }
         
         return result;
     }

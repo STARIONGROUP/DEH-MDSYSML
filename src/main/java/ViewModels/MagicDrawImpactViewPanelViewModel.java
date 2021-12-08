@@ -30,10 +30,13 @@ import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 
+import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
+
 import DstController.DstController;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Utils.Tasks.Task;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
@@ -62,8 +65,13 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     /**
      * The {@linkplain IDstController} instance
      */
-    private IDstController dstController;
+    private IDstController dstController;    
 
+    /**
+     * The {@linkplain IMagicDrawUILogService}
+     */
+    private IMagicDrawUILogService logService;
+    
     /**
      * The {@linkplain IMagicDrawMappingConfigurationService}
      */
@@ -137,7 +145,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * The {@linkplain IRequirementImpactViewViewModel}
      */
     private IRequirementImpactViewViewModel requirementDefinitionImpactViewViewModel;
-    
+
     /**
      * Gets the {@linkplain IRequirementImpactViewViewModel} requirementDefinitionImpactViewViewModel
      * 
@@ -182,11 +190,13 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * @param contextMenuViewModel the {@linkplain IImpactViewContextMenuViewModel}
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService}
      * @param magicDrawImpactViewViewModel the {@linkplain IMagicDrawImpactViewViewModel}
+     * @param logService the {@linkplain IMagicDrawUILogService}
      */
     public MagicDrawImpactViewPanelViewModel(IHubController hubController, IDstController dstController, 
             IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel,
             ITransferControlViewModel transferControlViewModel, IImpactViewContextMenuViewModel contextMenuViewModel,
-            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel)
+            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel,
+            IMagicDrawUILogService logService)
     {
         super(hubController);
         this.dstController = dstController;
@@ -194,6 +204,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
         this.contextMenuViewModel = contextMenuViewModel;
         this.mappingConfigurationService = mappingConfigurationService;
         this.magicDrawImpactViewViewModel = magicDrawImpactViewViewModel;
+        this.logService = logService;
         this.isSessionOpen = this.HubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;
@@ -256,6 +267,8 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
                 .orElse(this.CreateNewMappingConfiguration(configurationName)));
         
         Task.Run(() -> this.dstController.LoadMapping());
+        
+        this.logService.Append("The configuration %s has been %s", configurationName, !isNew ? "reloaded" : "loaded");
         
         return isNew && this.mappingConfigurationService.GetExternalIdentifierMap().getRevisionNumber() < 1;
     }

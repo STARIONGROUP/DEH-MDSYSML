@@ -23,6 +23,8 @@
  */
 package Views;
 
+import org.apache.logging.log4j.LogManager;
+
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import Views.ContextMenu.ImpactViewContextMenu;
@@ -74,7 +76,7 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
            this.View.SetSavedMappingconfigurationCollection(this.DataContext.GetSavedMappingconfigurationCollection());
        });
 
-       Observable.zip(this.DataContext.GetHasOneMagicDrawModelOpen(), this.DataContext.GetIsSessionOpen(),
+       Observable.combineLatest(this.DataContext.GetHasOneMagicDrawModelOpen(), this.DataContext.GetIsSessionOpen(),
                (hasOneMagicDrawModelOpen, isHubSessionOpen) -> hasOneMagicDrawModelOpen && isHubSessionOpen)
            .subscribe(x -> this.View.SetLoadMappingControlsIsEnable(x));
        

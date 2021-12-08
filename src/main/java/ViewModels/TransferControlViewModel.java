@@ -24,10 +24,14 @@
 package ViewModels;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.lang3.time.StopWatch;
 
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import Reactive.ObservableValue;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
 import ViewModels.Interfaces.ITransferControlViewModel;
 import io.reactivex.Observable;
 
@@ -53,18 +57,25 @@ public class TransferControlViewModel implements ITransferControlViewModel
     }
     
     /**
-     *  the {@linkplain IDstController}
+     * The {@linkplain IDstController}
      */
     private IDstController dstController;
+    
+    /**
+     * The {@linkplain IMagicDrawUILogService}
+     */
+    private IMagicDrawUILogService logService;
 
     /**
      * Initializes a new {@linkplain TransferControlViewModel}
      * 
      * @param dstController the {@linkplain IDstController}
+     * @param logService the {@linkplain IMagicDrawUILogService}
      */
-    public TransferControlViewModel(IDstController dstController)
+    public TransferControlViewModel(IDstController dstController, IMagicDrawUILogService logService)
     {
         this.dstController = dstController;
+        this.logService = logService;
         
         this.dstController.GetSelectedDstMapResultForTransfer()
             .Changed()
@@ -97,6 +108,22 @@ public class TransferControlViewModel implements ITransferControlViewModel
     @Override
     public Callable<Boolean> GetOnTransferCallable()
     {
-       return () -> this.dstController.Transfer();
+       return () -> 
+       {
+           StopWatch timer = StopWatch.createStarted();
+           
+           this.logService.Append("Transfer in progress...");
+           
+           boolean result = this.dstController.Transfer();
+
+           if(timer.isStarted())
+           {
+               timer.stop();
+           }
+           
+           this.logService.Append(String.format("Transfer done in %s ms", timer.getTime(TimeUnit.MILLISECONDS)), result);
+           
+           return result;
+       };
     }
 }

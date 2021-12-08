@@ -36,7 +36,7 @@ import Views.Interfaces.IView;
  * The {@linkplain MagicDrawBasePanel} is the base class for all MagicDraw/Cameo panels such as the Impact view
  * 
  * @param <TViewModel> the type of the view model the inheriting view belongs to
- * @param <TView> the type of the view that is enclosed by the inheriting view
+ * @param <TView> the type of the view that is enclosed by the inheriting v iew
  */
 @SuppressWarnings("serial")
 public abstract class MagicDrawBasePanel<TViewModel extends IViewModel, TView extends JPanel> extends DockableFrame implements IView<TViewModel>
