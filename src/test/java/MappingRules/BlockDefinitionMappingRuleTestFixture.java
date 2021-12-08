@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
+import DstController.IDstController;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;

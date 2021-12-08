@@ -75,6 +75,8 @@ import DstController.IDstController;
 import HubController.IHubController;
 import MappingRules.BlockDefinitionMappingRule;
 import MappingRules.RequirementMappingRule;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
+import Services.MagicDrawUILog.MagicDrawUILogService;
 import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
@@ -139,7 +141,7 @@ public class DEHMDSYSMLPlugin extends Plugin
                     @Override
                     public void configure(ActionsManager manager, Tree tree)
                     {
-                        ActionsCategory category = new ActionsCategory();
+                        ActionsCategory category = new ActionsCategory(null, "DEH-MDSYSML action category");
                         category.setName("DEH-MDSYSML action category");
                         category.setSmallIcon(ImageLoader.GetIcon("icon16.png"));
                         manager.addCategory(manager.getCategories().size(), category);
@@ -150,6 +152,8 @@ public class DEHMDSYSMLPlugin extends Plugin
                 };
                 
                 ActionsConfiguratorsManager.getInstance().addContainmentBrowserContextConfigurator(configuratorContext);
+                
+                Application.getInstance().getGUILog().log("[MDSYSMLPlugin] Initialized with success!");
 			}
 	        catch (Exception exception)
 	        {
@@ -198,6 +202,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(RequirementMappingRule.class.getName(), RequirementMappingRule.class);
 
             AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
+            AppContainer.Container.addComponent(IMagicDrawUILogService.class, MagicDrawUILogService.class);
 
             AppContainer.Container.addComponent(IElementDefinitionImpactViewViewModel.class, ElementDefinitionImpactViewViewModel.class);
             AppContainer.Container.addComponent(IRequirementImpactViewViewModel.class, RequirementImpactViewViewModel.class);

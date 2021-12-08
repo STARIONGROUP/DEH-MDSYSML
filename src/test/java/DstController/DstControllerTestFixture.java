@@ -47,6 +47,7 @@ import com.google.common.cache.Cache;
 import Enumerations.MappingDirection;
 import HubController.HubController;
 import HubController.IHubController;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
@@ -94,6 +95,7 @@ class DstControllerTestFixture
     private Parameter parameter0;
     private Parameter parameter1;
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
+    private IMagicDrawUILogService logService;
 
     /**
      * @throws java.lang.Exception
@@ -104,7 +106,8 @@ class DstControllerTestFixture
         this.mappingEngine = mock(IMappingEngineService.class);
         this.hubController = mock(HubController.class);
         this.mappingConfigurationService = mock(IMagicDrawMappingConfigurationService.class);
-
+        this.logService = mock(IMagicDrawUILogService.class);
+        
         this.uri = URI.create("http://t.est");
         this.cache = com.google.common.cache.CacheBuilder.newBuilder().build();
         this.assembler = mock(Assembler.class);
@@ -127,9 +130,9 @@ class DstControllerTestFixture
         when(this.hubController.GetOpenIteration()).thenReturn(this.iteration);
         when(this.hubController.GetIterationTransaction()).thenReturn(Pair.of(this.iteration.clone(false), mock(ThingTransaction.class)));
         when(this.hubController.Refresh()).thenReturn(true);
-        when(this.hubController.TryWrite(any(ThingTransaction.class))).thenReturn(true);
+        when(this.hubController.Write(any(ThingTransaction.class))).thenReturn(true);
 
-        this.controller = new DstController(this.mappingEngine, this.hubController, this.mappingConfigurationService, false);
+        this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, this.mappingConfigurationService, false);
     }
 
     private void SetSession() throws Exception

@@ -25,6 +25,8 @@ package ViewModels;
 
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.stream.Collectors;
+
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
@@ -85,6 +87,12 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
                 {
                     iteration.getElement().add(index.Get(), thing);
                 }
+            }
+            
+            for (ElementDefinition containedElement : thing.getContainedElement()
+                    .stream().map(x -> x.getElementDefinition()).collect(Collectors.toList()))
+            {
+                this.ComputeDifferences(iteration, containedElement);
             }
         }
         catch(Exception exception)

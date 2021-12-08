@@ -40,6 +40,7 @@ import com.nomagic.magicdraw.ui.browser.Tree;
 import DstController.IDstController;
 import HubController.IHubController;
 import Reactive.ObservableValue;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.NavigationService.INavigationService;
 
 @RunWith(MagicDrawTestRunner.class)
@@ -48,6 +49,7 @@ public class MapActionTestFixture
     private IDstController dstController;
     private IHubController hubController;
     private INavigationService navigationService;
+    private IMagicDrawUILogService uILogService;
 
     @Before
     public void setup()
@@ -55,6 +57,7 @@ public class MapActionTestFixture
         this.hubController = mock(IHubController.class);
         this.dstController = mock(IDstController.class);
         this.navigationService = mock(INavigationService.class);
+        this.uILogService = mock(IMagicDrawUILogService.class);
         ObservableValue<Boolean> isSessionOpen = new ObservableValue<Boolean>(true, Boolean.class);
         when(this.hubController.GetIsSessionOpenObservable()).thenReturn(isSessionOpen.Observable());
     }
@@ -62,7 +65,7 @@ public class MapActionTestFixture
     @Test
     public void VerifyActionPerformed()
     {
-        MapAction action = new MapAction(this.hubController, this.dstController, this.navigationService);
+        MapAction action = new MapAction(this.hubController, this.dstController, this.navigationService, this.uILogService);
         action.setTree(new Tree());
         assertDoesNotThrow(() -> action.actionPerformed(any(ActionEvent.class)));
     }

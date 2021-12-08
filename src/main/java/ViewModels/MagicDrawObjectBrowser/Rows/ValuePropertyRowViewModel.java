@@ -23,7 +23,6 @@
  */
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import Utils.Stereotypes.Stereotypes;
@@ -41,7 +40,7 @@ public class ValuePropertyRowViewModel extends PropertyRowViewModel
      * @param parent the parent {@linkplain IElementRowViewModel} view model
      * @param property the represented {@linkplain Property}
      */
-    public ValuePropertyRowViewModel(IElementRowViewModel<Class> parent, Property property)
+    public ValuePropertyRowViewModel(IElementRowViewModel<?> parent, Property property)
     {
         super(parent, property);
     }

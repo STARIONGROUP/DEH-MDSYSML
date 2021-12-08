@@ -23,10 +23,14 @@
  */
 package MappingRules;
 
+import static Utils.Operators.Operators.AreTheseEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,17 +38,31 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.*;
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
+import com.nomagic.magicdraw.sysml.util.SysMLProfile;
+import com.nomagic.text.html.HtmlTextUtils;
+import com.nomagic.uml2.ext.jmi.helpers.ModelHelper;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
-
-import HubController.IHubController;
-
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ElementValue;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralInteger;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralNull;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralSpecification;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralUnlimitedNatural;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Slot;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.StructuralFeature;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Enumerations.MappingDirection;
+import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
@@ -57,14 +75,15 @@ import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.ElementUsage;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterSwitchKind;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
 import cdp4common.engineeringmodeldata.Relationship;
-
 import cdp4common.sitedirectorydata.BooleanParameterType;
 import cdp4common.sitedirectorydata.Category;
 import cdp4common.sitedirectorydata.MeasurementScale;
+import cdp4common.sitedirectorydata.MeasurementUnit;
 import cdp4common.sitedirectorydata.NumberSetKind;
 import cdp4common.sitedirectorydata.ParameterType;
 import cdp4common.sitedirectorydata.QuantityKind;
@@ -73,7 +92,6 @@ import cdp4common.sitedirectorydata.ReferenceDataLibrary;
 import cdp4common.sitedirectorydata.SimpleQuantityKind;
 import cdp4common.sitedirectorydata.SimpleUnit;
 import cdp4common.sitedirectorydata.TextParameterType;
-import cdp4common.sitedirectorydata.MeasurementUnit;
 import cdp4common.types.ContainerList;
 import cdp4common.types.ValueArray;
 import cdp4dal.operations.ThingTransaction;
@@ -142,6 +160,11 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     private List<Pair<Property, ElementDefinition>> connectedElements = new ArrayList<Pair<Property, ElementDefinition>>();
 
     /**
+     * The {@linkplain MagicDrawBlockCollection} of {@linkplain MappedElementDefinitionRowViewModel}
+     */
+    private MagicDrawBlockCollection elements;
+
+    /**
      * Initializes a new {@linkplain BlockDefinitionMappingRule}
      * 
      * @param HubController the {@linkplain IHubController}
@@ -164,14 +187,14 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     {
         try
         {
-            MagicDrawBlockCollection elements = this.CastInput(input);
-            MagicDrawBlockCollection mappedElements = this.Map(elements);
-            this.SaveMappingConfiguration(elements);
+            this.elements = this.CastInput(input);
+            MagicDrawBlockCollection mappedElements = this.Map(this.elements);
+            this.SaveMappingConfiguration(this.elements);
             return new ArrayList<MappedElementDefinitionRowViewModel>(mappedElements);
         }
         catch (Exception exception)
         {
-            this.logger.catching(exception);
+            this.Logger.catching(exception);
             return new ArrayList<MappedElementDefinitionRowViewModel>();
         }
     }
@@ -198,46 +221,61 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      */
     private MagicDrawBlockCollection Map(MagicDrawBlockCollection mappedElementDefinitions)
     {        
-        for (MappedElementDefinitionRowViewModel mappedElement : mappedElementDefinitions)
+        for (MappedElementDefinitionRowViewModel mappedElement : new ArrayList<MappedElementDefinitionRowViewModel>(mappedElementDefinitions))
         {
-            String shortName = this.GetShortName(mappedElement.GetDstElement().getName());
-            
-            ElementDefinition elementDefinition = mappedElement.GetHubElement();
-            
-            if(elementDefinition == null)
+            if(mappedElement.GetHubElement() == null)
             {
-                Optional<ElementDefinition> optionalElementDefinition = this.hubController.GetOpenIteration().getElement().stream()
-                        .filter(x -> x.getShortName().equals(shortName))
-                        .findFirst();
-                
-                if(optionalElementDefinition.isPresent())
-                {
-                    elementDefinition = optionalElementDefinition.get().clone(true);
-                }
-                else
-                {
-                    elementDefinition = new ElementDefinition();
-                    elementDefinition.setIid(UUID.randomUUID());
-                    elementDefinition.setName(mappedElement.GetDstElement().getName());
-                    elementDefinition.setShortName(shortName);
-                    elementDefinition.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-                    Definition definition = new Definition();
-                    definition.setIid(UUID.randomUUID());
-                    definition.setContent(mappedElement.GetDstElement().getID());
-                    definition.setLanguageCode(MDIID);
-                    elementDefinition.getDefinition().add(definition);
-                }               
-                
-                mappedElement.SetHubElement(elementDefinition);
+                mappedElement.SetHubElement(this.GetOrCreateElementDefinition(mappedElement.GetDstElement()));
             }
             
-            this.MapCategories(elementDefinition, mappedElement.GetDstElement());            
-            this.MapProperties(elementDefinition, mappedElement.GetDstElement());
+            this.MapCategories(mappedElement.GetHubElement(), mappedElement.GetDstElement());
+            this.MapProperties(mappedElement.GetHubElement(), mappedElement.GetDstElement(), null);
         }
         
         this.ProcessConnectorProperties();
         
         return mappedElementDefinitions;
+    }
+
+    /**
+     * Gets an existing or creates an {@linkplain ElementDefinition} that will be mapped to the {@linkplain Class} 
+     * represented in the provided {@linkplain MappedElementDefinitionRowViewModel}
+     * 
+     * @param mappedElement the {@linkplain MappedElementDefinitionRowViewModel}
+     * @param shortName the {@linkplain String} shortname of the searched {@linkplain ElementDefinition}
+     * @return an {@linkplain ElementDefinition}
+     */
+    private ElementDefinition GetOrCreateElementDefinition(Class dstElement)
+    {
+        ElementDefinition elementDefinition;
+        String shortName = this.GetShortName(dstElement.getName());
+        
+        Optional<ElementDefinition> optionalElementDefinition = this.hubController.GetOpenIteration()
+                .getElement()
+                .stream()
+                .filter(x -> x.getShortName().equals(shortName))
+                .findFirst();
+        
+        if(optionalElementDefinition.isPresent())
+        {
+            elementDefinition = optionalElementDefinition.get().clone(true);
+        }
+        else
+        {
+            elementDefinition = new ElementDefinition();
+            elementDefinition.setIid(UUID.randomUUID());
+            elementDefinition.setName(dstElement.getName());
+            elementDefinition.setShortName(shortName);
+            elementDefinition.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+            
+            Definition definition = new Definition();
+            definition.setIid(UUID.randomUUID());
+            definition.setContent(dstElement.getID());
+            definition.setLanguageCode(MDIID);
+            elementDefinition.getDefinition().add(definition);
+        }
+        
+        return elementDefinition;
     }
     
     /**
@@ -269,7 +307,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                                     && x instanceof BinaryRelationship
                                     && VerifyBinaryRelationshipIsTheOne((BinaryRelationship)x, otherEnd.get(), element.getRight()))
                             .findFirst()
-                            .map(x -> (BinaryRelationship)x)
+                            .map(x -> (BinaryRelationship)x.clone(false))
                             .orElseGet(this.CreateBinaryRelationshipFromConnectorProperty(element.getLeft(), otherEnd.get(), element.getRight()));
                             
                     this.binaryRelationShips.add(relationship);
@@ -305,6 +343,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     private Supplier<? extends BinaryRelationship> CreateBinaryRelationshipFromConnectorProperty(Property connectorProperty, ElementDefinition elementDefinition0, ElementDefinition elementDefinition1)
     {        
         BinaryRelationship relationship = new BinaryRelationship();
+        relationship.setIid(UUID.randomUUID());
         relationship.setOwner(this.hubController.GetCurrentDomainOfExpertise());
         relationship.setName(this.connectorPropertyNames.getRight());
         relationship.setSource(elementDefinition0);
@@ -328,12 +367,23 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * @param elementDefinition the {@linkplain ElementDefinition} that represents the block
      * @param block the source {@linkplain Class} block
      */
-    private void MapProperties(ElementDefinition elementDefinition, Class block)
+    private void MapProperties(ElementDefinition elementDefinition, Class block, Property parentPartProperty)
     {
-        Hashtable<ConnectorEnd, BinaryRelationship> connectors = new Hashtable<ConnectorEnd, BinaryRelationship>();
+        Hashtable<ConnectorEnd, BinaryRelationship> connectors = new Hashtable<>();
         
         for (Property property : block.getOwnedAttribute())
         {
+            if (MDCustomizationForSysMLProfile.isPartProperty(property))
+            {
+                if(parentPartProperty != null && AreTheseEquals(parentPartProperty.getID(), property.getID()))
+                {
+                    continue;
+                }
+                    
+                this.MapPartProperty(elementDefinition, property);
+                continue;
+            }
+            
             Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
                     .filter(x -> this.AreShortNamesEquals(x.getParameterType(), property.getName()))
                     .findAny();
@@ -370,28 +420,77 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 }
                 else
                 {
-                    this.logger.error(String.format("Coulnd create ParameterType %s", property.getName()));
+                    this.Logger.error(String.format("Coulnd create ParameterType %s", property.getName()));
                     continue;
                 }
             }   
             else if (existingParameter.isPresent() && hasValue)
             {
-                parameter = existingParameter.get();
+                parameter = existingParameter.get().clone(true);
             }
             else
             {
-                this.logger.error(String.format("Could not map attribute %s for element definition %s", property.getName(), elementDefinition.getName()));
+                this.Logger.error(String.format("Could not map attribute %s for element definition %s", property.getName(), elementDefinition.getName()));
                 continue;
             }
 
             this.ProcessBindingConnectors(connectors, property, parameter);
-            
             this.UpdateValueSet(parameter, refValue);
 
             this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
         }
         
-        this.logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
+        this.Logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
+    }
+
+    /**
+     * Maps the specified part property
+     * 
+     * @param elementDefinition the {@linkplain ElementDefinition} that represents the block
+     * @param partProperty the part Property
+     */
+    private void MapPartProperty(ElementDefinition elementDefinition, Property partProperty)
+    {
+        if(!(partProperty.getType() instanceof Class))
+        {
+            this.Logger.error(String.format("The Part Property %s is not correctly typed", partProperty.getName()));
+            return;
+        }
+        
+        Class definitionBlock = (Class)partProperty.getType();
+        
+        MappedElementDefinitionRowViewModel mappedElement = this.elements.stream()
+                .filter(x -> AreTheseEquals(x.GetDstElement().getID(), definitionBlock.getID()))
+                .findFirst()
+                .orElseGet(() -> 
+                {
+                    MappedElementDefinitionRowViewModel element = 
+                            new MappedElementDefinitionRowViewModel(definitionBlock, MappingDirection.FromDstToHub);
+                    
+                    this.elements.add(element);                    
+                    return element;
+        
+                });
+        
+        if(mappedElement.GetHubElement() == null)
+        {
+            mappedElement.SetHubElement(this.GetOrCreateElementDefinition(definitionBlock));
+        }
+        else
+        {
+            mappedElement.SetHubElement(mappedElement.GetHubElement().clone(true));
+        }
+
+        this.MapProperties(mappedElement.GetHubElement(), definitionBlock, partProperty);
+        
+        ElementUsage elementUsage = new ElementUsage();
+        elementUsage.setName(mappedElement.GetHubElement().getName());
+        elementUsage.setShortName(mappedElement.GetHubElement().getShortName());
+        elementUsage.setIid(UUID.randomUUID());
+        elementUsage.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+        elementUsage.setElementDefinition(mappedElement.GetHubElement());
+        
+        elementDefinition.getContainedElement().add(elementUsage);   
     }
 
     /**
@@ -404,7 +503,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     {
         ParameterValueSet valueSet = null;
         
-        if(parameter.getOriginal() != null)
+        if(parameter.getOriginal() != null || !parameter.getValueSet().isEmpty())
         {
             valueSet = (ParameterValueSet) ValueSetUtils.QueryParameterBaseValueSet(parameter, null, null);    
         }
@@ -413,9 +512,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             valueSet = new ParameterValueSet();
             valueSet.setIid(UUID.randomUUID());
             valueSet.setReference(new ValueArray<String>(Arrays.asList(""), String.class));
-            valueSet.setFormula(new ValueArray<String>(Arrays.asList(""),String.class));
-            valueSet.setPublished(new ValueArray<String>(Arrays.asList(""),String.class));
-            valueSet.setComputed(new ValueArray<String>(Arrays.asList(""),String.class));
+            valueSet.setFormula(new ValueArray<String>(Arrays.asList(""), String.class));
+            valueSet.setPublished(new ValueArray<String>(Arrays.asList(""), String.class));
+            valueSet.setComputed(new ValueArray<String>(Arrays.asList(""), String.class));
             valueSet.setValueSwitch(ParameterSwitchKind.MANUAL);
             parameter.getValueSet().add(valueSet);
         }
@@ -525,7 +624,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     
                     if(!this.TryCreateOrGetMeasurementScale(valueSpecification, property, refScale))
                     {
-                        this.logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", shortName));
+                        this.Logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", shortName));
                         return false;
                     }
                     
@@ -545,7 +644,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 
                 if(!(valueSpecification instanceof LiteralSpecification) || valueSpecification instanceof LiteralNull)
                 {
-                    this.logger.error(String.format("The property %s value type isn't supported by the adapter because its not a LiteralSpecification ? %s or it is a LiteralNull ? %s", 
+                    this.Logger.error(String.format("The property %s value type isn't supported by the adapter because its not a LiteralSpecification ? %s or it is a LiteralNull ? %s", 
                             property.getName(), !(valueSpecification instanceof LiteralSpecification), valueSpecification instanceof LiteralNull));
                 }
                                 
@@ -568,8 +667,8 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         }
         catch(Exception exception)
         {
-            this.logger.error(String.format("Could not create the parameter type with the shortname: %s, because %s", property.getName(), exception));
-            this.logger.catching(exception);
+            this.Logger.error(String.format("Could not create the parameter type with the shortname: %s, because %s", property.getName(), exception));
+            this.Logger.catching(exception);
             return false;
         }
     }
@@ -585,9 +684,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     @SuppressWarnings("resource")
     private boolean TryCreateOrGetMeasurementScale(ValueSpecification valueSpecification, Property property, Ref<MeasurementScale> refScale)
     {
-        Pair<Stereotype, Stereotype> scaleAndUnit = this.GetScaleAndUnit(property); 
+        Pair<Property, Property> scaleAndUnit = this.GetScaleAndUnit(property); 
         
-        if(scaleAndUnit.getLeft() == null && scaleAndUnit.getRight() == null)
+        if(scaleAndUnit.getLeft() == null || scaleAndUnit.getRight() == null)
         {
             return false;
         }
@@ -629,22 +728,32 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         
         return true;
     }
-
+    
     /**
      * Gets the scale and the unit from the specified property
      * 
      * @param property the {@linkplain Property}
      * @return a {@linkplain Pair} of {@linkplain Property} where left is the scale and right is the unit
      */
-    private Pair<Stereotype, Stereotype> GetScaleAndUnit(Property property)
+    private Pair<Property, Property> GetScaleAndUnit(Property property)
     {
-        MDCustomizationForSysMLProfile instance = MDCustomizationForSysMLProfile.getInstance(property);
-
-        if(instance != null)
+        Type dataType = property.getDatatype() != null ? property.getDatatype() : property.getType();
+        
+        if(dataType != null)
         {
-            return Pair.of(instance.getQuantityKind(), instance.getUnit());
+            Property quantityKind = StereotypesHelper.findStereotypePropertyFor(dataType, "quantityKind");
+            Property scale = null;
+            
+            if(quantityKind != null)
+            {
+                scale = StereotypesHelper.findStereotypePropertyFor(quantityKind, "scale");
+            }
+            
+            Property unit = StereotypesHelper.findStereotypePropertyFor(dataType, "Unit");
+            
+            return Pair.of(scale, unit);
         }
-
+        
         return Pair.of(null, null);
     }
 
@@ -659,13 +768,13 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      */
     private boolean TryCreateOrGetMeasurementUnit(ValueSpecification valueSpecification, String unitName, Ref<MeasurementUnit> refMeasurementUnit)
     {
-        String scaleShortName = this.GetShortName(unitName);
+        String unitShortName = this.GetShortName(unitName);
         
-        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(scaleShortName), refMeasurementUnit))
+        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(unitShortName) || x.getName().equals(unitName), refMeasurementUnit))
         {
             SimpleUnit newMeasurementUnit = new SimpleUnit();
             newMeasurementUnit.setName(unitName);
-            newMeasurementUnit.setShortName(scaleShortName);
+            newMeasurementUnit.setShortName(unitShortName);
 
             ReferenceDataLibrary referenceDataLibrary = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
             referenceDataLibrary.getUnit().add(newMeasurementUnit);
@@ -682,7 +791,12 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * @param block the SysML block ({@linkplain Class}) instance
      */
     private void MapCategories(ElementDefinition elementDefinition, Class block)
-    {        
+    {
+        if(elementDefinition == null)
+        {
+            return;
+        }
+        
         Boolean isEncapsulated = null;
 
         Optional<String> optionalIsEncapsulated = 
@@ -700,7 +814,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         this.MapCategory(elementDefinition, this.isActiveCategoryNames, block.isActive(), false);
         this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, isEncapsulated, true);
         
-        this.logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
+        this.Logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
     }
 
     /**
@@ -713,30 +827,37 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      */
     private void MapCategory(ElementDefinition elementDefinition, Pair<String, String> categoryNames, Boolean value, boolean shouldCreateTheCategory)
     {
-        Ref<Category> refCategory = new Ref<Category>(Category.class);
-
-        if(!(this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(categoryNames.getLeft()), refCategory)))
-        {
-            if (shouldCreateTheCategory && !this.TryCreateCategory(categoryNames, refCategory, ClassKind.ElementDefinition, ClassKind.ElementUsage))
+        try
+        {         
+            Ref<Category> refCategory = new Ref<Category>(Category.class);
+    
+            if(!(this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(categoryNames.getLeft()), refCategory)))
             {
-                return;
+                if (shouldCreateTheCategory && !this.TryCreateCategory(categoryNames, refCategory, ClassKind.ElementDefinition, ClassKind.ElementUsage))
+                {
+                    return;
+                }
             }
-        }
-
-        if(refCategory.HasValue())
-        {
-            if(Boolean.TRUE.equals(value))
+    
+            if(refCategory.HasValue())
             {
-                elementDefinition.getCategory().add(refCategory.Get());
+                if(Boolean.TRUE.equals(value))
+                {
+                    elementDefinition.getCategory().add(refCategory.Get());
+                }
+                else
+                {
+                    elementDefinition.getCategory().remove(refCategory.Get());
+                }
             }
             else
             {
-                elementDefinition.getCategory().remove(refCategory.Get());
+                this.Logger.debug(String.format("The Category %s could not be found or created for the element %s", categoryNames.getLeft(), elementDefinition.getName()));
             }
         }
-        else
+        catch(Exception exception)
         {
-            this.logger.debug(String.format("The Category %s could not be found or created for the element %s", categoryNames.getLeft(), elementDefinition.getName()));
+            this.Logger.catching(exception);
         }
     }
     
@@ -780,15 +901,15 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             transaction.createOrUpdate(clonedReferenceDataLibrary);
             transaction.createOrUpdate(newThing);
             
-            this.hubController.TryWrite(transaction);
+            this.hubController.Write(transaction);
             this.hubController.RefreshReferenceDataLibrary(clonedReferenceDataLibrary);
             
             return this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getIid().compareTo(newThing.getIid()) == 0, refThing);
         }
         catch(Exception exception)
         {
-            this.logger.error(String.format("Could not create the %s because %s", newThing.getClassKind(), exception));
-            this.logger.catching(exception);
+            this.Logger.error(String.format("Could not create the %s because %s", newThing.getClassKind(), exception));
+            this.Logger.catching(exception);
             return false;
         }       
     }

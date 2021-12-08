@@ -83,7 +83,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
     private void InitializesObservables()
     {
         this.dstController.HasOneDocumentOpenObservable()
-            .subscribe(x -> this.UpdateBrowserTrees(x));
+            .subscribe(this::UpdateBrowserTrees);
                 
         this.dstController.OpenDocumentHasBeenSaved().subscribe(hasBeenSaved -> 
             {
@@ -95,7 +95,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
         
         this.dstController.GetHubMapResult()
             .ItemsAdded()
-            .subscribe(x -> this.ComputeDifferences(), e -> this.Logger.catching(e));
+            .subscribe(x -> this.ComputeDifferences(), this.Logger::catching);
         
         this.dstController.GetHubMapResult()
             .IsEmpty()
