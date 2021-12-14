@@ -81,10 +81,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
                 mappedElements.add(refMappedElementRowViewModel.Get());
             }
         }
-        
-        this.Logger.error(String.format("mappedElements contains %s not cloned thing", 
-                mappedElements.stream().filter(x -> ((MappedElementDefinitionRowViewModel)x).GetHubElement().getOriginal() == null).count()));
-        
+                
         return mappedElements;
     }
 
@@ -115,13 +112,6 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             if(this.HubController.TryGetThingById(optionalCorrespondence.get().right, refElementDefinition))
             {
                 mappedElement.SetHubElement(refElementDefinition.Get().clone(true));
-                
-                if(!mappedElement.GetHubElement().getContainedElement().isEmpty())
-                {
-                    this.Logger.debug(String.format("Current element definition contains %s non cloned out of %s usages", 
-                            mappedElement.GetHubElement().getContainedElement().stream().filter(x -> x.getOriginal() == null).count(),
-                            mappedElement.GetHubElement().getContainedElement().size()));
-                }
             }
             
             refMappedElementRowViewModel.Set(mappedElement);
