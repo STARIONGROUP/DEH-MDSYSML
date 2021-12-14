@@ -26,6 +26,7 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
@@ -78,6 +79,11 @@ public class BlockRowViewModel extends ClassRowViewModel
             {
                 this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
             }
-        }        
+        }
+        
+        for (Port port : this.GetElement().getOwnedPort())
+        {
+            this.GetContainedRows().add(new PortPropertyRowViewModel(this, port));
+        }
     }
 }

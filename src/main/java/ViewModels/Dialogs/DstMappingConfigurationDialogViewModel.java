@@ -122,7 +122,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
     /**
      * The {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel} that represents all the mapped elements
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> mappedElements = new ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>>();
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> mappedElements = new ObservableCollection<>();
     
     /**
      * Gets the collection of mapped element
@@ -138,7 +138,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
     /**
      * Backing field for {@linkplain GetSelectedMappedElement}
      */
-    private ObservableValue<MappedElementRowViewModel<? extends Thing, Class>> selectedMappedElement = new ObservableValue<MappedElementRowViewModel<? extends Thing, Class>>(null);
+    private ObservableValue<MappedElementRowViewModel<? extends Thing, Class>> selectedMappedElement = new ObservableValue<>(null);
     
     /**
      * The selected {@linkplain MappedElementRowViewModel}

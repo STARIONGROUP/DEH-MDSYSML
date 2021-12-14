@@ -220,10 +220,10 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     {
         if(!this.HubController.GetIsSessionOpen())
         {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
         
-        List<String> externalIdentifierMaps = this.HubController.GetAvailableExternalIdentifierMap(DstController.ThisToolName)
+        List<String> externalIdentifierMaps = this.HubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
                 .stream()
                 .map(x -> x.getName())
                 .sorted()
@@ -261,14 +261,14 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
             return false;
         }
 
-        this.mappingConfigurationService.SetExternalIdentifierMap(this.HubController.GetAvailableExternalIdentifierMap(DstController.ThisToolName)
+        this.mappingConfigurationService.SetExternalIdentifierMap(this.HubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
                 .stream().filter(x -> AreTheseEquals(x.getName(), configurationName))
                 .findFirst()
                 .orElse(this.CreateNewMappingConfiguration(configurationName)));
         
         Task.Run(() -> this.dstController.LoadMapping());
         
-        this.logService.Append("The configuration %s has been %s", configurationName, !isNew ? "reloaded" : "loaded");
+        this.logService.Append("The configuration %s is %s ...", configurationName, !isNew ? "reloading" : "loading");
         
         return isNew && this.mappingConfigurationService.GetExternalIdentifierMap().getRevisionNumber() < 1;
     }

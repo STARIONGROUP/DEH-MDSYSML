@@ -252,12 +252,4 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
             }
         }
     }
-
-    /**
-     * Gets the string representation of the type of thing represented
-     * 
-     * @return a {@linkplain Stereotypes}
-     */
-    @Override
-    public abstract Stereotypes GetClassKind();
 }

@@ -43,7 +43,7 @@ public class TransferControlViewModel implements ITransferControlViewModel
     /**
      * The number of selected things to transfer
      */
-    private ObservableValue<Integer> numberOfSelectedThings = new ObservableValue<Integer>(0, Integer.class);
+    private ObservableValue<Integer> numberOfSelectedThings = new ObservableValue<>(0, Integer.class);
     
     /**
      * Gets the number of selected things to transfer
