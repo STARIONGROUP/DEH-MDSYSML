@@ -130,7 +130,6 @@ class DstControllerTestFixture
         when(this.hubController.GetOpenIteration()).thenReturn(this.iteration);
         when(this.hubController.GetIterationTransaction()).thenReturn(Pair.of(this.iteration.clone(false), mock(ThingTransaction.class)));
         when(this.hubController.Refresh()).thenReturn(true);
-        when(this.hubController.Write(any(ThingTransaction.class))).thenReturn(true);
 
         this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, this.mappingConfigurationService, false);
     }

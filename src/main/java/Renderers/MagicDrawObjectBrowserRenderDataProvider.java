@@ -150,6 +150,10 @@ public class MagicDrawObjectBrowserRenderDataProvider extends ObjectBrowserRende
             {
                 return ImageLoader.GetIcon(ClassKind.Requirement);
             }
+            else if(element.GetClassKind() == Stereotypes.PortProperty)
+            {
+                return ImageLoader.GetIcon(ClassKind.ElementUsage);
+            }
             else if(element instanceof PropertyRowViewModel)
             {
                 return ImageLoader.GetIcon(ClassKind.Parameter);

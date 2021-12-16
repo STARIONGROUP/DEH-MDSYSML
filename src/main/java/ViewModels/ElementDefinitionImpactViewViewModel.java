@@ -68,14 +68,14 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
     protected void ComputeDifferences(Iteration iteration, ElementDefinition thing)
     {
         try
-        {
+        {            
             if(thing.getOriginal() == null && iteration.getElement().stream().noneMatch(x -> this.DoTheseThingsRepresentTheSameThing(x, thing)))
             {            
                 iteration.getElement().add(thing);
             }
             else
             {
-                Ref<Integer> index = new Ref<Integer>(Integer.class, null);
+                Ref<Integer> index = new Ref<>(Integer.class, null);
                 
                 iteration.getElement()
                         .stream()

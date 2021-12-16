@@ -70,18 +70,18 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
     @Override
     public Collection<IMappedElementRowViewModel> LoadMapping(Collection<Class> elements)
     {
-        List<IMappedElementRowViewModel> mappedElements = new ArrayList<IMappedElementRowViewModel>();
+        List<IMappedElementRowViewModel> mappedElements = new ArrayList<>();
 
         for (Class element : elements)
         {
-            Ref<IMappedElementRowViewModel> refMappedElementRowViewModel = new Ref<IMappedElementRowViewModel>(IMappedElementRowViewModel.class);
+            Ref<IMappedElementRowViewModel> refMappedElementRowViewModel = new Ref<>(IMappedElementRowViewModel.class);
             
             if(this.TryGetMappedElement(element, refMappedElementRowViewModel))
             {
                 mappedElements.add(refMappedElementRowViewModel.Get());
             }
         }
-        
+                
         return mappedElements;
     }
 
@@ -105,7 +105,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         
         if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Block))
         {
-            Ref<ElementDefinition> refElementDefinition = new Ref<ElementDefinition>(ElementDefinition.class);
+            Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
                         
             MappedElementDefinitionRowViewModel mappedElement = new MappedElementDefinitionRowViewModel(element, optionalCorrespondence.get().middle.MappingDirection);
             
@@ -118,7 +118,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         }
         else if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
         {      
-            Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<RequirementsSpecification>(RequirementsSpecification.class);
+            Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
             
             MappedRequirementsSpecificationRowViewModel mappedElement = new MappedRequirementsSpecificationRowViewModel(element, optionalCorrespondence.get().middle.MappingDirection);
             
@@ -145,6 +145,6 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
     @Override
     public ExternalIdentifierMap CreateExternalIdentifierMap(String newName, String modelName, boolean addTheTemporyMapping)
     {
-        return super.CreateExternalIdentifierMap(newName, modelName, DstController.DstController.ThisToolName, addTheTemporyMapping);
+        return super.CreateExternalIdentifierMap(newName, modelName, DstController.DstController.THISTOOLNAME, addTheTemporyMapping);
     }
 }

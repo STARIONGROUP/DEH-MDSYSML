@@ -56,5 +56,10 @@ public enum Stereotypes
     /**
      * The PartProperty represents a part property
      */
-    PartProperty
+    PartProperty,
+    
+    /**
+     * The PortProperty represents a port property
+     */
+    PortProperty
 }

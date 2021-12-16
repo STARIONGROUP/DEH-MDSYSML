@@ -31,12 +31,14 @@ import HubController.IHubController;
 import Utils.Ref;
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
+import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
 
@@ -170,7 +172,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      */
     protected boolean DoTheseThingsRepresentTheSameThing(Thing thing0, Thing thing1)
     {
-        return AreTheseEquals(thing0, thing1);
+        return AreTheseEquals(thing0.getIid(), thing1.getIid());
     }
 
     /**
@@ -267,27 +269,35 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     @Override
     public void OnSelectionChanged(ThingRowViewModel<?> selectedRow) 
     {
-        if(selectedRow != null && selectedRow.GetThing() != null && this.DstController.GetDstMapResult().stream()
-                .anyMatch(r -> AreTheseEquals(r.GetHubElement().getIid(), selectedRow.GetThing().getIid())))
+        if(selectedRow != null && selectedRow.GetThing() != null)
         {
-            this.AddOrRemoveSelectedRowToTransfer(selectedRow);
+            Optional<MappedElementRowViewModel<? extends Thing, com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class>> optionalMappedElement = 
+                    this.DstController.GetDstMapResult().stream()
+                        .filter(r -> AreTheseEquals(r.GetHubElement().getIid(), selectedRow.GetThing().getIid()))
+                        .findFirst();
+            
+            if(optionalMappedElement.isPresent())
+            {
+                this.AddOrRemoveSelectedRowToTransfer(selectedRow, optionalMappedElement.get().GetHubElement());
+            }            
         }
     }
 
     /**
      * Adds or remove the {@linkplain Thing} to/from the relevant collection depending on the {@linkplain MappingDirection}
      * 
+     * @param x the {@linkplain IThingRowViewModel} that represents the {@linkplain Thing}
      * @param thing the {@linkplain Thing} to add or remove
      */
-    private void AddOrRemoveSelectedRowToTransfer(IThingRowViewModel<?> x)
+    private void AddOrRemoveSelectedRowToTransfer(IThingRowViewModel<?> x, Thing thing)
     {
         if(x.SwitchIsSelectedValue())
         {
-            this.DstController.GetSelectedDstMapResultForTransfer().add(x.GetThing());
+            this.DstController.GetSelectedDstMapResultForTransfer().add(thing);
         }
         else
         {
-            this.DstController.GetSelectedDstMapResultForTransfer().Remove(x.GetThing());
+            this.DstController.GetSelectedDstMapResultForTransfer().Remove(thing);
         }
     }
 }

@@ -84,7 +84,7 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
             }
             else
             {
-                Ref<Integer> index = new Ref<Integer>(Integer.class, null);
+                Ref<Integer> index = new Ref<>(Integer.class, null);
                 
                 iteration.getRequirementsSpecification()
                         .stream()

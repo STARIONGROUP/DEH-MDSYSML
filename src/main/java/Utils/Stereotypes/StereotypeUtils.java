@@ -23,6 +23,8 @@
  */
 package Utils.Stereotypes;
 
+import static Utils.Operators.Operators.AreTheseEquals;
+
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 /**
@@ -40,5 +42,35 @@ public final class StereotypeUtils
     public static boolean DoesItHaveTheStereotype(Element element, Stereotypes stereotype)
     {
         return element.getHumanType().toLowerCase().contains(stereotype.name().toLowerCase());
+    }
+    
+    /**
+     * Verifies the provided {@linkplain Element} element is owned by the provided {@linkplain Element} parent
+     * 
+     * @param element the {@linkplain Element} to verify
+     * @param parent the {@linkplain Element} parent
+     * @return a value indicating whether the element is owned by the specified parent
+     */
+    public static boolean IsOwnedBy(Element element, Element parent)
+    {
+        if(!parent.hasOwnedElement())
+        {
+            return false;
+        }
+        
+        for (Element child : parent.getOwnedElement())
+        {
+            if(AreTheseEquals(child.getID(), element.getID()))
+            {
+                return true;
+            }
+            
+            if(child.hasOwnedElement() && IsOwnedBy(element, child))
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

@@ -157,11 +157,11 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
     {
         try
         {
-            ArrayList<Element> elements = new ArrayList<Element>(this.dstController.GetProjectElements());
+            ArrayList<Element> elements = new ArrayList<>(this.dstController.GetProjectElements());
             
             for(MappedElementRowViewModel<? extends Thing, Class> mappedElementRowViewModel : this.dstController.GetHubMapResult())
             {
-                    Ref<Integer> index = new Ref<Integer>(Integer.class, null);
+                    Ref<Integer> index = new Ref<>(Integer.class, null);
                     
                     elements.stream()
                             .filter(x -> AreTheseEquals(mappedElementRowViewModel.GetDstElement().getID(), x.getID()))
