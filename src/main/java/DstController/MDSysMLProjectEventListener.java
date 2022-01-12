@@ -36,17 +36,17 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     /**
      * Gets a reactive value indicating if Cameo/MagicDraw has an open document
      */
-    protected final ObservableValue<Boolean> HasOneDocumentOpenObservable = new ObservableValue<Boolean>(false, Boolean.class);
+    protected final ObservableValue<Boolean> HasOneDocumentOpenObservable = new ObservableValue<>(false, Boolean.class);
 
     /**
      * Gets a reactive value indicating that the open document has been saved
      */
-    protected final ObservableValue<Boolean> projectSavedObservable = new ObservableValue<Boolean>(false, Boolean.class);
+    protected final ObservableValue<Boolean> ProjectSavedObservable = new ObservableValue<>(false, Boolean.class);
     
     /**
      * Gets a reactive {@linkplain Project} of type {@linkplain ObservableValue} of type {@linkplain Project}
      */
-    protected final ObservableValue<Project> OpenDocumentObservable = new ObservableValue<Project>(Project.class);
+    protected final ObservableValue<Project> OpenDocumentObservable = new ObservableValue<>(Project.class);
     
     /**
      * Occurs when the project gets saved
@@ -57,7 +57,7 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectSaved(Project project, boolean isSaved) 
     {
-        this.projectSavedObservable.Value(isSaved);
+        this.ProjectSavedObservable.Value(isSaved);
     }
     
     /**

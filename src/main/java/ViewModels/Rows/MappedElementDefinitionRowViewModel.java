@@ -28,6 +28,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import Enumerations.MappingDirection;
 
 import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.RequirementsSpecification;
 
 /**
  * The {@linkplain MappedElementDefinitionRowViewModel} is the row view model that represents a mapping between an {@linkplain ElementDefinition }
@@ -65,14 +66,8 @@ public class MappedElementDefinitionRowViewModel extends MappedElementRowViewMod
     @Override
     public String GetDstElementRepresentation()
     {
-        if(this.GetDstElement() == null)
-        {
-            return this.ShouldCreateNewTargetElement.Value().booleanValue() && this.GetMappingDirection() == MappingDirection.FromHubToDst 
-                    ? "new [Block]"
-                    : "-";
-        }
-        
-        return String.format("[Block] %s", this.GetDstElement().getName());
+        return this.GetElementRepresentation(this.GetDstElement() == null ? "-" : this.GetDstElement().getName(),
+                "Block", MappingDirection.FromHubToDst);
     }
     
     /**
@@ -83,13 +78,6 @@ public class MappedElementDefinitionRowViewModel extends MappedElementRowViewMod
     @Override
     public String GetHubElementRepresentation()
     {
-        if(this.GetHubElement() == null)
-        {
-            return this.ShouldCreateNewTargetElement.Value().booleanValue() && this.GetMappingDirection() == MappingDirection.FromDstToHub 
-                    ? "new [ElementDefinition]"
-                    : "-";
-        }
-        
-        return String.format("%s", this.GetHubElement().getName()); 
+        return this.GetHubElementRepresentation(ElementDefinition.class);
     }
 }

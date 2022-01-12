@@ -26,12 +26,19 @@ package Utils.Stereotypes;
 import static Utils.Operators.Operators.AreTheseEquals;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
 /**
  * The {@linkplain StereotypeUtils} provides useful methods to verify stereotypes used in MagicDraw/Cameo
  */
 public final class StereotypeUtils
 {
+    /**
+     * Initializes a new {@linkplain StereotypeUtils} and
+     * Prevents the {@linkplain StereotypeUtils} to initialized because static classes don't exist out of the box in java
+     */
+    private StereotypeUtils() { }
+    
     /**
      * Verifies that the provided {@linkplain Element} has the specified stereotype
      * 
@@ -72,5 +79,27 @@ public final class StereotypeUtils
         }
         
         return false;
+    }
+    
+    /**
+     * Gets a 10-25 compliant short name from the provided stereotype name
+     * 
+     * @param name the {@linkplain String} name to base the short name on
+     * @return a {@linkplain string}
+     */
+    public static String GetShortName(String name)
+    {
+        return name.replaceAll("[^a-zA-Z0-9]|\\s", "");
+    }
+
+    /**
+     * Gets a 10-25 compliant short name from the provided stereotype name
+     * 
+     * @param name the {@linkplain NamedElement} to base the short name on its name
+     * @return a {@linkplain string}
+     */
+    public static String GetShortName(NamedElement name)
+    {
+        return name.getName().replaceAll("[^a-zA-Z0-9]|\\s", "");
     }
 }

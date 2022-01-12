@@ -23,6 +23,7 @@
  */
 package Renderers;
 
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.JList;
@@ -45,6 +46,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JButton;
 import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
  
 /**
  * The {@linkplain MappedElementRowViewModelRenderer} is the custom renderer that allows to display {@linkplain MappedElementRowViewModel} in a {@linkplain JList}
@@ -80,6 +82,7 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
         setLayout(gridBagLayout);
         
         this.dstElement = new JLabel("");
+        dstElement.setHorizontalAlignment(SwingConstants.CENTER);
         GridBagConstraints gbc_dstElement = new GridBagConstraints();
         gbc_dstElement.anchor = GridBagConstraints.WEST;
         gbc_dstElement.fill = GridBagConstraints.VERTICAL;
@@ -89,6 +92,7 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
         add(this.dstElement, gbc_dstElement);
         
         JLabel lblNewLabel_1 = new JLabel("<html><body>&#x1F872;</body></html>");
+        lblNewLabel_1.setHorizontalAlignment(SwingConstants.CENTER);
         GridBagConstraints gbc_lblNewLabel_1 = new GridBagConstraints();
         gbc_lblNewLabel_1.fill = GridBagConstraints.VERTICAL;
         gbc_lblNewLabel_1.insets = new Insets(5, 5, 0, 5);
@@ -97,10 +101,10 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
         add(lblNewLabel_1, gbc_lblNewLabel_1);
         
         this.hubElement = new JLabel("");
+        hubElement.setHorizontalAlignment(SwingConstants.RIGHT);
         GridBagConstraints gbc_hubElement = new GridBagConstraints();
-        gbc_hubElement.anchor = GridBagConstraints.EAST;
         gbc_hubElement.insets = new Insets(5, 5, 0, 5);
-        gbc_hubElement.fill = GridBagConstraints.VERTICAL;
+        gbc_hubElement.fill = GridBagConstraints.BOTH;
         gbc_hubElement.gridx = 2;
         gbc_hubElement.gridy = 0;
         this.add(this.hubElement, gbc_hubElement);
@@ -122,11 +126,12 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
     public Component getListCellRendererComponent(JList<? extends MappedElementRowViewModel<? extends Thing, ?>> list,
             MappedElementRowViewModel<? extends Thing, ?> value, int index, boolean isSelected, boolean cellHasFocus)
     {
-        
         this.dstElement.setText(value.GetDstElementRepresentation());
         this.hubElement.setText(value.GetHubElementRepresentation());
         
-        value.GetShouldCreateNewTargetElement().subscribe(x -> this.UpdateLabels(value));
+        this.UpdateRowStatus(value);
+        
+        value.GetShouldCreateNewTargetElement().subscribe(x -> this.UpdateLabelsAndStatus(value));
         
         value.GetIsSelected().subscribe(x -> this.SetIsSelected(list, x));
                 
@@ -136,16 +141,49 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
     }
 
     /**
-     * Updates the labels of this row
+     * Updates the provided {@linkplain MappedElementRowViewModel} row status
+     * 
+     * @param rowViewModel the {@linkplain MappedElementRowViewModel} row view model
+     */
+    private void UpdateRowStatus(MappedElementRowViewModel<? extends Thing, ?> rowViewModel)
+    {
+        if(rowViewModel.GetRowStatus() != null)
+        {
+            switch(rowViewModel.GetRowStatus())
+            {
+                case ExisitingElement:
+                    this.dstElement.setForeground(Color.decode("#17418f"));
+                    this.hubElement.setForeground(Color.decode("#17418f"));
+                    break;
+                case ExistingMapping:
+                    this.dstElement.setForeground(Color.decode("#a8601d"));
+                    this.hubElement.setForeground(Color.decode("#a8601d"));
+                    break;
+                case NewElement:
+                    this.dstElement.setForeground(Color.decode("#226b1e"));
+                    this.hubElement.setForeground(Color.decode("#226b1e"));
+                    break;
+                default:
+                    this.dstElement.setForeground(Color.BLACK);
+                    this.hubElement.setForeground(Color.BLACK);
+                    break;            
+            }
+        }
+    }
+
+    /**
+     * Updates the labels and status of this row
      * 
      * @param the {@linkplain MappedElementRowViewModel}
      */
-    private void UpdateLabels(MappedElementRowViewModel<? extends Thing, ?> rowViewModel)
+    private void UpdateLabelsAndStatus(MappedElementRowViewModel<? extends Thing, ?> rowViewModel)
     {
         SwingUtilities.invokeLater(() -> 
         {
             this.dstElement.setText(rowViewModel.GetDstElementRepresentation());
             this.hubElement.setText(rowViewModel.GetHubElementRepresentation());
+
+            this.UpdateRowStatus(rowViewModel);
         });
     }
 

@@ -23,28 +23,21 @@
  */
 package MappingRules;
 
+import static Utils.Stereotypes.StereotypeUtils.GetShortName;
+
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
-
-import HubController.IHubController;
-
 import com.nomagic.requirements.util.RequirementUtilities;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Slot;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import Enumerations.MappingDirection;
+import HubController.IHubController;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
@@ -54,7 +47,6 @@ import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
 import cdp4common.commondata.Definition;
-import cdp4common.commondata.ShortNamedThing;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
@@ -151,9 +143,9 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             {
                 Element parentPackage = mappedRequirement.GetDstElement().getOwner();
                 
-                Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<RequirementsSpecification>(RequirementsSpecification.class);
+                Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
                    
-                if(mappedRequirement.GetHubElement() != null)
+                if(!mappedRequirement.GetShouldCreateNewTargetElementValue() && mappedRequirement.GetHubElement() != null)
                 {
                     refRequirementsSpecification.Set(mappedRequirement.GetHubElement());
                 }
@@ -259,7 +251,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         Optional<Requirement> optionalRequirement = refRequirementsSpecification.Get()
                 .getRequirement()
                 .stream()
-                .filter(x -> this.AreShortNamesEquals(x, element))
+                .filter(x -> this.AreShortNamesEquals(x, GetShortName(element)))
                 .findFirst();
         
         if(optionalRequirement.isPresent())
@@ -271,7 +263,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             Requirement requirement = new Requirement();
             requirement.setIid(UUID.randomUUID());
             requirement.setName(element.getName());
-            requirement.setShortName(this.GetShortName(element));
+            requirement.setShortName(GetShortName(element));
             requirement.setOwner(this.hubController.GetCurrentDomainOfExpertise());
             
             requirement.setGroup(refRequirementsGroup.Get());
@@ -344,7 +336,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         {
             RequirementsGroup requirementsgroup = new RequirementsGroup();
             requirementsgroup.setName(currentPackage.getName());
-            requirementsgroup.setShortName(this.GetShortName(currentPackage));
+            requirementsgroup.setShortName(GetShortName(currentPackage));
             requirementsgroup.setIid(UUID.randomUUID());
             requirementsgroup.setOwner(this.hubController.GetCurrentDomainOfExpertise());
             
@@ -376,7 +368,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
     {
         Optional<RequirementsGroup> optionalRequirementsGroup = Stream.concat(this.temporaryRequirementsGroups.stream(), 
                 refRequirementsSpecification.Get().getAllContainedGroups().stream())
-            .filter(x -> this.AreShortNamesEquals(x, currentPackage))
+            .filter(x -> this.AreShortNamesEquals(x, GetShortName(currentPackage)))
             .findFirst();
         
         if(optionalRequirementsGroup.isPresent())
@@ -400,7 +392,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
     {
         Optional<RequirementsSpecification> optionalRequirementsSpecification = this.requirementsSpecifications
                 .stream()
-                .filter(x -> this.AreShortNamesEquals(x, currentPackage))
+                .filter(x -> this.AreShortNamesEquals(x, GetShortName(currentPackage)))
                 .findFirst();
 
         if(optionalRequirementsSpecification.isPresent())
@@ -412,7 +404,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             optionalRequirementsSpecification = this.hubController.GetOpenIteration()
                     .getRequirementsSpecification()
                     .stream()
-                    .filter(x -> this.AreShortNamesEquals(x, currentPackage))
+                    .filter(x -> this.AreShortNamesEquals(x, GetShortName(currentPackage)))
                     .findFirst();
             
             if(optionalRequirementsSpecification.isPresent())
@@ -423,7 +415,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             {
                 RequirementsSpecification requirementsSpecification = new RequirementsSpecification();
                 requirementsSpecification.setName(currentPackage.getName());
-                requirementsSpecification.setShortName(this.GetShortName(currentPackage));
+                requirementsSpecification.setShortName(GetShortName(currentPackage));
                 requirementsSpecification.setIid(UUID.randomUUID());
                 requirementsSpecification.setOwner(this.hubController.GetCurrentDomainOfExpertise());
                 refRequirementSpecification.Set(requirementsSpecification);             
@@ -435,29 +427,6 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         return refRequirementSpecification.HasValue();
     }
     
-    /**
-     * Compares the two specified things to determine if they have the same shortName
-     * 
-     * @param shortNamedThing the 10-25 {@linkplain ShortNamedThing}
-     * @param element the element name as {@linkplain NamedElement}
-     * @return a value indicating whether the two element have the same short name
-     */
-    protected boolean AreShortNamesEquals(ShortNamedThing shortNamedThing, NamedElement element)
-    {
-        return this.AreShortNamesEquals(shortNamedThing, element.getName());
-    }
-
-    /**
-     * Gets the short name of the specified {@linkplain NamedElement}
-     * 
-     * @param element the {@linkplain NamedElement} to get the short name from
-     * @return a string containing the short name
-     */
-    protected String GetShortName(NamedElement element)
-    {
-        return this.GetShortName(element.getName()); 
-    }
-
     /**
      * Verifies if the provided {@linkplain Element} contains any requirement
      * 

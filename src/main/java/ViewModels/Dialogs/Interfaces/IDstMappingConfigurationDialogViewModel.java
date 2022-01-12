@@ -99,4 +99,16 @@ public interface IDstMappingConfigurationDialogViewModel extends IViewModel
      * @param mappedElement the {@linkplain MappedElementRowViewModel} that is to be selected
      */
     void SetSelectedMappedElement(MappedElementRowViewModel<? extends Thing, Class> mappedElement);
+
+    /**
+     * Resets the pre-mapped things to the default way 
+     */
+    void ResetPreMappedThings();
+
+    /**
+     * Gets an {@linkplain Observable} value indicating whether the mapToNewHubElementCheckBox should be enabled 
+     * 
+     * @return an {@linkplain Observable} of {@linkplain Boolean}
+     */
+    Observable<Boolean> GetShouldMapToNewHubElementCheckBoxBeEnabled();
 }
