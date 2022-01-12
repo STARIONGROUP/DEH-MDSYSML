@@ -148,10 +148,12 @@ public class MapAction extends DefaultBrowserAction
                     .filter(x -> x.getUserObject() instanceof Element)
                     .map(x -> (Element)x.getUserObject())
                     .collect(Collectors.toList());
-
+            
             viewModel.SetMappedElement(elements);
             
-            if(!this.navigationService.ShowDialog(new DstMappingConfigurationDialog(), viewModel))
+            Boolean dialogResult = this.navigationService.ShowDialog(new DstMappingConfigurationDialog(), viewModel);
+            
+            if(!Boolean.TRUE.equals(dialogResult))
             {
                 return;
             }
@@ -172,13 +174,13 @@ public class MapAction extends DefaultBrowserAction
                         timer.stop();
                     }
 
-                    this.uILogService.Append(String.format("Mapping action is done in %s ms", timer.getTime(TimeUnit.MILLISECONDS), x.GetResult().booleanValue()));
+                    this.uILogService.Append(String.format("Mapping action is done in %s ms", timer.getTime(TimeUnit.MILLISECONDS)), x.GetResult().booleanValue());
                     
                 }, x -> this.logger.catching(x));
         }
         catch (Exception exception) 
         {
-            this.logger.error(String.format("MapAction actionPerformed has thrown an exception %s", exception));
+            this.logger.catching(exception);
         }
     }
     

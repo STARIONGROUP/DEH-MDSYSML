@@ -141,7 +141,7 @@ public final class DstController implements IDstController
     @Override
     public Observable<Boolean> OpenDocumentHasBeenSaved() 
     {
-        return this.projectEventListener.projectSavedObservable.Observable();
+        return this.projectEventListener.ProjectSavedObservable.Observable();
     }
 
     /**

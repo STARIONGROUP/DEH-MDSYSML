@@ -157,7 +157,7 @@ public class DEHMDSYSMLPlugin extends Plugin
 			}
 	        catch (Exception exception)
 	        {
-				this.logger.error(String.format("MDSYSMLPlugin 'init' has thrown an exception %s \n\r %s", exception.toString(), exception.getStackTrace()));
+				this.logger.error(String.format("MDSYSMLPlugin 'init' has thrown an exception %s %n %s", exception.toString(), exception.getStackTrace()));
 				throw exception;
 			}  
 	    });
@@ -215,7 +215,7 @@ public class DEHMDSYSMLPlugin extends Plugin
         }
         catch (Exception exception) 
         {
-            this.logger.error(String.format("MDSYSMLPlugin register dependencies has thrown an exception with %s \n\r %s", exception.toString(), exception.getStackTrace()));
+            this.logger.error(String.format("MDSYSMLPlugin register dependencies has thrown an exception with %s %n %s", exception.toString(), exception.getStackTrace()));
             throw exception;
         }
     }

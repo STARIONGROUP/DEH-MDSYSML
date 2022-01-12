@@ -25,26 +25,32 @@ package Views.Dialogs;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.Collection;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Renderers.MappedElementRowViewModelRenderer;
 import Utils.ImageLoader.ImageLoader;
@@ -56,14 +62,6 @@ import Views.Interfaces.IDialog;
 import Views.ObjectBrowser.ObjectBrowser;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Thing;
-
-import java.awt.Insets;
-import javax.swing.JCheckBox;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import java.awt.Dimension;
 
 /**
  * The {@linkplain DstMappingConfigurationDialog} is the dialog view to allow to configure a mapping 
@@ -112,6 +110,8 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
     private JPanel panel;
     private JTabbedPane hubBrowserTreeViewsContainer;
     private JCheckBox mapToNewHubElementCheckBox;
+    private JScrollPane scrollPane;
+    private JButton resetButton;
     
     /**
      * Initializes a new {@linkplain DstMappingConfigurationDialog}
@@ -164,7 +164,7 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
         panel.setLayout(gbl_panel);
         
         
-        this.hubBrowserTreeViewsContainer = new JTabbedPane(JTabbedPane.TOP);
+        this.hubBrowserTreeViewsContainer = new JTabbedPane(SwingConstants.TOP);
         GridBagConstraints gbc_hubBrowserTreeViewsContainer = new GridBagConstraints();
         gbc_hubBrowserTreeViewsContainer.insets = new Insets(0, 0, 5, 0);
         gbc_hubBrowserTreeViewsContainer.fill = GridBagConstraints.BOTH;
@@ -191,24 +191,28 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
         JPanel mappedElementsPanel = new JPanel();
         mainSplitPane.setRightComponent(mappedElementsPanel);
         
-        this.mappedElementSource = new DefaultListModel<MappedElementRowViewModel<? extends Thing, Class>>();
+        this.mappedElementSource = new DefaultListModel<>();
         GridBagLayout gbl_mappedElementsPanel = new GridBagLayout();
-        gbl_mappedElementsPanel.columnWidths = new int[]{260, 1, 0};
-        gbl_mappedElementsPanel.rowHeights = new int[]{1, 0};
-        gbl_mappedElementsPanel.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
-        gbl_mappedElementsPanel.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+        gbl_mappedElementsPanel.columnWidths = new int[] {0};
+        gbl_mappedElementsPanel.rowHeights = new int[] {0};
+        gbl_mappedElementsPanel.columnWeights = new double[]{1.0};
+        gbl_mappedElementsPanel.rowWeights = new double[]{1.0};
         mappedElementsPanel.setLayout(gbl_mappedElementsPanel);
         
-        this.mappedElementListView = new JList<MappedElementRowViewModel<? extends Thing, Class>>(mappedElementSource);
+        this.mappedElementListView = new JList<>(mappedElementSource);
+        mappedElementListView.setToolTipText("<html><p>The collection of previously mapped elements (<span style=\"color: #E37814;\">Orange</span>),<br>as well as pre-mapped element to existing Hub element (<span style=\"color: #0E5AE8;\">Blue</span>),<br>and element mapped to \"to be created\" Hub element (<span style=\"color: #20B818;\">Green</span>)</P></html>");
         this.mappedElementListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         this.mappedElementListView.setSelectionBackground(new Color(104, 143, 184));
         this.mappedElementListView.setCellRenderer(new MappedElementRowViewModelRenderer());
-        GridBagConstraints gbc_mappedElementListView = new GridBagConstraints();
-        gbc_mappedElementListView.gridwidth = 2;
-        gbc_mappedElementListView.fill = GridBagConstraints.BOTH;
-        gbc_mappedElementListView.gridx = 0;
-        gbc_mappedElementListView.gridy = 0;
-        mappedElementsPanel.add(this.mappedElementListView, gbc_mappedElementListView);
+        
+        scrollPane = new JScrollPane(this.mappedElementListView);
+        GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+        gbc_scrollPane.insets = new Insets(0, 0, 5, 0);
+        gbc_scrollPane.fill = GridBagConstraints.BOTH;
+        gbc_scrollPane.gridx = 0;
+        gbc_scrollPane.gridy = 0;
+        mappedElementsPanel.add(scrollPane, gbc_scrollPane);
+        
         GridBagConstraints gbc_splitPane = new GridBagConstraints();
         gbc_splitPane.fill = GridBagConstraints.BOTH;
         gbc_splitPane.gridx = 0;
@@ -217,17 +221,38 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
         
         JPanel buttonPane = new JPanel();
         getContentPane().add(buttonPane, BorderLayout.SOUTH);
-        buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        GridBagLayout gbl_buttonPane = new GridBagLayout();
+        gbl_buttonPane.columnWidths = new int[] {1, 588, 1, 1, 1, 1};
+        gbl_buttonPane.rowHeights = new int[]{23, 0};
+        gbl_buttonPane.columnWeights = new double[]{0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE};
+        gbl_buttonPane.rowWeights = new double[]{0.0, Double.MIN_VALUE};
+        buttonPane.setLayout(gbl_buttonPane);
+        
+        resetButton = new JButton("Reset");
+        resetButton.setToolTipText("Reset  to the default mapping.");
+        GridBagConstraints gbc_resetButton = new GridBagConstraints();
+        gbc_resetButton.insets = new Insets(0, 5, 10, 5);
+        gbc_resetButton.gridx = 0;
+        gbc_resetButton.gridy = 0;
+        buttonPane.add(resetButton, gbc_resetButton);
         
         this.okButton = new JButton("Next");
         this.okButton.setToolTipText("Map the current elements");
         this.okButton.setActionCommand("OK");
-        buttonPane.add(this.okButton);
+        GridBagConstraints gbc_okButton = new GridBagConstraints();
+        gbc_okButton.insets = new Insets(0, 5, 10, 5);
+        gbc_okButton.gridx = 2;
+        gbc_okButton.gridy = 0;
+        buttonPane.add(this.okButton, gbc_okButton);
         
         this.cancelButton = new JButton("Cancel");
         this.cancelButton.setToolTipText("Close this dialog and abort the mapping");
         this.cancelButton.setActionCommand("Cancel");
-        buttonPane.add(this.cancelButton);
+        GridBagConstraints gbc_cancelButton = new GridBagConstraints();
+        gbc_cancelButton.insets = new Insets(0, 5, 10, 5);
+        gbc_cancelButton.gridx = 3;
+        gbc_cancelButton.gridy = 0;
+        buttonPane.add(this.cancelButton, gbc_cancelButton);
         
         this.addComponentListener(new ComponentAdapter() 
         {
@@ -236,6 +261,7 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
              * 
              * @param componentEvent the {@linkplain ComponentEvent}
              */
+            @Override
             public void componentResized(ComponentEvent componentEvent) 
             {
                 super.componentResized(componentEvent);
@@ -279,31 +305,39 @@ public class DstMappingConfigurationDialog extends JDialog implements IDialog<ID
             }
         });
         
-        this.dataContext.GetMappedElementCollection().ItemAdded().subscribe(x -> 
-        {
-            this.mappedElementSource.addElement(x);
-            this.RefreshMappedElementListView();
-        });
+        this.dataContext.GetMappedElementCollection().ItemAdded()
+            .subscribe(x -> 
+            {
+                this.mappedElementSource.addElement(x);
+                this.RefreshMappedElementListView();
+            });
         
-        this.dataContext.GetMappedElementCollection().ItemRemoved().subscribe(x -> 
-        {
-            this.mappedElementSource.removeElement(x);
-            this.RefreshMappedElementListView();
-        });
+        this.dataContext.GetMappedElementCollection().ItemRemoved()
+            .subscribe(x -> 
+            {
+                this.mappedElementSource.removeElement(x);
+                this.RefreshMappedElementListView();
+            });
         
-        this.dataContext.GetMappedElementCollection().IsEmpty().subscribe(x -> 
-        {
-            this.mappedElementSource.clear();
-            this.RefreshMappedElementListView();
-        });
+        this.dataContext.GetMappedElementCollection().IsEmpty()
+            .filter(x -> x)
+            .subscribe(x -> 
+            {
+                this.mappedElementSource.clear();
+                this.RefreshMappedElementListView();
+            });
         
         this.mapToNewHubElementCheckBox.addActionListener(x -> 
         {
             this.dataContext.WhenMapToNewHubElementCheckBoxChanged(this.mapToNewHubElementCheckBox.isSelected());
         });
-                
+        
+        this.dataContext.GetShouldMapToNewHubElementCheckBoxBeEnabled()
+            .subscribe(x -> this.mapToNewHubElementCheckBox.setEnabled(x));
+        
         this.okButton.addActionListener(x -> this.CloseDialog(true));        
         this.cancelButton.addActionListener(x -> this.CloseDialog(false));
+        this.resetButton.addActionListener(x -> this.dataContext.ResetPreMappedThings());
     }
 
     /**

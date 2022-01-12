@@ -23,7 +23,8 @@
  */
 package MappingRules;
 
-import static Utils.Operators.Operators.AreTheseEquals;
+import static Utils.Operators.Operators.AreTheseEquals; 
+import static Utils.Stereotypes.StereotypeUtils.GetShortName;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -374,7 +375,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             ElementUsage elementUsage = new ElementUsage();
             
             elementUsage.setName(portName);
-            elementUsage.setShortName(this.GetShortName(portName));
+            elementUsage.setShortName(GetShortName(portName));
             elementUsage.setIid(UUID.randomUUID());
             elementUsage.setOwner(this.hubController.GetCurrentDomainOfExpertise());
             elementUsage.setElementDefinition(this.GetPortElementDefinition());
@@ -463,7 +464,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      */
     private ElementDefinition GetOrCreateElementDefinition(String dstElementName, String dstElementId)
     {
-        String shortName = this.GetShortName(dstElementName);
+        String shortName = GetShortName(dstElementName);
         
         ElementDefinition elementDefinition = this.elements.stream()
                 .filter(x -> x.GetHubElement() != null && AreTheseEquals(x.GetHubElement().getShortName(), shortName))
@@ -836,7 +837,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     {
         try
         {
-            String shortName = this.GetShortName(property.getName());
+            String shortName = GetShortName(property.getName());
             
             if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> this.AreShortNamesEquals(x, shortName), refParameterType))
             {
@@ -920,7 +921,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             return false;
         }
         
-        String scaleShortName = this.GetShortName(scaleAndUnit.getLeft().getName());
+        String scaleShortName = GetShortName(scaleAndUnit.getLeft().getName());
         
         if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(scaleShortName), refScale))
         {
@@ -997,7 +998,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      */
     private boolean TryCreateOrGetMeasurementUnit(ValueSpecification valueSpecification, String unitName, Ref<MeasurementUnit> refMeasurementUnit)
     {
-        String unitShortName = this.GetShortName(unitName);
+        String unitShortName = GetShortName(unitName);
         
         if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(unitShortName) || x.getName().equals(unitName), refMeasurementUnit))
         {
