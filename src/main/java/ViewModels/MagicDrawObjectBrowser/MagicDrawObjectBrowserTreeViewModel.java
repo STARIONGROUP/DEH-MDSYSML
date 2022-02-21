@@ -27,7 +27,6 @@ import java.util.Collection;
 
 import javax.swing.tree.TreeModel;
 
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 

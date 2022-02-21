@@ -23,10 +23,10 @@
  */
 package MappingRules;
 
-import static Utils.Operators.Operators.AreTheseEquals; 
+import static Utils.Operators.Operators.AreTheseEquals;
 import static Utils.Stereotypes.StereotypeUtils.GetShortName;
+import static Utils.Stereotypes.StereotypeUtils.IsOwnedBy;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,8 +36,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -72,7 +70,6 @@ import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
-import static Utils.Stereotypes.StereotypeUtils.IsOwnedBy;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
@@ -254,9 +251,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             
             this.MapCategories(mappedElement.GetHubElement(), mappedElement.GetDstElement());
             this.MapProperties(mappedElement.GetHubElement(), mappedElement.GetDstElement(), null);
-            this.MapPorts(mappedElement);
         }
         
+        this.MapPorts();
         this.ProcessInterfaces();
         this.ProcessConnectorProperties();
     }
@@ -354,7 +351,18 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
 
         return () -> relationship;
     }
-
+    
+    /**
+     * Maps the attached ports of all the mapped {@linkplain Class}
+     */
+    private void MapPorts()
+    {
+        for (MappedElementDefinitionRowViewModel mappedElement : this.elements)
+        {
+            this.MapPorts(mappedElement);
+        }
+    }
+    
     /**
      * Maps the attached ports of the {@linkplain Class} mapped in the specified {@linkplain MappedElementDefinitionRowViewModel}
      * 
@@ -442,6 +450,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         
         return  nameAfterContainer;
     }
+    
     /**
      * Gets an existing or creates an {@linkplain ElementDefinition} that will be mapped to the {@linkplain Class} 
      * represented in the provided {@linkplain MappedElementDefinitionRowViewModel}
@@ -474,6 +483,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     .getElement()
                     .stream()
                     .filter(x -> AreTheseEquals(x.getShortName(), shortName))
+                    .map(x -> x.clone(true))
                     .findFirst()
                     .orElse(null));
         
@@ -498,7 +508,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             return elementDefinition;
         }
 
-        return elementDefinition.clone(true);
+        return elementDefinition;
     }
     
     /**
@@ -704,11 +714,12 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             mappedElement.SetHubElement(mappedElement.GetHubElement().clone(true));
         }
 
+        this.MapCategories(mappedElement.GetHubElement(), definitionBlock);
         this.MapProperties(mappedElement.GetHubElement(), definitionBlock, partProperty);
         
 
         if(elementDefinition.getContainedElement()
-                .stream().anyMatch(x -> AreTheseEquals(x.getName(), mappedElement.GetHubElement().getName())))
+                .stream().anyMatch(x -> AreTheseEquals(x.getIid(), mappedElement.GetHubElement().getIid())))
         {
             return;
         }

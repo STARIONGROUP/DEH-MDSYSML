@@ -6,7 +6,7 @@
 
 	<groupId>com.rheagroup</groupId>
 	<artifactId>DEHMDSYSMLPlugin</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 
 	<dependencies>
 		<dependency>
@@ -61,11 +61,7 @@
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.1.1</version>
 				<configuration>
-				    <additionalClasspathElements>
-                         <additionalClasspathElement>lib\</additionalClasspathElement>
-                         <additionalClasspathElement>bin\</additionalClasspathElement>
-                         <additionalClasspathElement>%USERPROFILE%\.m2\repository</additionalClasspathElement>
-                    </additionalClasspathElements>
+				 
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>

@@ -36,7 +36,6 @@ import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
  */
 public interface IElementRowViewModel<TElement extends Element> extends IRowViewModel
 {
-
     /**
      * Gets the string representation of the type of thing represented
      * 

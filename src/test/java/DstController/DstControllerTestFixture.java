@@ -49,7 +49,6 @@ import HubController.HubController;
 import HubController.IHubController;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
-import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawBlockCollection;

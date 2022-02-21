@@ -26,8 +26,11 @@ package DstController;
 import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -81,6 +84,7 @@ import cdp4common.types.ContainerList;
 import cdp4dal.exceptions.TransactionException;
 import cdp4dal.operations.ThingTransaction;
 import io.reactivex.Observable;
+import net.bytebuddy.asm.Advice.This;
 
 /**
  * The {@linkplain DstController} is a class that manage transfer and connection to attached running instance of Cameo/MagicDraw
@@ -608,14 +612,14 @@ public final class DstController implements IDstController
     private void PrepareElementDefinitionForTransfer(Iteration iterationClone, ThingTransaction transaction, 
             ElementDefinition elementDefinition) throws TransactionException
     {
+        this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
+        
         for (ElementUsage elementUsage : elementDefinition.getContainedElement())
         {
             this.AddOrUpdateIterationAndTransaction(elementUsage.getElementDefinition(), iterationClone.getElement(), transaction);
             this.AddOrUpdateIterationAndTransaction(elementUsage, elementDefinition.getContainedElement(), transaction);
         }
 
-        this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
-        
         for(Parameter parameter : elementDefinition.getParameter())
         {            
             transaction.createOrUpdate(parameter);
@@ -683,11 +687,11 @@ public final class DstController implements IDstController
     {
         try
         {
-            if(containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
+            if(thing.getContainer() == null || containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
             {
                 containerList.add(thing);
             }
-
+            
             transaction.createOrUpdate(thing);
         }
         catch (Exception exception)
