@@ -59,7 +59,7 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
         this.View = new ImpactViewPanel();
         this.getRootPane().getContentPane().add(this.View);
         this.magicDrawObjectBrowser = new MagicDrawObjectBrowser();
-        this.View.SetMagicDrawImpactView(this.magicDrawObjectBrowser);
+        this.View.SetDstImpactViewView(this.magicDrawObjectBrowser);
         this.magicDrawContextMenu = new ImpactViewContextMenu();
     }
 
