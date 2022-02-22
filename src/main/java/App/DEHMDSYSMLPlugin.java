@@ -25,31 +25,41 @@
 package App;
 import static org.picocontainer.Characteristics.CACHE;
 
-import java.awt.event.KeyEvent;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.SwingUtilities;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.picocontainer.Characteristics;
-import org.picocontainer.parameters.ComponentParameter;
 
 import com.nomagic.actions.AMConfigurator;
 import com.nomagic.actions.ActionsCategory;
 import com.nomagic.actions.ActionsManager;
 import com.nomagic.actions.NMAction;
+import com.nomagic.magicdraw.actions.ActionsConfiguratorsManager;
 import com.nomagic.magicdraw.actions.ActionsID;
 import com.nomagic.magicdraw.actions.BrowserContextAMConfigurator;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.plugins.Plugin;
 import com.nomagic.magicdraw.ui.browser.Tree;
-import com.nomagic.magicdraw.ui.browser.actions.x;
-import com.nomagic.magicdraw.ui.diagrams.symboldiagram.storage.ActionCategory;
-import com.nomagic.task.ProgressStatus;
-import com.nomagic.task.RunnableWithProgress;
-import com.nomagic.magicdraw.actions.ActionsConfiguratorsManager;
 
+import Actions.Browser.MapAction;
+import Actions.ToolBar.OpenHubBrowserPanelAction;
+import DstController.DstController;
+import DstController.IDstController;
+import DstController.IMagicDrawProjectEventListener;
+import DstController.MagicDrawProjectEventListener;
+import HubController.IHubController;
+import MappingRules.BlockDefinitionMappingRule;
+import MappingRules.RequirementMappingRule;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
+import Services.MagicDrawUILog.MagicDrawUILogService;
+import Services.MappingConfiguration.IMappingConfigurationService;
+import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
+import Services.MappingEngineService.IMappingEngineService;
+import Services.MappingEngineService.MappingEngineService;
+import Utils.ImageLoader.ImageLoader;
 import ViewModels.ElementDefinitionImpactViewViewModel;
 import ViewModels.HubBrowserPanelViewModel;
 import ViewModels.MagicDrawImpactViewPanelViewModel;
@@ -66,22 +76,6 @@ import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
-import cdp4common.dto.Category;
-import net.sf.ehcache.statistics.extended.ExtendedStatistics.Statistic;
-import Actions.Browser.MapAction;
-import Actions.ToolBar.*;
-import DstController.DstController;
-import DstController.IDstController;
-import HubController.IHubController;
-import MappingRules.BlockDefinitionMappingRule;
-import MappingRules.RequirementMappingRule;
-import Services.MagicDrawUILog.IMagicDrawUILogService;
-import Services.MagicDrawUILog.MagicDrawUILogService;
-import Services.MappingConfiguration.IMappingConfigurationService;
-import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
-import Services.MappingEngineService.IMappingEngineService;
-import Services.MappingEngineService.MappingEngineService;
-import Utils.ImageLoader.ImageLoader;
 
 public class DEHMDSYSMLPlugin extends Plugin
 {
@@ -193,8 +187,8 @@ public class DEHMDSYSMLPlugin extends Plugin
     {
         try
         {
-            AppContainer.Container.addConfig("shouldListenForProjectChanges", true);
-            AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IDstController.class, DstController.class);
+            AppContainer.Container.as(CACHE).addComponent(IDstController.class, DstController.class);
+            AppContainer.Container.addComponent(IMagicDrawProjectEventListener.class, MagicDrawProjectEventListener.class);
             AppContainer.Container.addConfig(MappingEngineService.AssemblyParameterName, BlockDefinitionMappingRule.class.getPackage());
             AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IMappingEngineService.class, MappingEngineService.class);
             AppContainer.Container.as(CACHE).addComponent(MapAction.class);
