@@ -34,6 +34,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -109,7 +110,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * The string that indicates the language code for the {@linkplain Definition} for {@linkplain ElementDefinition}s
      * That contains the MagicDraw Id of the mapped {@linkplain Block}
      */
-    private static final String MDIID = "MDIID";    
+    public static final String MDIID = "MDIID";    
 
     /**
      * The string that specifies the {@linkplain ElementDefinition} representing ports
@@ -617,8 +618,11 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 continue;
             }
             
+            Predicate<Parameter> areParameterParameterTypeShortNameEqualsPredicate = 
+                    x -> this.AreShortNamesEquals(x.getParameterType(), GetShortName(property.getName()));
+            
             Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
-                    .filter(x -> this.AreShortNamesEquals(x.getParameterType(), property.getName()))
+                    .filter(areParameterParameterTypeShortNameEqualsPredicate)
                     .findAny();
 
             Ref<ParameterType> refParameterType = new Ref<>(ParameterType.class);
@@ -670,6 +674,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             this.ProcessBindingConnectors(connectors, property, parameter);
             this.UpdateValueSet(parameter, refValue);
 
+            elementDefinition.getParameter().removeIf(areParameterParameterTypeShortNameEqualsPredicate);
+            elementDefinition.getParameter().add(parameter);
+            
             this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
         }
         
@@ -698,28 +705,20 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 .orElseGet(() -> 
                 {
                     MappedElementDefinitionRowViewModel element = 
-                            new MappedElementDefinitionRowViewModel(definitionBlock, MappingDirection.FromDstToHub);
+                            new MappedElementDefinitionRowViewModel(this.GetOrCreateElementDefinition(definitionBlock), definitionBlock, MappingDirection.FromDstToHub);
                     
                     this.elements.add(element);                    
                     return element;
-        
                 });
         
-        if(mappedElement.GetHubElement() == null)
-        {
-            mappedElement.SetHubElement(this.GetOrCreateElementDefinition(definitionBlock));
-        }
-        else
-        {
-            mappedElement.SetHubElement(mappedElement.GetHubElement().clone(true));
-        }
-
         this.MapCategories(mappedElement.GetHubElement(), definitionBlock);
         this.MapProperties(mappedElement.GetHubElement(), definitionBlock, partProperty);
-        
 
         if(elementDefinition.getContainedElement()
-                .stream().anyMatch(x -> AreTheseEquals(x.getIid(), mappedElement.GetHubElement().getIid())))
+                .stream().anyMatch(x -> AreTheseEquals(x.getElementDefinition().getIid(), mappedElement.GetHubElement().getIid())
+                && x.getElementDefinition().getDefinition().stream()
+                        .filter(d -> AreTheseEquals(d.getLanguageCode(), MDIID))
+                        .anyMatch(d -> AreTheseEquals(d.getContent(), definitionBlock.getID()))))
         {
             return;
         }

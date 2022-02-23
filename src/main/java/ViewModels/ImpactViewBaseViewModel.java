@@ -185,7 +185,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         return thing.getOriginal() != null || !this.hubController.TryGetThingById(thing.getIid(), new Ref<TCurrentThing>(clazz));
     }
-        
+
     /**
      * Computes the differences between the current model and the elements present in the {@linkplain IDstController}.{@linkplain GetDstMapResult}
      */
