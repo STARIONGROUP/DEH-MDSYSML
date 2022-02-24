@@ -1,5 +1,5 @@
 /*
- * MDSysMLProjectEventListener.java
+ * MagicDrawProjectEventListener.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -23,30 +23,72 @@
  */
 package DstController;
 
+import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
 
 import Reactive.ObservableValue;
+import io.reactivex.Observable;
 
 /**
- * The {@linkplain MDSysMLProjectEventListener} is a {@linkplain ProjectEventListener}. It listens for changes happening in Cameo/MagicDraw on the open project
+ * The {@linkplain MagicDrawProjectEventListener} is a {@linkplain ProjectEventListener}. It listens for changes happening in Cameo/MagicDraw on the open project
  */
-public final class MDSysMLProjectEventListener implements ProjectEventListener
+public final class MagicDrawProjectEventListener implements ProjectEventListener, IMagicDrawProjectEventListener
 {
+    /**
+     * The {@linkplain Application} instance
+     */
+    private Application application = Application.getInstance();
+    
+    /**
+     * Backing field for {@linkplain HasOneDocumentOpen}
+     */
+    private final ObservableValue<Boolean> hasOneDocumentOpen = new ObservableValue<>(false, Boolean.class);
+    
     /**
      * Gets a reactive value indicating if Cameo/MagicDraw has an open document
      */
-    protected final ObservableValue<Boolean> HasOneDocumentOpenObservable = new ObservableValue<>(false, Boolean.class);
+    @Override
+    public ObservableValue<Boolean> HasOneDocumentOpen()
+    {
+        return this.hasOneDocumentOpen;
+    }
+
+    /**
+     * Backing field for {@linkplain ProjectSaved}
+     */
+    private final ObservableValue<Boolean> projectSaved = new ObservableValue<>(false, Boolean.class);
 
     /**
      * Gets a reactive value indicating that the open document has been saved
      */
-    protected final ObservableValue<Boolean> ProjectSavedObservable = new ObservableValue<>(false, Boolean.class);
+    @Override
+    public Observable<Boolean> ProjectSaved()
+    {
+        return this.projectSaved.Observable();
+    }
     
     /**
-     * Gets a reactive {@linkplain Project} of type {@linkplain ObservableValue} of type {@linkplain Project}
+     * Backing field for {@linkplain OpenDocument}
      */
-    protected final ObservableValue<Project> OpenDocumentObservable = new ObservableValue<>(Project.class);
+    private final ObservableValue<Project> openDocument = new ObservableValue<>(Project.class);
+
+    /**
+     * Gets an {@linkplain ObservableValue} of type {@linkplain Project}
+     */
+    @Override
+    public ObservableValue<Project> OpenDocument()
+    {
+        return this.openDocument;
+    }
+    
+    /**
+     * Initializes a new {@linkplain MagicDrawProjectEventListener}
+     */
+    public MagicDrawProjectEventListener()
+    {
+        this.application.addProjectEventListener(this);
+    }
     
     /**
      * Occurs when the project gets saved
@@ -57,7 +99,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectSaved(Project project, boolean isSaved) 
     {
-        this.ProjectSavedObservable.Value(isSaved);
+        this.openDocument.Value(this.application.getProject());
+        this.projectSaved.Value(isSaved);
     }
     
     /**
@@ -67,8 +110,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectClosed(Project project)
     {
-        this.HasOneDocumentOpenObservable.Value(false);
-        this.OpenDocumentObservable.Value(null);
+        this.hasOneDocumentOpen.Value(false);
+        this.openDocument.Value(null);
     }
 
     /**
@@ -78,8 +121,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectCreated(Project project)
     {
-        this.HasOneDocumentOpenObservable.Value(true);
-        this.OpenDocumentObservable.Value(project);
+        this.hasOneDocumentOpen.Value(true);
+        this.openDocument.Value(project);
     }
 
     /**
@@ -89,8 +132,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectOpened(Project project)
     {
-        this.OpenDocumentObservable.Value(project);
-        this.HasOneDocumentOpenObservable.Value(true);
+        this.openDocument.Value(project);
+        this.hasOneDocumentOpen.Value(true);
     }
 
     /**
@@ -100,8 +143,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectOpenedFromGUI(Project project)
     {
-        this.OpenDocumentObservable.Value(project);
-        this.HasOneDocumentOpenObservable.Value(true);
+        this.openDocument.Value(project);
+        this.hasOneDocumentOpen.Value(true);
     }
 
     /**
@@ -111,8 +154,8 @@ public final class MDSysMLProjectEventListener implements ProjectEventListener
     @Override
     public void projectReplaced(Project project, Project project2)
     {
-        this.OpenDocumentObservable.Value(project2);
-        this.HasOneDocumentOpenObservable.Value(true);
+        this.openDocument.Value(project2);
+        this.hasOneDocumentOpen.Value(true);
     }
 
     /**

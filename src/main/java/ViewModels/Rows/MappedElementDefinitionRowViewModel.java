@@ -28,7 +28,6 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import Enumerations.MappingDirection;
 
 import cdp4common.engineeringmodeldata.ElementDefinition;
-import cdp4common.engineeringmodeldata.RequirementsSpecification;
 
 /**
  * The {@linkplain MappedElementDefinitionRowViewModel} is the row view model that represents a mapping between an {@linkplain ElementDefinition }

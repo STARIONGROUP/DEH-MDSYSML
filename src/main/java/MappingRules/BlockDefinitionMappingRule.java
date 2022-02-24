@@ -23,10 +23,10 @@
  */
 package MappingRules;
 
-import static Utils.Operators.Operators.AreTheseEquals; 
+import static Utils.Operators.Operators.AreTheseEquals;
 import static Utils.Stereotypes.StereotypeUtils.GetShortName;
+import static Utils.Stereotypes.StereotypeUtils.IsOwnedBy;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,10 +34,9 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -72,7 +71,6 @@ import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
-import static Utils.Stereotypes.StereotypeUtils.IsOwnedBy;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
@@ -112,7 +110,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * The string that indicates the language code for the {@linkplain Definition} for {@linkplain ElementDefinition}s
      * That contains the MagicDraw Id of the mapped {@linkplain Block}
      */
-    private static final String MDIID = "MDIID";    
+    public static final String MDIID = "MDIID";    
 
     /**
      * The string that specifies the {@linkplain ElementDefinition} representing ports
@@ -254,9 +252,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             
             this.MapCategories(mappedElement.GetHubElement(), mappedElement.GetDstElement());
             this.MapProperties(mappedElement.GetHubElement(), mappedElement.GetDstElement(), null);
-            this.MapPorts(mappedElement);
         }
         
+        this.MapPorts();
         this.ProcessInterfaces();
         this.ProcessConnectorProperties();
     }
@@ -354,7 +352,18 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
 
         return () -> relationship;
     }
-
+    
+    /**
+     * Maps the attached ports of all the mapped {@linkplain Class}
+     */
+    private void MapPorts()
+    {
+        for (MappedElementDefinitionRowViewModel mappedElement : this.elements)
+        {
+            this.MapPorts(mappedElement);
+        }
+    }
+    
     /**
      * Maps the attached ports of the {@linkplain Class} mapped in the specified {@linkplain MappedElementDefinitionRowViewModel}
      * 
@@ -442,6 +451,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         
         return  nameAfterContainer;
     }
+    
     /**
      * Gets an existing or creates an {@linkplain ElementDefinition} that will be mapped to the {@linkplain Class} 
      * represented in the provided {@linkplain MappedElementDefinitionRowViewModel}
@@ -474,6 +484,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     .getElement()
                     .stream()
                     .filter(x -> AreTheseEquals(x.getShortName(), shortName))
+                    .map(x -> x.clone(true))
                     .findFirst()
                     .orElse(null));
         
@@ -498,7 +509,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             return elementDefinition;
         }
 
-        return elementDefinition.clone(true);
+        return elementDefinition;
     }
     
     /**
@@ -607,8 +618,11 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 continue;
             }
             
+            Predicate<Parameter> areParameterParameterTypeShortNameEqualsPredicate = 
+                    x -> this.AreShortNamesEquals(x.getParameterType(), GetShortName(property.getName()));
+            
             Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
-                    .filter(x -> this.AreShortNamesEquals(x.getParameterType(), property.getName()))
+                    .filter(areParameterParameterTypeShortNameEqualsPredicate)
                     .findAny();
 
             Ref<ParameterType> refParameterType = new Ref<>(ParameterType.class);
@@ -660,6 +674,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             this.ProcessBindingConnectors(connectors, property, parameter);
             this.UpdateValueSet(parameter, refValue);
 
+            elementDefinition.getParameter().removeIf(areParameterParameterTypeShortNameEqualsPredicate);
+            elementDefinition.getParameter().add(parameter);
+            
             this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
         }
         
@@ -688,27 +705,20 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 .orElseGet(() -> 
                 {
                     MappedElementDefinitionRowViewModel element = 
-                            new MappedElementDefinitionRowViewModel(definitionBlock, MappingDirection.FromDstToHub);
+                            new MappedElementDefinitionRowViewModel(this.GetOrCreateElementDefinition(definitionBlock), definitionBlock, MappingDirection.FromDstToHub);
                     
                     this.elements.add(element);                    
                     return element;
-        
                 });
         
-        if(mappedElement.GetHubElement() == null)
-        {
-            mappedElement.SetHubElement(this.GetOrCreateElementDefinition(definitionBlock));
-        }
-        else
-        {
-            mappedElement.SetHubElement(mappedElement.GetHubElement().clone(true));
-        }
-
+        this.MapCategories(mappedElement.GetHubElement(), definitionBlock);
         this.MapProperties(mappedElement.GetHubElement(), definitionBlock, partProperty);
-        
 
         if(elementDefinition.getContainedElement()
-                .stream().anyMatch(x -> AreTheseEquals(x.getName(), mappedElement.GetHubElement().getName())))
+                .stream().anyMatch(x -> AreTheseEquals(x.getElementDefinition().getIid(), mappedElement.GetHubElement().getIid())
+                && x.getElementDefinition().getDefinition().stream()
+                        .filter(d -> AreTheseEquals(d.getLanguageCode(), MDIID))
+                        .anyMatch(d -> AreTheseEquals(d.getContent(), definitionBlock.getID()))))
         {
             return;
         }

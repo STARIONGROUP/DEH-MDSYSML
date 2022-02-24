@@ -206,4 +206,4 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
             this.setForeground(list.getForeground());
         }
     }
-} 
+}

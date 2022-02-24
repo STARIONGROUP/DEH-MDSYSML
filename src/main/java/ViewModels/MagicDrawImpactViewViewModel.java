@@ -33,8 +33,6 @@ import java.util.Optional;
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
-import com.nomagic.magicdraw.core.Project;
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
@@ -87,10 +85,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
                 
         this.dstController.OpenDocumentHasBeenSaved().subscribe(hasBeenSaved -> 
             {
-                if(hasBeenSaved)
-                {
-                    this.UpdateBrowserTrees(this.dstController.HasOneDocumentOpen());
-                }
+                this.UpdateBrowserTrees(this.dstController.HasOneDocumentOpen());
             });
         
         this.dstController.GetHubMapResult()

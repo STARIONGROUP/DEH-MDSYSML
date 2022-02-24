@@ -1,5 +1,5 @@
 /*
- * IClassRowViewModel.java
+ * IMagicDrawProjectEventListener.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,32 +21,30 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ViewModels.MagicDrawObjectBrowser.Interfaces;
+package DstController;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.magicdraw.core.Project;
 
-import Utils.Stereotypes.Stereotypes;
-import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
-import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
+import Reactive.ObservableValue;
+import io.reactivex.Observable;
 
 /**
- * The {@linkplain IElementRowViewModel} is the interface definition for all {@linkplain ElementRowViewModel}
- * 
- * @param TElement the type of {@linkplain Element} this row view model represents
+ * The {@linkplain IMagicDrawProjectEventListener} is the interface definition for {@linkplain MagicDrawProjectEventListener}
  */
-public interface IElementRowViewModel<TElement extends Element> extends IRowViewModel
+public interface IMagicDrawProjectEventListener
 {
     /**
-     * Gets the string representation of the type of thing represented
-     * 
-     * @return a {@linkplain Stereotypes}
+     * Gets a reactive value indicating that the open document has been saved
      */
-    Stereotypes GetClassKind();
+    Observable<Boolean> ProjectSaved();
 
     /**
-     * Gets the name of the {@linkplain Element} represented by this row view model
-     * 
-     * @return the represented {@linkplain Element}
+     * Gets a reactive value indicating if Cameo/MagicDraw has an open document
      */
-    TElement GetElement();
+    ObservableValue<Boolean> HasOneDocumentOpen();
+
+    /**
+     * Gets an {@linkplain ObservableValue} of type {@linkplain Project}
+     */
+    ObservableValue<Project> OpenDocument();
 }

@@ -49,7 +49,6 @@ import HubController.HubController;
 import HubController.IHubController;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
-import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawBlockCollection;
@@ -96,6 +95,7 @@ class DstControllerTestFixture
     private Parameter parameter1;
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
     private IMagicDrawUILogService logService;
+    private IMagicDrawProjectEventListener projectEventListener;
 
     /**
      * @throws java.lang.Exception
@@ -107,6 +107,7 @@ class DstControllerTestFixture
         this.hubController = mock(HubController.class);
         this.mappingConfigurationService = mock(IMagicDrawMappingConfigurationService.class);
         this.logService = mock(IMagicDrawUILogService.class);
+        this.projectEventListener = mock(IMagicDrawProjectEventListener.class);
         
         this.uri = URI.create("http://t.est");
         this.cache = com.google.common.cache.CacheBuilder.newBuilder().build();
@@ -131,7 +132,7 @@ class DstControllerTestFixture
         when(this.hubController.GetIterationTransaction()).thenReturn(Pair.of(this.iteration.clone(false), mock(ThingTransaction.class)));
         when(this.hubController.Refresh()).thenReturn(true);
 
-        this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, this.mappingConfigurationService, false);
+        this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, this.mappingConfigurationService, this.projectEventListener);
     }
 
     private void SetSession() throws Exception

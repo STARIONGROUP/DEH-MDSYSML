@@ -290,7 +290,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         {            
             Definition definition = refRequirement.Get().getDefinition()
                     .stream()
-                    .filter(x -> x.getLanguageCode().toLowerCase().equals("en"))
+                    .filter(x -> x.getLanguageCode().equalsIgnoreCase("en"))
                     .findFirst()
                     .map(x -> x.clone(true))
                     .orElse(this.createDefinition());

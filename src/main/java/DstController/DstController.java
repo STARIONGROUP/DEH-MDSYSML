@@ -28,6 +28,7 @@ import static Utils.Operators.Operators.AreTheseEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,6 +47,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import MappingRules.BlockDefinitionMappingRule;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
@@ -100,7 +102,7 @@ public final class DstController implements IDstController
     /**
      * The {@linkplain ProjectEventListener} to monitor project open and closed in Cameo/MagicDraw
      */
-    private final MDSysMLProjectEventListener projectEventListener = new MDSysMLProjectEventListener();
+    private final IMagicDrawProjectEventListener projectEventListener;
 
     /**
      * The {@linkplain IMappingEngine} instance
@@ -130,7 +132,7 @@ public final class DstController implements IDstController
     @Override
     public Project OpenDocument() 
     {
-        return this.projectEventListener.OpenDocumentObservable.Value();
+        return this.projectEventListener.OpenDocument().Value();
     }
     
     /**
@@ -141,7 +143,7 @@ public final class DstController implements IDstController
     @Override
     public Observable<Boolean> OpenDocumentHasBeenSaved() 
     {
-        return this.projectEventListener.ProjectSavedObservable.Observable();
+        return this.projectEventListener.ProjectSaved();
     }
 
     /**
@@ -152,7 +154,7 @@ public final class DstController implements IDstController
     @Override
     public Observable<Boolean> HasOneDocumentOpenObservable()
     {
-        return this.projectEventListener.HasOneDocumentOpenObservable.Observable();
+        return this.projectEventListener.HasOneDocumentOpen().Observable();
     }
     
     /**
@@ -163,7 +165,7 @@ public final class DstController implements IDstController
     @Override
     public boolean HasOneDocumentOpen()
     {
-        return this.projectEventListener.HasOneDocumentOpenObservable.Value().booleanValue();
+        return this.projectEventListener.HasOneDocumentOpen().Value().booleanValue();
     }
     
     /**
@@ -280,21 +282,37 @@ public final class DstController implements IDstController
      * @param HubController the {@linkplain IHubController} instance
      * @param logService the {@linkplain IMagicDrawUILogService} instance
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService} instance
-     * @param shouldListenForProjectChanges indicates whether the {@linkplain DstController} should watch projects
+     * @param projectEventListener the {@linkplain IMagicDrawProjectEventListener} instance
      */
     public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawUILogService logService, 
-            IMagicDrawMappingConfigurationService mappingConfigurationService, boolean shouldListenForProjectChanges)
+            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawProjectEventListener projectEventListener)
     {
         this.mappingEngine = mappingEngine;
         this.hubController = hubController;
         this.logService = logService;
         this.mappingConfigurationService = mappingConfigurationService;
+        this.projectEventListener = projectEventListener;
         
-        if(shouldListenForProjectChanges)
+        this.InitializeObservables();
+    }
+
+    /**
+     * Initializes this {@linkplain DstController} {@linkplain Observable}s
+     */
+    private void InitializeObservables()
+    {            
+        this.OpenDocumentHasBeenSaved().subscribe(x -> this.LoadMapping());
+        
+        this.hubController.GetIsSessionOpenObservable().subscribe(isSessionOpen -> 
         {
-            Application applicationInstance = Application.getInstance();
-            applicationInstance.addProjectEventListener(this.projectEventListener);
-        }
+            if(!isSessionOpen)
+            {
+                this.dstMapResult.clear();
+                this.hubMapResult.clear();
+                this.selectedDstMapResultForTransfer.clear();
+                this.selectedHubMapResultForTransfer.clear();
+            }
+        });
     }
     
     /**
@@ -331,6 +349,8 @@ public final class DstController implements IDstController
         
         this.dstMapResult.clear();
         this.hubMapResult.clear();
+        this.selectedDstMapResultForTransfer.clear();
+        this.selectedHubMapResultForTransfer.clear();
         
         if(!allMappedMagicDrawElement.isEmpty())
         {
@@ -608,17 +628,42 @@ public final class DstController implements IDstController
     private void PrepareElementDefinitionForTransfer(Iteration iterationClone, ThingTransaction transaction, 
             ElementDefinition elementDefinition) throws TransactionException
     {
+        this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
+        
         for (ElementUsage elementUsage : elementDefinition.getContainedElement())
         {
             this.AddOrUpdateIterationAndTransaction(elementUsage.getElementDefinition(), iterationClone.getElement(), transaction);
+            this.PrepareDefinition(transaction, elementUsage.getElementDefinition());
             this.AddOrUpdateIterationAndTransaction(elementUsage, elementDefinition.getContainedElement(), transaction);
         }
-
-        this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
         
+        if(transaction.getAddedThing().stream().anyMatch(x -> AreTheseEquals(x.getIid(), elementDefinition.getIid())))
+        {
+            this.PrepareDefinition(transaction, elementDefinition);
+        }
+
         for(Parameter parameter : elementDefinition.getParameter())
         {            
             transaction.createOrUpdate(parameter);
+        }
+    }
+
+    /**
+     * Prepares any transferable {@linkplain Definition} from the provided {@linkplain ElementDefinition}
+     * 
+     * @param transaction the {@linkplain ThingTransaction}
+     * @param elementDefinition the {@linkplain ElementDefinition} that can contain a transferable {@linkplain Definition}
+     * @throws TransactionException
+     */
+    private void PrepareDefinition(ThingTransaction transaction, ElementDefinition elementDefinition) throws TransactionException
+    {
+        Optional<Definition> definition = elementDefinition.getDefinition().stream()
+                                                .filter(x -> AreTheseEquals(x.getLanguageCode(), BlockDefinitionMappingRule.MDIID))
+                                                .findFirst();
+        
+        if(definition.isPresent())
+        {
+            this.AddOrUpdateIterationAndTransaction(definition.get(), elementDefinition.getDefinition(), transaction);
         }
     }
 
@@ -683,11 +728,11 @@ public final class DstController implements IDstController
     {
         try
         {
-            if(containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
+            if(thing.getContainer() == null || containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
             {
                 containerList.add(thing);
             }
-
+            
             transaction.createOrUpdate(thing);
         }
         catch (Exception exception)
