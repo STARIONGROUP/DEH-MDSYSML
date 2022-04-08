@@ -23,6 +23,7 @@
  */
 
 package App;
+
 import static org.picocontainer.Characteristics.CACHE;
 
 import java.util.List;
@@ -45,6 +46,8 @@ import com.nomagic.magicdraw.plugins.Plugin;
 import com.nomagic.magicdraw.ui.browser.Tree;
 
 import Actions.Browser.MapAction;
+import Actions.ToolBar.LocalExchangeHistoryAction;
+import Actions.ToolBar.MagicDrawAdapterRibbonActionCategory;
 import Actions.ToolBar.OpenHubBrowserPanelAction;
 import DstController.DstController;
 import DstController.IDstController;
@@ -53,12 +56,17 @@ import DstController.MagicDrawProjectEventListener;
 import HubController.IHubController;
 import MappingRules.BlockDefinitionMappingRule;
 import MappingRules.RequirementMappingRule;
+import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
+import Services.LocalExchangeHistory.LocalExchangeHistoryService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MagicDrawUILog.MagicDrawUILogService;
 import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
+import Services.VersionNumber.AdapterVersionNumberService;
+import Services.VersionNumber.IAdapterVersionNumberService;
+import Services.VersionNumber.MagicDrawAdapterVersionNumberService;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.ElementDefinitionImpactViewViewModel;
 import ViewModels.HubBrowserPanelViewModel;
@@ -76,6 +84,7 @@ import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
+import cdp4common.Version;
 
 public class DEHMDSYSMLPlugin extends Plugin
 {
@@ -94,7 +103,7 @@ public class DEHMDSYSMLPlugin extends Plugin
 
 	    SwingUtilities.invokeLater(() -> 
 	    {
-	        try 
+	        try
 	        {
 	            AMConfigurator configurator = new AMConfigurator()
                 {
@@ -102,22 +111,22 @@ public class DEHMDSYSMLPlugin extends Plugin
 	                {
 	                   NMAction found = manager.getActionFor(ActionsID.NEW_PROJECT);
 	                   
-	                   if( found != null )
+	                   if(found != null)
 	                   {
 	                        // find the category of the "New Project" action.
 	                        ActionsCategory category = (ActionsCategory)manager.getActionParent(found);
-	             	             
+
 	                        // Get all actions from this category (menu).
 	                        List<NMAction> actionsInCategory = category.getActions();
 	                        
 	                        //Add the action after the "New Project" action.
 	                        int indexOfFound = actionsInCategory.indexOf(found);
-	                        actionsInCategory.add(indexOfFound+1, new OpenHubBrowserPanelAction());
+                            actionsInCategory.add(indexOfFound+1, new MagicDrawAdapterRibbonActionCategory());
 	             
 	                        // Set all actions.
 	                        category.setActions(actionsInCategory);
 	                    }
-	                };
+	                }
                 };
 	            
                 ActionsConfiguratorsManager.getInstance().addMainToolbarConfigurator(configurator);
@@ -147,7 +156,7 @@ public class DEHMDSYSMLPlugin extends Plugin
                 
                 ActionsConfiguratorsManager.getInstance().addContainmentBrowserContextConfigurator(configuratorContext);
                 
-                Application.getInstance().getGUILog().log("[MDSYSMLPlugin] Initialized with success!");
+                Application.getInstance().getGUILog().log(String.format("[MDSYSMLPlugin] %s Initialized with success!", AppContainer.Container.getComponent(IAdapterVersionNumberService.class).GetVersion()));
 			}
 	        catch (Exception exception)
 	        {
@@ -197,6 +206,7 @@ public class DEHMDSYSMLPlugin extends Plugin
 
             AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
             AppContainer.Container.addComponent(IMagicDrawUILogService.class, MagicDrawUILogService.class);
+            AppContainer.Container.addComponent(IAdapterVersionNumberService.class, MagicDrawAdapterVersionNumberService.class);
 
             AppContainer.Container.addComponent(IElementDefinitionImpactViewViewModel.class, ElementDefinitionImpactViewViewModel.class);
             AppContainer.Container.addComponent(IRequirementImpactViewViewModel.class, RequirementImpactViewViewModel.class);

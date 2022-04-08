@@ -87,13 +87,13 @@ class RequirementImpactViewViewModelTestFixture
     @Test
     void VerifyComputeDifferences()
     {
-        assertEquals(null, this.viewModel.BrowserTreeModel.Value());
+        assertEquals(null, this.viewModel.browserTreeModel.Value());
         this.isSessionOpen.Value(true);
         this.viewModel.SetOutlineModel(this.hubController.GetOpenIteration());
-        assertNotNull(this.viewModel.BrowserTreeModel);
-        assertNotNull(this.viewModel.BrowserTreeModel.Value());
-        assertEquals(IterationRequirementRowViewModel.class, this.viewModel.BrowserTreeModel.Value().getRoot().getClass());
-        assertEquals(1, ((IterationRequirementRowViewModel)this.viewModel.BrowserTreeModel.Value().getRoot()).GetContainedRows().size());
+        assertNotNull(this.viewModel.browserTreeModel);
+        assertNotNull(this.viewModel.browserTreeModel.Value());
+        assertEquals(IterationRequirementRowViewModel.class, this.viewModel.browserTreeModel.Value().getRoot().getClass());
+        assertEquals(1, ((IterationRequirementRowViewModel)this.viewModel.browserTreeModel.Value().getRoot()).GetContainedRows().size());
     }
 
     @Test

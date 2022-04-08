@@ -90,7 +90,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
         
         this.dstController.GetHubMapResult()
             .ItemsAdded()
-            .subscribe(x -> this.ComputeDifferences(), this.Logger::catching);
+            .subscribe(x -> this.ComputeDifferences(), this.logger::catching);
         
         this.dstController.GetHubMapResult()
             .IsEmpty()
@@ -177,7 +177,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
         }
         catch(Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return Arrays.asList();
         }
     }
@@ -190,7 +190,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
      */
     protected IElementRowViewModel<?> GetRowViewModelFromClass(Class element)
     {
-        RootRowViewModel rootRowViewModel = (RootRowViewModel) this.BrowserTreeModel.Value().getRoot();
+        RootRowViewModel rootRowViewModel = (RootRowViewModel) this.browserTreeModel.Value().getRoot();
         
         Optional<IElementRowViewModel<?>> optionalDefinition = rootRowViewModel.GetContainedRows().stream()
             .filter(x -> AreTheseEquals(x.GetElement().getID(), element.getID()))
@@ -221,7 +221,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
             this.SetOutlineModel(DefaultOutlineModel.createOutlineModel(treeModel, new MagicDrawObjectBrowserTreeRowViewModel(), true));
         }
     
-        this.IsTheTreeVisible.Value(isConnected);
+        this.isTheTreeVisible.Value(isConnected);
     }
     
     /**
@@ -232,7 +232,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
     protected void SetOutlineModel(OutlineModel model)
     {
         this.UpdateHighlightOnRows(model);
-        this.BrowserTreeModel.Value(model);
+        this.browserTreeModel.Value(model);
     }
 
     /**

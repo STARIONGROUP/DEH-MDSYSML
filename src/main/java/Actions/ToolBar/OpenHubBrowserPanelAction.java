@@ -30,11 +30,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jidesoft.docking.DockingManager;
+import com.nomagic.actions.NMAction;
 import com.nomagic.magicdraw.actions.MDAction;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.ui.MainFrame;
 
 import App.AppContainer;
+import DstController.IDstController;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
@@ -57,6 +59,9 @@ public class OpenHubBrowserPanelAction extends MDAction
      */
     private MagicDrawHubBrowserPanel hubBrowserPanel;
 
+    /**
+     * The {@link MagicDrawImpactViewPanel} instance
+     */
     private MagicDrawImpactViewPanel impactViewPanel;
     
     /**
@@ -64,14 +69,30 @@ public class OpenHubBrowserPanelAction extends MDAction
      */
     public OpenHubBrowserPanelAction()
     {
-         super("Hub Browser", "Open/Close the Hub Browser Panel", null, null);
+         super("Hub Browser", "Open/Close the Hub Browser Panels", null, null);
          this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
 
-         this.hubBrowserPanel = new MagicDrawHubBrowserPanel();
-         this.hubBrowserPanel.SetDataContext(AppContainer.Container.getComponent(IHubBrowserPanelViewModel.class));
+         this.InitializesPanels();
+         
+         AppContainer.Container.getComponent(IDstController.class).HasOneDocumentOpenObservable().subscribe(x -> 
+         {
+             if(!x.booleanValue())
+             {
+                 this.InitializesPanels();
+             }
+         });
+    }
 
-         this.impactViewPanel = new MagicDrawImpactViewPanel();
-         this.impactViewPanel.SetDataContext(AppContainer.Container.getComponent(IMagicDrawImpactViewPanelViewModel.class));
+    /**
+     * Initializes the Hub panels
+     */
+    private void InitializesPanels()
+    {
+        this.hubBrowserPanel = new MagicDrawHubBrowserPanel();
+        this.hubBrowserPanel.SetDataContext(AppContainer.Container.getComponent(IHubBrowserPanelViewModel.class));
+
+        this.impactViewPanel = new MagicDrawImpactViewPanel();
+        this.impactViewPanel.SetDataContext(AppContainer.Container.getComponent(IMagicDrawImpactViewPanelViewModel.class));
     }
     
     /**
@@ -118,7 +139,7 @@ public class OpenHubBrowserPanelAction extends MDAction
         }
         catch (Exception exception) 
         {
-            this.logger.error(String.format("OpenHubBrowserPanelAction actionPerformed has thrown an exception %s \n\r %s", exception.toString(), exception.getStackTrace()));
+            this.logger.error(String.format("OpenHubBrowserPanelAction actionPerformed has thrown an exception %s %n %s", exception.toString(), exception.getStackTrace()));
             throw exception;
         }
     }
