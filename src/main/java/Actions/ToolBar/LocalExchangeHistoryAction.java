@@ -36,6 +36,9 @@ import Utils.ImageLoader.ImageLoader;
 import Views.MagicDrawHubBrowserPanel;
 import Views.ExchangeHistory.ExchangeHistoryDialog;
 
+/**
+ * The {@linkplain LocalExchangeHistoryAction} is the {@link MDAction} that shows the {@linkplain ExchangeHistoryDialog}
+ */
 @SuppressWarnings("serial")
 public class LocalExchangeHistoryAction extends MDAction
 {
