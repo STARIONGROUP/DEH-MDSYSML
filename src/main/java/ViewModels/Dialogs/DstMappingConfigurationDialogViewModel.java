@@ -584,6 +584,11 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
     @Override
     public void WhenMapToNewHubElementCheckBoxChanged(boolean selected)
     {
+        if(this.selectedMappedElement.Value() == null)
+        {
+            return;
+        }
+        
         if(selected && !this.selectedMappedElement.Value().GetShouldCreateNewTargetElementValue())
         {
             this.selectedMappedElement.Value().SetHubElement(null);

@@ -38,7 +38,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
@@ -50,6 +49,7 @@ import HubController.IHubController;
 import MappingRules.BlockDefinitionMappingRule;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
+import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingConfiguration.IMappingConfigurationService;
@@ -64,6 +64,7 @@ import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+import cdp4common.ChangeKind;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
@@ -123,7 +124,12 @@ public final class DstController implements IDstController
      * The {@linkplain IMappingConfigurationService} instance
      */
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
-    
+
+    /**
+     * The {@linkplain ILocalExchangeHistoryService} instance
+     */
+    private final ILocalExchangeHistoryService exchangeHistory;
+
     /**
      * Gets the open Document ({@linkplain Project}) from the running instance of Cameo/MagicDraw
      * 
@@ -283,15 +289,18 @@ public final class DstController implements IDstController
      * @param logService the {@linkplain IMagicDrawUILogService} instance
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService} instance
      * @param projectEventListener the {@linkplain IMagicDrawProjectEventListener} instance
+     * @param exchangeHistory the {@linkplain ILocalExchangeHistoryService} instance
      */
     public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawUILogService logService, 
-            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawProjectEventListener projectEventListener)
+            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawProjectEventListener projectEventListener,
+            ILocalExchangeHistoryService exchangeHistory)
     {
         this.mappingEngine = mappingEngine;
         this.hubController = hubController;
         this.logService = logService;
         this.mappingConfigurationService = mappingConfigurationService;
         this.projectEventListener = projectEventListener;
+        this.exchangeHistory = exchangeHistory;
         
         this.InitializeObservables();
     }
@@ -493,6 +502,12 @@ public final class DstController implements IDstController
             Iteration iterationClone = iterationTransaction.getLeft();
             ThingTransaction transaction = iterationTransaction.getRight();
             
+            if(!this.hubController.TrySupplyAndCreateLogEntry(transaction))
+            {
+                this.logService.Append("Transfer to the HUB aborted!", NotificationSeverity.WARNING);
+                return true;
+            }            
+            
             this.PrepareThingsForTransfer(iterationClone, transaction);
 
             this.mappingConfigurationService.PersistExternalIdentifierMap(transaction, iterationClone);
@@ -566,6 +581,8 @@ public final class DstController implements IDstController
      */
     private void UpdateValueSet(ParameterValueSetBase clone, ValueSet valueSet)
     {
+        this.exchangeHistory.Append(clone, valueSet);
+        
         clone.setManual(valueSet.getManual());
         clone.setValueSwitch(valueSet.getValueSwitch());
     }
@@ -731,8 +748,13 @@ public final class DstController implements IDstController
             if(thing.getContainer() == null || containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
             {
                 containerList.add(thing);
+                this.exchangeHistory.Append(thing, ChangeKind.CREATE);
             }
-            
+            else
+            {
+                this.exchangeHistory.Append(thing, ChangeKind.UPDATE);
+            }
+                        
             transaction.createOrUpdate(thing);
         }
         catch (Exception exception)

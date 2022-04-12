@@ -258,7 +258,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         this.ProcessInterfaces();
         this.ProcessConnectorProperties();
     }
-
+    
     /**
      * Creates the {@linkplain BinaryRelationShip} that connects ports between each others
      * 
@@ -388,12 +388,33 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             elementUsage.setIid(UUID.randomUUID());
             elementUsage.setOwner(this.hubController.GetCurrentDomainOfExpertise());
             elementUsage.setElementDefinition(this.GetPortElementDefinition());
-            elementUsage.setInterfaceEnd(InterfaceEndKind.UNDIRECTED);
+            
+            elementUsage.setInterfaceEnd(this.GetInterfaceEndKind(port));
                         
             mappedElement.GetHubElement().getContainedElement().add(elementUsage);
             
             this.portsToConnect.add(Triple.of(port, mappedElement, elementUsage));
         }
+    }
+
+    /**
+     * Gets the {@linkplain InterfaceEndKind} of the specified {@linkplain Port}
+     * 
+     * @param port the {@linkplain Port}
+     * @return the {@linkplain InterfaceEndKind}
+     */
+    private InterfaceEndKind GetInterfaceEndKind(Port port)
+    {
+        if (port.getProvided().isEmpty() && !port.getRequired().isEmpty())
+        {
+            return InterfaceEndKind.INPUT;
+        }
+        else if(port.getRequired().isEmpty() && !port.getProvided().isEmpty())
+        {
+            return InterfaceEndKind.OUTPUT;
+        }
+        
+        return InterfaceEndKind.UNDIRECTED;
     }
 
     /**

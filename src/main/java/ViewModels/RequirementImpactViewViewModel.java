@@ -100,7 +100,7 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
         }
         catch(Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
         }
     }
         
@@ -127,7 +127,7 @@ public class RequirementImpactViewViewModel extends ImpactViewBaseViewModel<Requ
     protected IThingRowViewModel<RequirementsSpecification> GetRowViewModelFromThing(RequirementsSpecification thing)
     {
 
-        IterationRequirementRowViewModel iterationRowViewModel = (IterationRequirementRowViewModel) this.BrowserTreeModel.Value().getRoot();
+        IterationRequirementRowViewModel iterationRowViewModel = (IterationRequirementRowViewModel) this.browserTreeModel.Value().getRoot();
         
         Optional<RequirementSpecificationRowViewModel> optionalDefinition = iterationRowViewModel.GetContainedRows().stream()
             .filter(x -> x.GetThing().getIid().equals(thing.getIid()))

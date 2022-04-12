@@ -91,11 +91,11 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel 
     @Override
     public void BuildTree(String name, Collection<Element> elements)
     {
-        this.BrowserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
+        this.browserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
                 new MagicDrawObjectBrowserTreeViewModel(name, elements),
                 new MagicDrawObjectBrowserTreeRowViewModel(), true));
     
-        this.IsTheTreeVisible.Value(true);
+        this.isTheTreeVisible.Value(true);
     }
 
 
