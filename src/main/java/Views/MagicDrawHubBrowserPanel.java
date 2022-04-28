@@ -56,6 +56,8 @@ public class MagicDrawHubBrowserPanel extends MagicDrawBasePanel<IHubBrowserPane
     @Override
     public void Bind()
     {
+        this.View.GetElementDefinitionBrowser().GetContextMenu().SetDataContext(this.DataContext.GetElementDefinitionBrowserContextMenuViewModel());
+        this.View.GetRequirementBrowser().GetContextMenu().SetDataContext(this.DataContext.GetRequirementBrowserContextMenuViewModel());
         this.View.GetSessionControlPanel().SetDataContext(this.DataContext.GetSessionControlViewModel());
         this.View.getHubBrowserHeader().SetDataContext(this.DataContext.GetHubBrowserHeaderViewModel());
         this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionBrowserViewModel());

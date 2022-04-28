@@ -26,6 +26,7 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 
 import Utils.Stereotypes.Stereotypes;
@@ -71,13 +72,17 @@ public class BlockRowViewModel extends ClassRowViewModel
             {
                 this.GetContainedRows().add(new ReferencePropertyRowViewModel(this, property));
             }
-            else if(MDCustomizationForSysMLProfile.isValueProperty(property))
+            else if(MDCustomizationForSysMLProfile.isValueProperty(property) || property.getType() instanceof DataType)
             {
                 this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
             }
-            else if(MDCustomizationForSysMLProfile.isPartProperty(property))
+            else if(MDCustomizationForSysMLProfile.isPartProperty(property) || property.getType() instanceof Class)
             {
                 this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
+            }
+            else
+            {
+                this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
             }
         }
         

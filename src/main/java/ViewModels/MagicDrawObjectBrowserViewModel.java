@@ -30,33 +30,35 @@ import javax.swing.tree.TreeModel;
 import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import Reactive.ObservableValue;
+import Services.MagicDrawSession.IMagicDrawSessionService;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
-import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
-import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import Views.MagicDrawObjectBrowser;
-import cdp4common.commondata.Thing;
 import io.reactivex.Observable;
 
 /**
  * The {@linkplain MagicDrawObjectBrowserViewModel} is the view model for the MagicDraw object browser {@linkplain MagicDrawObjectBrowser}
  */
-public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel implements IMagicDrawObjectBrowserViewModel
+public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<ClassRowViewModel> implements IMagicDrawObjectBrowserViewModel
 {
+    /**
+     * The {@linkplain IMagicDrawSessionService}
+     */
+    protected IMagicDrawSessionService sessionService;
+    
     /**
      * Backing field for {@linkplain GetSelectedElement}
      */
-    private ObservableValue<ClassRowViewModel> selectedElement = new ObservableValue<ClassRowViewModel>(ClassRowViewModel.class);
-    
+    private ObservableValue<ClassRowViewModel> selectedElement = new ObservableValue<>(ClassRowViewModel.class);
+        
     /**
      * Gets the {@linkplain Observable} of {@linkplain ClassRowViewModel} that yields the selected element
      * 
@@ -66,6 +68,16 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel 
     public Observable<ClassRowViewModel> GetSelectedElement()
     {
         return this.selectedElement.Observable();
+    }
+    
+    /**
+     * Initializes a new {@linkplain MagicDrawObjectBrowser}
+     * 
+     * @param sessionService the {@linkplain IMagicDrawSessionService}
+     */
+    public MagicDrawObjectBrowserViewModel(IMagicDrawSessionService sessionService)
+    {
+        this.sessionService = sessionService;
     }
     
     /**
@@ -85,20 +97,26 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel 
     /**
      * Creates the {@linkplain OutlineModel} tree from the provided {@linkplain Collection} of {@linkplain Class}
      * 
-     * @param name the name of the root element of the tree
      * @param elements the {@linkplain Collection} of {@linkplain Element}
      */
     @Override
-    public void BuildTree(String name, Collection<Element> elements)
+    public void BuildTree(Collection<Element> elements)
     {
         this.browserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
-                new MagicDrawObjectBrowserTreeViewModel(name, elements),
+                new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProject().getName(), elements),
                 new MagicDrawObjectBrowserTreeRowViewModel(), true));
     
         this.isTheTreeVisible.Value(true);
     }
 
-
+    /**
+     * Creates the {@linkplain OutlineModel} tree
+     */
+    public void BuildTree()
+    {
+        this.BuildTree(this.sessionService.GetProjectElements());
+    }
+    
     /**
      * Updates this view model {@linkplain TreeModel}
      * 

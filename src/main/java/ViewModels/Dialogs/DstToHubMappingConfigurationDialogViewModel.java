@@ -1,5 +1,5 @@
 /*
- * DstMappingConfigurationDialogViewModel.java
+ * DstToHubMappingConfigurationDialogViewModel.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -32,35 +32,31 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import DstController.IDstController;
 import Enumerations.MappedElementRowStatus;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
-import Reactive.ObservableCollection;
-import Reactive.ObservableValue;
 import Utils.Ref;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
-import ViewModels.Dialogs.Interfaces.IDstMappingConfigurationDialogViewModel;
+import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
 import ViewModels.Interfaces.IElementDefinitionBrowserViewModel;
+import ViewModels.Interfaces.IObjectBrowserBaseViewModel;
 import ViewModels.Interfaces.IRequirementBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
+import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
+import ViewModels.Rows.MappedDstRequirementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
-import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
-import Views.Dialogs.DstMappingConfigurationDialog;
 import cdp4common.commondata.NamedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -69,150 +65,49 @@ import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import io.reactivex.Observable;
 
 /**
- * The {@linkplain DstMappingConfigurationDialogViewModel} is the main view model for the {@linkplain DstMappingConfigurationDialog}
+ * The {@linkplain DstToHubMappingConfigurationDialogViewModel} is the main view model for the {@linkplain DstMappingConfigurationDialog}
  */
-public class DstMappingConfigurationDialogViewModel implements IDstMappingConfigurationDialogViewModel
+public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigurationDialogViewModel<Element, Class, ClassRowViewModel> implements IDstToHubMappingConfigurationDialogViewModel
 {
-    /**
-     * This view model logger
-     */
-    private Logger logger = LogManager.getLogger();
-    
     /**
      * The {@linkplain IDstController}
      */
-    private IDstController dstController;
-    
-    /**
-     * The {@linkplain IHubController}
-     */
-    private IHubController hubController;
-    
-    /**
-     * Backing field for {@linkplain GetElementDefinitionBrowserViewModel}
-     */
-    private IElementDefinitionBrowserViewModel elementDefinitionBrowserViewModel;
-    
-    /**
-     * Gets the {@linkplain IElementDefinitionBrowserViewModel}
-     * 
-     * @return an {@linkplain IElementDefinitionBrowserViewModel}
-     */
-    @Override
-    public IElementDefinitionBrowserViewModel GetElementDefinitionBrowserViewModel()
-    {
-        return this.elementDefinitionBrowserViewModel;
-    }
-    
-    /**
-     * Backing field for {@linkplain GetRequirementBrowserViewModel}
-     */
-    private IRequirementBrowserViewModel requirementBrowserViewModel;
-    
-    /**
-     * Gets the {@linkplain IRequirementBrowserViewModel}
-     * 
-     * @return an {@linkplain IRequirementBrowserViewModel}
-     */
-    @Override
-    public IRequirementBrowserViewModel GetRequirementBrowserViewModel()
-    {
-        return this.requirementBrowserViewModel;
-    }
+    private final IDstController dstController;
 
     /**
-     * Backing field for {@linkplain GetMagicDrawObjectBrowserViewModel}
+     * The {@linkplain IMagicDrawObjectBrowserViewModel}
      */
-    private IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel;
+    private final IMagicDrawObjectBrowserViewModel magicDrawObjectBrowser;
 
     /**
-     * Gets the {@linkplain IMagicDrawObjectBrowserViewModel}
+     * Gets the DST {@linkplain IObjectBrowserBaseViewModel}
      * 
-     * @return an {@linkplain IMagicDrawObjectBrowserViewModel}
+     * @return an {@linkplain IObjectBrowserBaseViewModel}
      */
     @Override
-    public IMagicDrawObjectBrowserViewModel GetMagicDrawObjectBrowserViewModel()
+    public IObjectBrowserBaseViewModel<ClassRowViewModel> GetDstObjectBrowserViewModel()
     {
-        return this.magicDrawObjectBrowserViewModel;
+        return this.magicDrawObjectBrowser;
     }
-    
+        
     /**
-     * The {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel} that represents all the mapped elements
-     */
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> mappedElements = new ObservableCollection<>();
-    
-    /**
-     * Gets the collection of mapped element
-     * 
-     * @return {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
-     */
-    @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetMappedElementCollection()
-    {
-        return this.mappedElements;
-    }
-
-    /**
-     * Backing field for {@linkplain GetSelectedMappedElement}
-     */
-    private ObservableValue<MappedElementRowViewModel<? extends Thing, Class>> selectedMappedElement = new ObservableValue<>(null);
-    
-    /**
-     * The selected {@linkplain MappedElementRowViewModel}
-     * 
-     * @return a {@linkplain Observable} of {@linkplain MappedElementRowViewModel}
-     */
-    @Override
-    public Observable<MappedElementRowViewModel<? extends Thing, Class>> GetSelectedMappedElement()
-    {
-        return this.selectedMappedElement.Observable();
-    }
-
-    /**
-     * Sets the selectedMappedElement
-     * 
-     * @param mappedElement the {@linkplain MappedElementRowViewModel} that is to be selected
-     */
-    @Override
-    public void SetSelectedMappedElement(MappedElementRowViewModel<? extends Thing, Class> mappedElement)
-    {
-        mappedElement.SetIsSelected(true);
-        this.selectedMappedElement.Value(mappedElement);
-    }
-    
-    /**
-     * Backing field for {@linkplain GetShouldMapToNewHubElementCheckBoxBeEnabled}
-     */
-    private ObservableValue<Boolean> shouldMapToNewHubElementCheckBoxBeEnabled = new ObservableValue<>(true, Boolean.class);
-
-    /**
-     * Gets an {@linkplain Observable} value indicating whether the mapToNewHubElementCheckBox should be enabled 
-     * 
-     * @return an {@linkplain Observable} of {@linkplain Boolean}
-     */
-    public Observable<Boolean> GetShouldMapToNewHubElementCheckBoxBeEnabled()
-    {
-        return this.shouldMapToNewHubElementCheckBoxBeEnabled.Observable();
-    }
-    
-    /**
-     * Initializes a new {@linkplain DstMappingConfigurationDialogViewModel}
+     * Initializes a new {@linkplain DstToHubMappingConfigurationDialogViewModel}
      * 
      * @param dstController the {@linkplain IDstController}
      * @param hubController the {@linkplain IHubController}
      * @param elementDefinitionBrowserViewModel the {@linkplain IElementDefinitionBrowserViewModel}
      * @param requirementBrowserViewModel the {@linkplain IRequirementBrowserViewModel}
      * @param magicDrawObjectBrowserViewModel the {@linkplain IMagicDrawObjectBrowserViewModel}
+     * @param mappedElementListViewViewModel the {@linkplain ICapellaMappedElementListViewViewModel}
      */
-    public DstMappingConfigurationDialogViewModel(IDstController dstController, IHubController hubController, 
+    public DstToHubMappingConfigurationDialogViewModel(IDstController dstController, IHubController hubController, 
             IElementDefinitionBrowserViewModel elementDefinitionBrowserViewModel, IRequirementBrowserViewModel requirementBrowserViewModel,
-            IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel)
+            IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel, IMappedElementListViewViewModel<Class> mappedElementListViewViewModel)
     {
-        this.elementDefinitionBrowserViewModel = elementDefinitionBrowserViewModel;
-        this.requirementBrowserViewModel = requirementBrowserViewModel; 
+        super(dstController, hubController, elementDefinitionBrowserViewModel, requirementBrowserViewModel, mappedElementListViewViewModel);
+        
         this.dstController = dstController;
-        this.hubController = hubController;
-        this.magicDrawObjectBrowserViewModel = magicDrawObjectBrowserViewModel;
+        this.magicDrawObjectBrowser = magicDrawObjectBrowserViewModel;
         
         this.InitializeObservables();
         this.UpdateProperties();
@@ -221,15 +116,16 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
     /**
      * Initializes the {@linkplain Observable}s of this view model
      */
-    private void InitializeObservables()
+    @Override
+    protected void InitializeObservables()
     {
-        this.magicDrawObjectBrowserViewModel.GetSelectedElement()
+        this.magicDrawObjectBrowser.GetSelectedElement()
             .subscribe(x -> this.UpdateMappedElements(x));
         
-        this.elementDefinitionBrowserViewModel.GetSelectedElement()
+        this.GetElementDefinitionBrowserViewModel().GetSelectedElement()
             .subscribe(x -> this.SetHubElement(x.GetThing()));
 
-        this.requirementBrowserViewModel.GetSelectedElement()
+        this.GetRequirementBrowserViewModel().GetSelectedElement()
             .subscribe(x -> this.SetHubElement(x.GetThing()));
         
         this.selectedMappedElement.Observable().subscribe(
@@ -292,7 +188,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
      */
     private void UpdateMappedElements(ClassRowViewModel rowViewModel)
     {
-        Optional<MappedElementRowViewModel<? extends Thing, Class>> optionalMappedElement = this.mappedElements.stream()
+        Optional<MappedElementRowViewModel<? extends Thing, ? extends Class>> optionalMappedElement = this.mappedElements.stream()
             .filter(x -> AreTheseEquals(x.GetDstElement().getID(), rowViewModel.GetElement().getID()))
             .findFirst();
         
@@ -306,7 +202,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
             }
             else
             {
-                mappedElement = new MappedRequirementsSpecificationRowViewModel(rowViewModel.GetElement(), MappingDirection.FromDstToHub);
+                mappedElement = new MappedDstRequirementRowViewModel(rowViewModel.GetElement(), MappingDirection.FromDstToHub);
             }
 
             this.mappedElements.add(mappedElement);
@@ -317,31 +213,20 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
             this.SetSelectedMappedElement(optionalMappedElement.get());
         }
     }
-
+    
     /**
      * Updates this view model properties
      */
-    private void UpdateProperties()
-    {
-        this.mappedElements.clear();
-                
-        for (MappedElementRowViewModel<? extends Thing, Class> mappedElementRowViewModel : this.dstController.GetDstMapResult())
-        {
-            this.mappedElements.add(mappedElementRowViewModel);
-        }
-    }
-    
-    /**
-     * Sets the mappedElement picked to open this dialog and sets the DST tree
-     * 
-     * @param selectedElement the collection of {@linkplain Element}
-     */
     @Override
-    public void SetMappedElement(Collection<Element> selectedElement)
+    protected void UpdateProperties()
     {
-        this.magicDrawObjectBrowserViewModel.BuildTree(this.dstController.OpenDocument().getName(), selectedElement);
-        this.UpdateProperties();
-        this.PreMap(selectedElement);
+        if(this.originalSelection == null || this.originalSelection.isEmpty())
+        {
+            return;
+        }
+        
+        this.UpdateProperties(this.dstController.GetDstMapResult());
+        this.magicDrawObjectBrowser.BuildTree(this.originalSelection);
     }
     
     /**
@@ -349,8 +234,13 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
      * 
      * @param selectedElement the collection of {@linkplain Element}
      */
-    private void PreMap(Collection<Element> selectedElement)
+    protected void PreMap(Collection<Element> selectedElement)
     {
+        if(selectedElement == null)
+        {
+            return;
+        }
+        
         for (Element element : selectedElement)
         {            
             if (element instanceof Class)
@@ -397,7 +287,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
             if(this.TryGetRequirementSpecification(classElement, refRequirementSpecification, refShouldCreateNewTargetElement))
             {
                 mappedElementRowViewModel = 
-                        new MappedRequirementsSpecificationRowViewModel(refRequirementSpecification.Get(), classElement, MappingDirection.FromDstToHub);
+                        new MappedDstRequirementRowViewModel(refRequirementSpecification.Get(), classElement, MappingDirection.FromDstToHub);
             }
         }
         
@@ -418,7 +308,8 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
      * @param mappedElementRowViewModel the {@linkplain MappedElementRowViewModel} of which to update the row status
      * @param clazz the {@linkplain java.lang.Class} of the {@linkplain Thing} represented in the {@linkplain MappedElementRowViewModel}
      */
-    private <TThing extends Thing> void UpdateRowStatus(MappedElementRowViewModel<? extends Thing, Class> mappedElementRowViewModel, java.lang.Class<TThing> clazz)
+    @Override
+    protected <TThing extends Thing> void UpdateRowStatus(MappedElementRowViewModel<? extends Thing, ? extends Class> mappedElementRowViewModel, java.lang.Class<TThing> clazz)
     {
         Ref<TThing> refThing = new Ref<>(clazz);
         mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.None);
@@ -566,7 +457,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
      */
     public void ResetPreMappedThings()
     {
-        List<Element> elements = ((RootRowViewModel)this.magicDrawObjectBrowserViewModel.GetBrowserTreeModel().getRoot())
+        List<Element> elements = ((RootRowViewModel)this.magicDrawObjectBrowser.GetBrowserTreeModel().getRoot())
                 .GetContainedRows()
                 .stream()
                 .map(x -> (Element)x.GetElement())
@@ -582,7 +473,7 @@ public class DstMappingConfigurationDialogViewModel implements IDstMappingConfig
      * @param selected the new {@linkplain boolean} value
      */
     @Override
-    public void WhenMapToNewHubElementCheckBoxChanged(boolean selected)
+    public void WhenMapToNewElementCheckBoxChanged(boolean selected)
     {
         if(this.selectedMappedElement.Value() == null)
         {

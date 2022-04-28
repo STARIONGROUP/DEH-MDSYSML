@@ -1,5 +1,5 @@
 /*
- * HubRequirementsSpecificationCollection.java
+ * HubRequirementCollection.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -26,10 +26,11 @@ package Utils.Stereotypes;
 import java.util.ArrayList;
 
 import Services.MappingEngineService.IMappableThingCollection;
-import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+import ViewModels.Rows.MappedDstRequirementRowViewModel;
+import ViewModels.Rows.MappedHubRequirementRowViewModel;
 
 /**
- * The {@linkplain HubElementCollection} represents a collection {@linkplain MappedRequirementsSpecificationRowViewModel} usable by the {@linkplain MappingEngine}
+ * The {@linkplain HubElementCollection} represents a collection {@linkplain MappedHubRequirementRowViewModel} usable by the {@linkplain MappingEngine}
  */
 @SuppressWarnings("serial")
-public class HubRequirementsSpecificationCollection extends ArrayList<MappedRequirementsSpecificationRowViewModel> implements IMappableThingCollection { }
+public class HubRequirementCollection extends ArrayList<MappedHubRequirementRowViewModel> implements IMappableThingCollection { }

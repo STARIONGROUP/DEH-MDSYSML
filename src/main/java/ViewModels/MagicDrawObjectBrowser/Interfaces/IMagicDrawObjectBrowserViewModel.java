@@ -37,28 +37,17 @@ import io.reactivex.Observable;
 /**
  * The {@linkplain IMagicDrawObjectBrowserViewModel} is the interface definition for the {@linkplain MagicDrawObjectBrowserViewModel}
  */
-public interface IMagicDrawObjectBrowserViewModel extends IObjectBrowserBaseViewModel
+public interface IMagicDrawObjectBrowserViewModel extends IObjectBrowserBaseViewModel<ClassRowViewModel>
 {
-    /**
-     * Compute eligible rows where the represented {@linkplain Class} can be transfered,
-     * and return the filtered collection for feedback application on the tree
-     * 
-     * @param selectedRow the collection of selected view model {@linkplain ClassRowViewModel}
-     */
-    void OnSelectionChanged(ClassRowViewModel selectedRow);
-
     /**
      * Creates the {@linkplain OutlineModel} tree from the provided {@linkplain Collection} of {@linkplain Class}
      * 
-     * @param name the name of the root element of the tree
      * @param elements the {@linkplain Collection} of {@linkplain Element}
      */
-    void BuildTree(String name, Collection<Element> elements);
-
+    void BuildTree(Collection<Element> elements);
+    
     /**
-     * Gets the {@linkplain Observable} of {@linkplain ClassRowViewModel} that yields the selected element
-     * 
-     * @return an {@linkplain Observable} of {@linkplain ClassRowViewModel}
+     * Creates the {@linkplain OutlineModel} tree
      */
-    Observable<ClassRowViewModel> GetSelectedElement();
+    void BuildTree();
 }

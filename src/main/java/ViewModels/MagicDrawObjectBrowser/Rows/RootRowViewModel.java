@@ -24,12 +24,17 @@
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 
 import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
+import b.c.x;
 
 /**
  * The {@linkplain RootRowViewModel} represents the root element in one containment tree
@@ -50,7 +55,13 @@ public class RootRowViewModel extends PackageRowViewModel implements IHaveContai
     public RootRowViewModel(String name, Collection<Element> elements)
     {
         super(null, null);
-        this.containedElements = elements;
+        
+        this.containedElements = elements.stream()
+                .filter(x -> x instanceof NamedElement)
+                .map(x -> (NamedElement)x)
+                .sorted(Comparator.comparing(NamedElement::getName))
+                .collect(Collectors.toList());
+        
         this.UpdateProperties(name);
     }
 

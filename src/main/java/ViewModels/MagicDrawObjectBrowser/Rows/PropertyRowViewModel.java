@@ -40,7 +40,7 @@ public abstract class PropertyRowViewModel extends ElementRowViewModel<Property>
      * @param parent the parent {@linkplain IElementRowViewModel} view model
      * @param property the represented {@linkplain Property}
      */
-    public PropertyRowViewModel(IElementRowViewModel<?> parent, Property property)
+    protected PropertyRowViewModel(IElementRowViewModel<?> parent, Property property)
     {
         super(parent, property);
     }

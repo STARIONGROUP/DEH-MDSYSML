@@ -40,32 +40,28 @@ import com.nomagic.magicdraw.ui.browser.Tree;
 import DstController.IDstController;
 import HubController.IHubController;
 import Reactive.ObservableValue;
+import Services.MagicDrawSelection.IMagicDrawSelectionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
+import Services.Mapping.IMapCommandService;
 import Services.NavigationService.INavigationService;
 
 @RunWith(MagicDrawTestRunner.class)
 public class MapActionTestFixture
 {
-    private IDstController dstController;
-    private IHubController hubController;
-    private INavigationService navigationService;
-    private IMagicDrawUILogService uILogService;
+    private IMapCommandService mapCommandService;
+    private IMagicDrawSelectionService selectionService;
 
     @Before
     public void setup()
     {
-        this.hubController = mock(IHubController.class);
-        this.dstController = mock(IDstController.class);
-        this.navigationService = mock(INavigationService.class);
-        this.uILogService = mock(IMagicDrawUILogService.class);
-        ObservableValue<Boolean> isSessionOpen = new ObservableValue<Boolean>(true, Boolean.class);
-        when(this.hubController.GetIsSessionOpenObservable()).thenReturn(isSessionOpen.Observable());
+        this.mapCommandService = mock(IMapCommandService.class);
+        this.selectionService = mock(IMagicDrawSelectionService.class);
     }
     
     @Test
     public void VerifyActionPerformed()
     {
-        MapAction action = new MapAction(this.hubController, this.dstController, this.navigationService, this.uILogService);
+        MapAction action = new MapAction(this.mapCommandService, this.selectionService);
         action.setTree(new Tree());
         assertDoesNotThrow(() -> action.actionPerformed(any(ActionEvent.class)));
     }
