@@ -24,23 +24,35 @@
 package DstController;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
+import Utils.Ref;
 import ViewModels.Rows.MappedElementRowViewModel;
+import cdp4common.commondata.DefinedThing;
+import cdp4common.commondata.NamedThing;
+import cdp4common.commondata.ShortNamedThing;
 import cdp4common.commondata.Thing;
+import cdp4common.sitedirectorydata.MeasurementScale;
+import cdp4common.sitedirectorydata.MeasurementUnit;
+import cdp4common.sitedirectorydata.ParameterType;
 import io.reactivex.Observable;
 
 /**
  * The {@linkplain IDstController} is the interface definition for the {@linkplain DstController}
  */
-public interface IDstController extends IDstControllerBase
+public interface IDstController extends IDstControllerBase<Class>
 {
     /**
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
@@ -53,39 +65,18 @@ public interface IDstController extends IDstControllerBase
     boolean Map(IMappableThingCollection input, MappingDirection mappingDirection);
 
     /**
-     * Gets a value indicating if Cameo/MagicDraw has an open document
-     * 
-     * @return a {@linkplain boolean}
-     */
-    boolean HasOneDocumentOpen();
-
-    /**
-     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating if Cameo/MagicDraw has an open document
-     * 
-     * @return a {@linkplain Observable} of {@linkplain Boolean}
-     */
-    Observable<Boolean> HasOneDocumentOpenObservable();
-
-    /**
-     * Gets the open Document ({@linkplain Project}) from the running instance of Cameo/MagicDraw
-     * 
-     * @return the {@linkplain Project}
-     */
-    Project OpenDocument();
-
-    /**
      * Gets The {@linkplain ObservableCollection} of dst map result
      * 
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
-    ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetDstMapResult();
+    ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetDstMapResult();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
      * 
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
-    ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetHubMapResult();
+    ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetHubMapResult();
 
     /**
      * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub
@@ -144,16 +135,58 @@ public interface IDstController extends IDstControllerBase
     void LoadMapping();
 
     /**
-     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating the subscribers whenever the open document gets saved
+     * Tries to get the corresponding element that answer to the provided {@linkplain Predicate}
      * 
-     * @return an {@linkplain Observable} of {@linkplain Boolean}
+     * @param <TElement> the type of {@linkplain #TDstElement} to query
+     * @param predicate the {@linkplain Predicate} to verify in order to match the element
+     * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
+     * @return a value indicating whether the {@linkplain #TElement} has been found
      */
-    Observable<Boolean> OpenDocumentHasBeenSaved();
+    <TElement extends NamedElement> boolean TryGetElementBy(Predicate<TElement> predicate, Ref<TElement> refElement);
+    
+    /**
+     * Tries to get the corresponding element that has the provided Id
+     * 
+     * @param <TElement> the type of {@linkplain #TDstElement} to query
+     * @param elementId the {@linkplain String} id of the searched element
+     * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
+     * @return a value indicating whether the {@linkplain #TElement} has been found
+     */
+    <TElement extends NamedElement> boolean TryGetElementById(String elementId, Ref<TElement> refElement);
+    
+    /**
+     * Tries to get the corresponding element based on the provided {@linkplain DefinedThing} name or short name. 
+     * 
+     * @param <TElement> the type of {@linkplain #TDstElement} to query
+     * @param thing the {@linkplain DefinedThing} that can potentially match a {@linkplain #TElement} 
+     * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
+     * @return a value indicating whether the {@linkplain #TElement} has been found
+     */
+    <TElement extends NamedElement> boolean TryGetElementByName(DefinedThing thing, Ref<TElement> refElement);
 
     /**
-     * Gets the open project element
+     * Transfers all the {@linkplain Class} contained in the {@linkplain huMapResult} to the DST
      * 
-     * @return a {@linkplain Collection} of {@linkplain BaseElement}
+     * @return a value indicating that all transfer could be completed
      */
-    Collection<Element> GetProjectElements();
+    boolean TransferToDst();
+    
+    /**
+     * Tries to get a {@linkplain DataType} that matches the provided {@linkplain MeasurementScale}
+     * 
+     * @param parameterType the {@linkplain ParameterType} of reference
+     * @param scale the {@linkplain MeasurementScale} of reference
+     * @param refDataType the {@linkplain Ref} of {@linkplain DataType}
+     * @return a {@linkplain boolean}
+     */
+    boolean TryGetDataType(ParameterType parameterType, MeasurementScale scale, Ref<DataType> refDataType);
+
+    /**
+     * Tries to get a {@linkplain InstanceSpecification} unit that matches the provided {@linkplain MeasurementUnit}
+     * 
+     * @param unit the {@linkplain MeasurementUnit} of reference
+     * @param refDataType the {@linkplain Ref} of {@linkplain InstanceSpecification}
+     * @return a {@linkplain boolean}
+     */
+    boolean TryGetUnit(MeasurementUnit unit, Ref<InstanceSpecification> refUnit);
 }

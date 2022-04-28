@@ -1,5 +1,5 @@
 /*
- * RequirementMappingRule.java
+ * DstRequirementToHubRequirementMappingRule.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -27,106 +27,123 @@ import static Utils.Stereotypes.StereotypeUtils.GetShortName;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import org.eclipse.emf.ecore.EObject;
+import org.javafmi.framework.FmiContainer.Var;
+
+import com.nomagic.magicdraw.autoid.NumberingData;
+import com.nomagic.magicdraw.autoid.NumberingInfo;
+import com.nomagic.magicdraw.autoid.custom.AbstractionNumbering;
+import com.nomagic.magicdraw.core.Application;
+import com.nomagic.magicdraw.foundation.MDExtension;
+import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
+import com.nomagic.magicdraw.sysml.util.SysMLConstants;
+import com.nomagic.magicdraw.sysml.util.SysMLProfile;
+import com.nomagic.requirements.util.MDCustomizationForRequirements;
 import com.nomagic.requirements.util.RequirementUtilities;
+import com.nomagic.requirements.util.RequirementsConstants;
+import com.nomagic.uml2.UML2Constants;
+import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Comment;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ElementValue;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralInteger;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralUnlimitedNatural;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
+import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
-import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+import ViewModels.Rows.MappedDstRequirementRowViewModel;
+import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
+import net.bytebuddy.asm.Advice.This;
+import net.bytebuddy.dynamic.scaffold.MethodRegistry.Handler.ForAbstractMethod;
 
 /**
- * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
+ * The {@linkplain BlockToElementMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
  */
-public class RequirementMappingRule extends MappingRule<MagicDrawRequirementCollection, ArrayList<MappedRequirementsSpecificationRowViewModel>>
+public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappingRule<MagicDrawRequirementCollection, ArrayList<MappedDstRequirementRowViewModel>>
 {
-    /**
-     * The {@linkplain IHubController}
-     */
-    private IHubController hubController;
-    
-    /**
-     * The {@linkplain IMagicDrawMappingConfigurationService}
-     */
-    private IMagicDrawMappingConfigurationService mappingConfiguration;
-
     /**
      * The collection of {@linkplain RequirementsSpecification} that are being mapped
      */
-    private ArrayList<RequirementsSpecification> requirementsSpecifications = new ArrayList<RequirementsSpecification>();
+    private ArrayList<RequirementsSpecification> requirementsSpecifications = new ArrayList<>();
 
     /**
      * The collection of {@linkplain RequirementsGroup} that are being mapped
      */
-    private ArrayList<RequirementsGroup> temporaryRequirementsGroups = new ArrayList<RequirementsGroup>();
+    private ArrayList<RequirementsGroup> temporaryRequirementsGroups = new ArrayList<>();
 
     /**
-     * Initializes a new {@linkplain RequirementMappingRule}
+     * The {@linkplain IMagicDrawTransactionService}
+     */
+    private final IMagicDrawTransactionService transactionService;
+
+    /**
+     * Initializes a new {@linkplain DstRequirementToHubRequirementMappingRule}
      * 
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
+     * @param mappingConfiguration the {@linkplain IMagicDrawTransactionService}
      */
-    public RequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
+    public DstRequirementToHubRequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawTransactionService transactionService)
     {
-        this.hubController = hubController;
-        this.mappingConfiguration = mappingConfiguration;
+        super(hubController, mappingConfiguration);
+        this.transactionService = transactionService;
     }    
     
     /**
      * Transforms an {@linkplain MagicDrawRequirementCollection} of type {@linkplain Class} to an {@linkplain ArrayList} of {@linkplain RequirementsSpecification}
      * 
      * @param input the {@linkplain MagicDrawRequirementCollection} to transform
-     * @return the {@linkplain ArrayList} of {@linkplain MappedRequirementsSpecificationRowViewModel}
+     * @return the {@linkplain ArrayList} of {@linkplain MappedDstRequirementRowViewModel}
      */
     @Override
-    public ArrayList<MappedRequirementsSpecificationRowViewModel> Transform(Object input)
+    public ArrayList<MappedDstRequirementRowViewModel> Transform(Object input)
     {
         try
         {
             MagicDrawRequirementCollection mappedElements = this.CastInput(input);
             this.Map(mappedElements);
-            this.SaveMappingConfiguration(mappedElements);
-            return new ArrayList<MappedRequirementsSpecificationRowViewModel>(mappedElements);
+            this.SaveMappingConfiguration(mappedElements, MappingDirection.FromDstToHub);
+            return new ArrayList<>(mappedElements);
         }
         catch (Exception exception)
         {
             this.Logger.catching(exception);
-            return new ArrayList<MappedRequirementsSpecificationRowViewModel>();
+            return new ArrayList<>();
         }
         finally
         {
             this.requirementsSpecifications.clear();
             this.temporaryRequirementsGroups.clear();
-        }
-    }
-    
-    /**
-     * Saves the mapping configuration
-     * 
-     * @param elements the {@linkplain MagicDrawBlockCollection}
-     */
-    private void SaveMappingConfiguration(MagicDrawRequirementCollection elements)
-    {
-        for (MappedRequirementsSpecificationRowViewModel mappedRequirementsSpecification : elements)
-        {
-            this.mappingConfiguration.AddToExternalIdentifierMap(
-                    mappedRequirementsSpecification.GetHubElement().getIid(), mappedRequirementsSpecification.GetDstElement().getID(), MappingDirection.FromDstToHub);
         }
     }
     
@@ -137,7 +154,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      */
     private void Map(MagicDrawRequirementCollection mappedRequirements)
     {
-        for (MappedRequirementsSpecificationRowViewModel mappedRequirement : mappedRequirements)
+        for (MappedDstRequirementRowViewModel mappedRequirement : mappedRequirements)
         {
             try
             {
@@ -170,14 +187,19 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
     
                 mappedRequirement.SetHubElement(refRequirementsSpecification.Get());
                 
-                Ref<RequirementsGroup> refRequirementsGroup = new Ref<RequirementsGroup>(RequirementsGroup.class);
-                Ref<Requirement> refRequirement = new Ref<Requirement>(Requirement.class);
+                Ref<RequirementsGroup> refRequirementsGroup = new Ref<>(RequirementsGroup.class);
+                Ref<Requirement> refRequirement = new Ref<>(Requirement.class);
                 
                 Collection<Element> parentElements = parentPackage.getOwnedElement();
                 
                 if(!TryCreateRelevantGroupsAndTheRequirement(mappedRequirement.GetDstElement(), parentElements, refRequirementsSpecification, refRequirementsGroup, refRequirement))
                 {
                     this.Logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
+                }
+                else
+                {
+                    this.UpdateOrCreateDefinition(mappedRequirement.GetDstElement(), refRequirement);
+                    refRequirement.Get().setShortName(this.transactionService.GetRequirementId(mappedRequirement.GetDstElement()));
                 }
             }
             catch(Exception exception)
@@ -263,14 +285,13 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
             Requirement requirement = new Requirement();
             requirement.setIid(UUID.randomUUID());
             requirement.setName(element.getName());
-            requirement.setShortName(GetShortName(element));
+            requirement.setShortName(this.transactionService.GetRequirementId(element));
             requirement.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-            
+            this.MapCategory(element, requirement);
             requirement.setGroup(refRequirementsGroup.Get());
             refRequirementsSpecification.Get().getRequirement().add(requirement);
             refRequirement.Set(requirement);
         }
-        this.UpdateOrCreateDefinition(element, refRequirement);
 
         refRequirementsSpecification.Get().getRequirement().removeIf(x -> x.getIid().equals(refRequirement.Get().getIid()));
         refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
@@ -278,6 +299,58 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
         return refRequirement.HasValue();
     }
 
+    /**
+     * Applies category onto the created {@linkplain Requirement}
+     * 
+     * @param element the {@linkplain Class} element
+     * @param requirement the 10-25 requirement
+     */
+    private void MapCategory(Class element, Requirement requirement)
+    {
+        for(Stereotype stereotype : MDCustomizationForSysMLProfile.getInstance(element).getAllStereotypes())
+        {
+            this.Logger.debug("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType());
+            RequirementType requirementType = RequirementType.From(stereotype);
+            
+            if(requirementType != null)
+            {
+                this.MapCategory(requirement, requirementType.name(), ClassKind.Requirement);
+            }
+        }
+    }
+
+    /**
+     * Tries to extract the value from the provided property and returns it as string
+     * 
+     * @return a value indicating whether the value has been extracted
+     */
+    private boolean TryGetValueFromProperty(Property property, Ref<String> refValue)
+    {
+        ValueSpecification valueSpecification = property.getDefaultValue();
+        
+        if(valueSpecification instanceof LiteralInteger)
+        {
+            refValue.Set(String.valueOf(((LiteralInteger)property.getDefaultValue()).getValue()));
+        }
+        else if(valueSpecification instanceof LiteralUnlimitedNatural)
+        {
+            refValue.Set(String.valueOf(((LiteralUnlimitedNatural)property.getDefaultValue()).getValue()));
+        }
+        else if(valueSpecification instanceof LiteralReal)
+        {
+            refValue.Set(String.valueOf(((LiteralReal)property.getDefaultValue()).getValue()));
+        }
+        else if(valueSpecification instanceof LiteralString)
+        {
+            refValue.Set(((LiteralString)property.getDefaultValue()).getValue());
+        }
+        else if(valueSpecification instanceof LiteralBoolean)
+        {
+            refValue.Set(String.valueOf(((LiteralBoolean)property.getDefaultValue()).isValue()));
+        }
+        
+        return refValue.HasValue();
+    }
     /**
      * Updates or creates the definition according to the provided {@linkplain Class} assignable to the {@linkplain Requirement}  
      * 
@@ -326,7 +399,7 @@ public class RequirementMappingRule extends MappingRule<MagicDrawRequirementColl
      */
     private boolean TryGetOrCreateRequirementGroup(Package currentPackage, Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup)
     {
-        Ref<RequirementsGroup> refCurrentRequirementsGroup = new Ref<RequirementsGroup>(RequirementsGroup.class);
+        Ref<RequirementsGroup> refCurrentRequirementsGroup = new Ref<>(RequirementsGroup.class);
         
         if(this.TryToFindGroup(currentPackage, refRequirementsSpecification, refCurrentRequirementsGroup))
         {

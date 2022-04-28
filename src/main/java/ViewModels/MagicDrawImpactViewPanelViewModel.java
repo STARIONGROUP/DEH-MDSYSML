@@ -36,6 +36,7 @@ import DstController.DstController;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Utils.Tasks.Task;
@@ -71,6 +72,11 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * The {@linkplain IMagicDrawUILogService}
      */
     private IMagicDrawUILogService logService;
+    
+    /**
+     * The {@linkplain IMagicDrawSessionService}
+     */
+    private final IMagicDrawSessionService sessionService;
     
     /**
      * The {@linkplain IMagicDrawMappingConfigurationService}
@@ -165,7 +171,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     @Override
     public Observable<Boolean> GetHasOneMagicDrawModelOpen()
     {
-        return this.dstController.HasOneDocumentOpenObservable();
+        return this.sessionService.HasAnyOpenSessionObservable();
     }
 
     /**
@@ -191,12 +197,13 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService}
      * @param magicDrawImpactViewViewModel the {@linkplain IMagicDrawImpactViewViewModel}
      * @param logService the {@linkplain IMagicDrawUILogService}
+     * @param sessionService the {@linkplain IMagicDrawSessionService}
      */
     public MagicDrawImpactViewPanelViewModel(IHubController hubController, IDstController dstController, 
             IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel,
             ITransferControlViewModel transferControlViewModel, IImpactViewContextMenuViewModel contextMenuViewModel,
             IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel,
-            IMagicDrawUILogService logService)
+            IMagicDrawUILogService logService, IMagicDrawSessionService sessionService)
     {
         super(hubController);
         this.dstController = dstController;
@@ -205,6 +212,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
         this.mappingConfigurationService = mappingConfigurationService;
         this.magicDrawImpactViewViewModel = magicDrawImpactViewViewModel;
         this.logService = logService;
+        this.sessionService = sessionService;
         this.isSessionOpen = this.HubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;
@@ -282,7 +290,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     private ExternalIdentifierMap CreateNewMappingConfiguration(String configurationName)
     {
         return this.mappingConfigurationService
-                .CreateExternalIdentifierMap(configurationName, this.dstController.OpenDocument().getName()
+                .CreateExternalIdentifierMap(configurationName, this.sessionService.GetProject().getName()
                         , this.CheckForExistingTemporaryMapping());
     }
 

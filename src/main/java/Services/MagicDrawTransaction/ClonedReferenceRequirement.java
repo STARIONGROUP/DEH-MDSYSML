@@ -1,5 +1,5 @@
 /*
- * IMagicDrawProjectEventListener.java
+ * ClonedReferenceRequirement.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,30 +21,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package DstController;
+package Services.MagicDrawTransaction;
 
-import com.nomagic.magicdraw.core.Project;
-
-import Reactive.ObservableValue;
-import io.reactivex.Observable;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 
 /**
- * The {@linkplain IMagicDrawProjectEventListener} is the interface definition for {@linkplain MagicDrawProjectEventListener}
+ * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
  */
-public interface IMagicDrawProjectEventListener
+public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
 {
     /**
-     * Gets a reactive value indicating that the open document has been saved
+     * Initializes a new {@linkplain ClonedReferenceElement}
+     * 
+     * @param original the {@linkplain Class} original reference
      */
-    Observable<Boolean> ProjectSaved();
-
-    /**
-     * Gets a reactive value indicating if Cameo/MagicDraw has an open document
-     */
-    ObservableValue<Boolean> HasOneDocumentOpen();
-
-    /**
-     * Gets an {@linkplain ObservableValue} of type {@linkplain Project}
-     */
-    ObservableValue<Project> OpenDocument();
+    ClonedReferenceRequirement(Class original)
+    {
+        super(original, SysMLProfile.getInstance(original).getRequirement(), "Id", "Text");
+    }
 }

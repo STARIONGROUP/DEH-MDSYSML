@@ -56,7 +56,7 @@ class RequirementImpactViewViewModelTestFixture
     private IHubController hubController;
     private IDstController dstController;
     private RequirementImpactViewViewModel viewModel;
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> dstMapResult;
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> dstMapResult;
     private ObservableCollection<Thing> selectedDstMapResultForTransfer;
     private ObservableValue<Boolean> isSessionOpen;
     private ObservableValue<Boolean> sessionEvent;
@@ -76,7 +76,7 @@ class RequirementImpactViewViewModelTestFixture
         when(this.hubController.GetOpenIteration()).thenReturn(this.GetIteration());
         when(this.hubController.GetSessionEventObservable()).thenReturn(this.sessionEvent.Observable());
 
-        this.dstMapResult = new ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>>();
+        this.dstMapResult = new ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>>();
         when(this.dstController.GetDstMapResult()).thenReturn(this.dstMapResult);
         this.selectedDstMapResultForTransfer = new ObservableCollection<Thing>(Thing.class);
         when(this.dstController.GetSelectedDstMapResultForTransfer()).thenReturn(this.selectedDstMapResultForTransfer);

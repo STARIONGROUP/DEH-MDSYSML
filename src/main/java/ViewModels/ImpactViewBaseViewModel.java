@@ -272,7 +272,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         if(selectedRow != null && selectedRow.GetThing() != null)
         {
-            Optional<MappedElementRowViewModel<? extends Thing, com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class>> optionalMappedElement = 
+            Optional<MappedElementRowViewModel<? extends Thing, ? extends com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class>> optionalMappedElement = 
                     this.DstController.GetDstMapResult().stream()
                         .filter(r -> AreTheseEquals(r.GetHubElement().getIid(), selectedRow.GetThing().getIid()))
                         .findFirst();

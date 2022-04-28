@@ -47,7 +47,11 @@ import com.google.common.cache.Cache;
 import Enumerations.MappingDirection;
 import HubController.HubController;
 import HubController.IHubController;
+import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
+import Services.MagicDrawSession.IMagicDrawProjectEventListener;
+import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
@@ -97,7 +101,9 @@ class DstControllerTestFixture
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
     private IMagicDrawUILogService logService;
     private IMagicDrawProjectEventListener projectEventListener;
-    private ILocalExchangeHistoryService historyService;
+    private IMagicDrawLocalExchangeHistoryService historyService;
+    private IMagicDrawSessionService sessionService;
+    private IMagicDrawTransactionService transactionService;
 
     /**
      * @throws java.lang.Exception
@@ -110,7 +116,9 @@ class DstControllerTestFixture
         this.mappingConfigurationService = mock(IMagicDrawMappingConfigurationService.class);
         this.logService = mock(IMagicDrawUILogService.class);
         this.projectEventListener = mock(IMagicDrawProjectEventListener.class);
-        this.historyService = mock(ILocalExchangeHistoryService.class);
+        this.historyService = mock(IMagicDrawLocalExchangeHistoryService.class);
+        this.sessionService = mock(IMagicDrawSessionService.class);
+        this.transactionService = mock(IMagicDrawTransactionService.class);
         
         this.uri = URI.create("http://t.est");
         this.cache = com.google.common.cache.CacheBuilder.newBuilder().build();
@@ -135,7 +143,8 @@ class DstControllerTestFixture
         when(this.hubController.GetIterationTransaction()).thenReturn(Pair.of(this.iteration.clone(false), mock(ThingTransaction.class)));
         when(this.hubController.Refresh()).thenReturn(true);
 
-        this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, this.mappingConfigurationService, this.projectEventListener, this.historyService);
+        this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, 
+                this.mappingConfigurationService, this.sessionService, this.historyService, this.transactionService);
     }
 
     private void SetSession() throws Exception

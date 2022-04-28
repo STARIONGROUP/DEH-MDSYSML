@@ -27,16 +27,17 @@ import java.awt.Color;
 
 import javax.swing.Icon;
 
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+
+import Services.MagicDrawTransaction.MagicDrawTransactionService;
 import Utils.ImageLoader.ImageLoader;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.PropertyRowViewModel;
-import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.Parameters.ActualFiniteStateRowViewModel;
-import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.Parameters.OptionRowViewModel;
-import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.Parameters.ParameterValueRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 import ViewModels.ObjectBrowser.RenderDataProvider.ObjectBrowserRenderDataProvider;
-import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
+import Views.MagicDrawObjectBrowser;
 import cdp4common.commondata.ClassKind;
 
 /**
@@ -53,9 +54,18 @@ public class MagicDrawObjectBrowserRenderDataProvider extends ObjectBrowserRende
     @Override
     public String getDisplayName(Object rowViewModel)
     {
-        if(rowViewModel instanceof ElementRowViewModel)
+        if((rowViewModel instanceof ElementRowViewModel))
         {
-            return ((ElementRowViewModel<?>)rowViewModel).GetName();
+            ElementRowViewModel<?> elementRowViewModel = (ElementRowViewModel<?>)rowViewModel;
+            
+            if(rowViewModel instanceof RequirementRowViewModel)
+            {
+                return String.format("%s %s", MagicDrawTransactionService.GetRequirementId((Element)((RequirementRowViewModel)elementRowViewModel).GetElement()), elementRowViewModel.GetName());
+            }
+            else
+            {
+                return elementRowViewModel.GetName();
+            }
         }
         
         return "undefined";
@@ -151,6 +161,10 @@ public class MagicDrawObjectBrowserRenderDataProvider extends ObjectBrowserRende
                 return ImageLoader.GetIcon(ClassKind.Requirement);
             }
             else if(element.GetClassKind() == Stereotypes.PortProperty)
+            {
+                return ImageLoader.GetIcon(ClassKind.ElementUsage);
+            }
+            else if(element.GetClassKind() == Stereotypes.PartProperty)
             {
                 return ImageLoader.GetIcon(ClassKind.ElementUsage);
             }

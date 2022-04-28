@@ -46,25 +46,32 @@ import com.nomagic.magicdraw.plugins.Plugin;
 import com.nomagic.magicdraw.ui.browser.Tree;
 
 import Actions.Browser.MapAction;
-import Actions.ToolBar.LocalExchangeHistoryAction;
 import Actions.ToolBar.MagicDrawAdapterRibbonActionCategory;
-import Actions.ToolBar.OpenHubBrowserPanelAction;
 import DstController.DstController;
 import DstController.IDstController;
-import DstController.IMagicDrawProjectEventListener;
-import DstController.MagicDrawProjectEventListener;
 import HubController.IHubController;
-import MappingRules.BlockDefinitionMappingRule;
-import MappingRules.RequirementMappingRule;
-import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
-import Services.LocalExchangeHistory.LocalExchangeHistoryService;
+import MappingRules.BlockToElementMappingRule;
+import MappingRules.DstRequirementToHubRequirementMappingRule;
+import MappingRules.ElementToBlockMappingRule;
+import MappingRules.HubRequirementToDstRequirementMappingRule;
+import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
+import Services.HistoryService.MagicDrawLocalExchangeHistoryService;
+import Services.MagicDrawSelection.IMagicDrawSelectionService;
+import Services.MagicDrawSelection.MagicDrawSelectionService;
+import Services.MagicDrawSession.IMagicDrawProjectEventListener;
+import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.MagicDrawSession.MagicDrawProjectEventListener;
+import Services.MagicDrawSession.MagicDrawSessionService;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.MagicDrawTransaction.MagicDrawTransactionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MagicDrawUILog.MagicDrawUILogService;
+import Services.Mapping.IMapCommandService;
+import Services.Mapping.MapCommandService;
 import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
-import Services.VersionNumber.AdapterVersionNumberService;
 import Services.VersionNumber.IAdapterVersionNumberService;
 import Services.VersionNumber.MagicDrawAdapterVersionNumberService;
 import Utils.ImageLoader.ImageLoader;
@@ -75,16 +82,21 @@ import ViewModels.MagicDrawImpactViewViewModel;
 import ViewModels.MagicDrawObjectBrowserViewModel;
 import ViewModels.RequirementImpactViewViewModel;
 import ViewModels.TransferControlViewModel;
-import ViewModels.Dialogs.DstMappingConfigurationDialogViewModel;
-import ViewModels.Dialogs.Interfaces.IDstMappingConfigurationDialogViewModel;
+import ViewModels.ContextMenu.HubBrowserContextMenuViewModel;
+import ViewModels.Dialogs.DstToHubMappingConfigurationDialogViewModel;
+import ViewModels.Dialogs.HubToDstMappingConfigurationDialogViewModel;
+import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
+import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
+import ViewModels.Interfaces.IHubBrowserContextMenuViewModel;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
-import cdp4common.Version;
+import ViewModels.MappedElementListView.MappedElementListViewViewModel;
+import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
 
 public class DEHMDSYSMLPlugin extends Plugin
 {
@@ -198,24 +210,35 @@ public class DEHMDSYSMLPlugin extends Plugin
         {
             AppContainer.Container.as(CACHE).addComponent(IDstController.class, DstController.class);
             AppContainer.Container.addComponent(IMagicDrawProjectEventListener.class, MagicDrawProjectEventListener.class);
-            AppContainer.Container.addConfig(MappingEngineService.AssemblyParameterName, BlockDefinitionMappingRule.class.getPackage());
+            AppContainer.Container.addConfig(MappingEngineService.AssemblyParameterName, BlockToElementMappingRule.class.getPackage());
             AppContainer.Container.as(CACHE, Characteristics.USE_NAMES).addComponent(IMappingEngineService.class, MappingEngineService.class);
             AppContainer.Container.as(CACHE).addComponent(MapAction.class);
-            AppContainer.Container.addComponent(BlockDefinitionMappingRule.class.getName(), BlockDefinitionMappingRule.class);
-            AppContainer.Container.addComponent(RequirementMappingRule.class.getName(), RequirementMappingRule.class);
+            AppContainer.Container.addComponent(BlockToElementMappingRule.class.getName(), BlockToElementMappingRule.class);
+            AppContainer.Container.addComponent(DstRequirementToHubRequirementMappingRule.class.getName(), DstRequirementToHubRequirementMappingRule.class);
+            AppContainer.Container.addComponent(ElementToBlockMappingRule.class.getName(), ElementToBlockMappingRule.class);
+            AppContainer.Container.addComponent(HubRequirementToDstRequirementMappingRule.class.getName(), HubRequirementToDstRequirementMappingRule.class);
 
             AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
             AppContainer.Container.addComponent(IMagicDrawUILogService.class, MagicDrawUILogService.class);
             AppContainer.Container.addComponent(IAdapterVersionNumberService.class, MagicDrawAdapterVersionNumberService.class);
+            AppContainer.Container.addComponent(IMagicDrawSelectionService.class, MagicDrawSelectionService.class);
+            AppContainer.Container.addComponent(IMapCommandService.class, MapCommandService.class);
+            AppContainer.Container.as(CACHE).addComponent(IMagicDrawTransactionService.class, MagicDrawTransactionService.class);
+            AppContainer.Container.as(CACHE).addComponent(IMagicDrawSessionService.class, MagicDrawSessionService.class);
+            AppContainer.Container.as(CACHE).addComponent(IMagicDrawLocalExchangeHistoryService.class, MagicDrawLocalExchangeHistoryService.class);
 
             AppContainer.Container.addComponent(IElementDefinitionImpactViewViewModel.class, ElementDefinitionImpactViewViewModel.class);
             AppContainer.Container.addComponent(IRequirementImpactViewViewModel.class, RequirementImpactViewViewModel.class);
             AppContainer.Container.addComponent(IHubBrowserPanelViewModel.class, HubBrowserPanelViewModel.class);
             AppContainer.Container.addComponent(IMagicDrawImpactViewPanelViewModel.class, MagicDrawImpactViewPanelViewModel.class);
             AppContainer.Container.addComponent(ITransferControlViewModel.class, TransferControlViewModel.class);
-            AppContainer.Container.addComponent(IDstMappingConfigurationDialogViewModel.class, DstMappingConfigurationDialogViewModel.class);
+            AppContainer.Container.addComponent(IDstToHubMappingConfigurationDialogViewModel.class, DstToHubMappingConfigurationDialogViewModel.class);
+            AppContainer.Container.addComponent(IHubToDstMappingConfigurationDialogViewModel.class, HubToDstMappingConfigurationDialogViewModel.class);
+            AppContainer.Container.addComponent(IHubBrowserContextMenuViewModel.class, HubBrowserContextMenuViewModel.class);
             AppContainer.Container.addComponent(IMagicDrawObjectBrowserViewModel.class, MagicDrawObjectBrowserViewModel.class);
             AppContainer.Container.addComponent(IMagicDrawImpactViewViewModel.class, MagicDrawImpactViewViewModel.class);
+            AppContainer.Container.addConfig("TElement", Class.class);
+            AppContainer.Container.as(Characteristics.USE_NAMES).addComponent(IMappedElementListViewViewModel.class, MappedElementListViewViewModel.class);
         }
         catch (Exception exception) 
         {

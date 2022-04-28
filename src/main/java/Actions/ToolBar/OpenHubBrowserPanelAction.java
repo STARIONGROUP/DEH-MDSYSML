@@ -35,7 +35,7 @@ import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.ui.MainFrame;
 
 import App.AppContainer;
-import DstController.IDstController;
+import Services.MagicDrawSession.IMagicDrawSessionService;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
@@ -73,7 +73,7 @@ public class OpenHubBrowserPanelAction extends MDAction
 
          this.InitializesPanels();
          
-         AppContainer.Container.getComponent(IDstController.class).HasOneDocumentOpenObservable().subscribe(x -> 
+         AppContainer.Container.getComponent(IMagicDrawSessionService.class).HasAnyOpenSessionObservable().subscribe(x -> 
          {
              if(!x.booleanValue())
              {

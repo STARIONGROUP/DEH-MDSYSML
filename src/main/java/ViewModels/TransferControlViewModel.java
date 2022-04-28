@@ -31,6 +31,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import Reactive.ObservableValue;
+import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import ViewModels.Interfaces.ITransferControlViewModel;
@@ -52,9 +53,9 @@ public class TransferControlViewModel implements ITransferControlViewModel
     private final IMagicDrawUILogService logService;
 
     /**
-     * The {@linkplain ILocalExchangeHistoryService}
+     * The {@linkplain IMagicDrawLocalExchangeHistoryService}
      */
-    private final ILocalExchangeHistoryService exchangeHistory;
+    private final IMagicDrawLocalExchangeHistoryService exchangeHistory;
 
     /**
      * The number of selected things to transfer
@@ -77,9 +78,9 @@ public class TransferControlViewModel implements ITransferControlViewModel
      * 
      * @param dstController the {@linkplain IDstController}
      * @param logService the {@linkplain IMagicDrawUILogService}
-     * @param exchangeHistory the {@linkplain ILocalExchangeHistoryService}
+     * @param exchangeHistory the {@linkplain IMagicDrawLocalExchangeHistoryService}
      */
-    public TransferControlViewModel(IDstController dstController, IMagicDrawUILogService logService, ILocalExchangeHistoryService exchangeHistory)
+    public TransferControlViewModel(IDstController dstController, IMagicDrawUILogService logService, IMagicDrawLocalExchangeHistoryService exchangeHistory)
     {
         this.dstController = dstController;
         this.logService = logService;
@@ -88,6 +89,11 @@ public class TransferControlViewModel implements ITransferControlViewModel
         this.dstController.GetSelectedDstMapResultForTransfer()
             .Changed()
             .subscribe(x -> this.UpdateNumberOfSelectedThing(this.dstController.CurrentMappingDirection()));
+        
+        this.dstController.GetSelectedHubMapResultForTransfer()
+            .Changed()
+            .subscribe(x -> this.UpdateNumberOfSelectedThing(this.dstController.CurrentMappingDirection()));
+    
         
         this.dstController.GetMappingDirection()
             .subscribe(x -> this.UpdateNumberOfSelectedThing(x));

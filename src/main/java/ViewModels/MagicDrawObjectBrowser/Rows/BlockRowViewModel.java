@@ -79,6 +79,10 @@ public class BlockRowViewModel extends ClassRowViewModel
             {
                 this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
             }
+            else
+            {
+                this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
+            }
         }
         
         for (Port port : this.GetElement().getOwnedPort())

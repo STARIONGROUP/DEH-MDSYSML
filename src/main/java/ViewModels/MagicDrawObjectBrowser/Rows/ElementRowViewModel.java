@@ -24,6 +24,7 @@
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -32,9 +33,11 @@ import org.apache.logging.log4j.Logger;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
+import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 
 /**
@@ -240,16 +243,43 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
             else if(this.element instanceof Property)
             {
                 this.name = ((Property)this.element).getName();
+                Type type = ((Property)this.element).getType();
                 
-                if(StringUtils.isBlank(this.name))
+                if(StringUtils.isBlank(this.name) && type != null)
                 {
-                    this.name = String.format(": %s", ((Property)this.element).getType().getName());
+                    this.name = String.format(": %s", type.getName());
                 }
             }
-            else
+            
+            if(StringUtils.isBlank(this.name))
             {
                 this.name = this.element.getHumanName();
             }
+        }
+    }
+    /**
+     * Updates the represented {@linkplain Element} with the specified one
+     * 
+     * @param element the new {@linkplain Element}
+     * @param shouldHighlight a value indicating whether the highlight should be updated
+     */
+    @SuppressWarnings("unchecked")
+    public void UpdateElement(Element element, boolean shouldHighlight)
+    {
+        this.element = (TElement)element;
+        this.UpdateProperties();
+        
+        if(shouldHighlight)
+        {
+            this.isHighlighted = true;
+        }
+
+        if(this instanceof IHaveContainedRows)
+        {
+            IHaveContainedRows<?> thisAsParent = (IHaveContainedRows<?>)this;
+            
+            thisAsParent.GetContainedRows().clear();
+            thisAsParent.ComputeContainedRows();
         }
     }
 }

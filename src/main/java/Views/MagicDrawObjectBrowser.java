@@ -30,27 +30,28 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.netbeans.swing.outline.Outline;
 
 import Renderers.MagicDrawObjectBrowserRenderDataProvider;
+import ViewModels.Interfaces.IContextMenuViewModel;
+import ViewModels.Interfaces.IImpactViewContextMenuViewModel;
+import ViewModels.Interfaces.IObjectBrowserViewModel;
 import ViewModels.Interfaces.IViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
-import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import Views.ContextMenu.ContextMenu;
 import Views.ObjectBrowser.ObjectBrowser;
-import cdp4common.commondata.Thing;
-import java.awt.GridBagLayout;
+import Views.ObjectBrowser.ObjectBrowserBase;
 
 /**
  * The {@linkplain MagicDrawObjectBrowser}
  */
 @SuppressWarnings("serial")
-public class MagicDrawObjectBrowser extends ObjectBrowser
+public class MagicDrawObjectBrowser extends ObjectBrowserBase<IMagicDrawObjectBrowserViewModel, IImpactViewContextMenuViewModel>
 {
     /**
      * This view attached {@linkplain IViewModel}
      */
     private IMagicDrawObjectBrowserViewModel dataContext;
-    
+
     /**
      * Initializes a new {@linkplain MagicDrawObjectBrowser}
      */
@@ -66,12 +67,12 @@ public class MagicDrawObjectBrowser extends ObjectBrowser
      * @param viewModel the {@link IViewModel} to assign
      */
     @Override
-    public void SetDataContext(IViewModel viewModel)
+    public void SetDataContext(IMagicDrawObjectBrowserViewModel viewModel)
     {
-        this.dataContext = (IMagicDrawObjectBrowserViewModel)viewModel;
+        this.dataContext = viewModel;
         this.Bind();
     }
-    
+
     /**
      * Gets the DataContext
      * 
@@ -82,7 +83,7 @@ public class MagicDrawObjectBrowser extends ObjectBrowser
     {
         return this.dataContext;
     }
-    
+
     /**
      * Handles the selection when the user changes it
      */
@@ -91,29 +92,17 @@ public class MagicDrawObjectBrowser extends ObjectBrowser
     {
         int selectedRowIndex = objectBrowserTree.getSelectedRow();
 
-        Pair<Integer, IElementRowViewModel> row = Pair.of(selectedRowIndex,
-                (IElementRowViewModel) objectBrowserTree.getValueAt(selectedRowIndex, 0));
+        Pair<Integer, IElementRowViewModel<?>> row = Pair.of(selectedRowIndex,
+                (IElementRowViewModel<?>) objectBrowserTree.getValueAt(selectedRowIndex, 0));
 
-        if(!(row.getRight() instanceof ClassRowViewModel))
+        if (!(row.getRight() instanceof ClassRowViewModel))
         {
             return;
         }
-        
-        dataContext.OnSelectionChanged((ClassRowViewModel)row.getRight());
 
-        SwingUtilities.invokeLater(() -> {
-            objectBrowserTree
-                    .tableChanged(new TableModelEvent(objectBrowserTree.getOutlineModel(), row.getLeft()));
-        });
-    }
+        dataContext.OnSelectionChanged((ClassRowViewModel) row.getRight());
 
-    /**
-     * Sets this {@linkplain Outline} contained component context menu
-     * 
-     * @param contextMenu the {@linkplain ContextMenu}
-     */
-    public void SetContextMenu(ContextMenu<?> contextMenu)
-    {
-        this.objectBrowserTree.setComponentPopupMenu(contextMenu);
+        SwingUtilities.invokeLater(() -> 
+            objectBrowserTree.tableChanged(new TableModelEvent(objectBrowserTree.getOutlineModel(), row.getLeft())));
     }
 }

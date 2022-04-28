@@ -35,13 +35,19 @@ import org.apache.commons.lang3.tuple.ImmutableTriple;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
+import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Utils.Ref;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
-import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+import ViewModels.Rows.MappedHubRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementBaseRowViewModel;
+import ViewModels.Rows.MappedDstRequirementRowViewModel;
+import cdp4common.commondata.NamedThing;
+import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
@@ -49,16 +55,33 @@ import cdp4common.engineeringmodeldata.RequirementsSpecification;
 /**
  * The {@linkplain MagicDrawMappingConfigurationService} is the implementation of {@linkplain MappingConfigurationService} for the MagicDraw adapter
  */
-public class MagicDrawMappingConfigurationService extends MappingConfigurationService<Class> implements IMagicDrawMappingConfigurationService
+public class MagicDrawMappingConfigurationService extends MappingConfigurationService<Class, ExternalIdentifier> implements IMagicDrawMappingConfigurationService
 {
+    /**
+     * The {@linkplain IMagicDrawTransactionService}
+     */
+    private final IMagicDrawTransactionService transactionService;
+    
     /**
      * Initializes a new {@linkplain MagicDrawMappingConfigurationService}
      * 
      * @param HubController the {@linkplain IHubController}
+     * @param transactionService the {@linkplain ICapellaTransactionService}
      */
-    public MagicDrawMappingConfigurationService(IHubController hubController)
+    public MagicDrawMappingConfigurationService(IHubController hubController, IMagicDrawTransactionService transactionService)
     {
-        super(hubController);
+        super(hubController, ExternalIdentifier.class);
+        this.transactionService = transactionService;
+
+        this.HubController.GetIsSessionOpenObservable()
+        .subscribe(x -> 
+        {
+            if(!x)
+            {
+                this.Correspondences.clear();
+                this.SetExternalIdentifierMap(new ExternalIdentifierMap());
+            }
+        });
     }
 
     /**
@@ -103,36 +126,60 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             return false;
         }
         
+        MappingDirection mappingDirection = optionalCorrespondence.get().middle.MappingDirection;
+        UUID internalId = optionalCorrespondence.get().right;
+        
         if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Block))
         {
             Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
-                        
-            MappedElementDefinitionRowViewModel mappedElement = new MappedElementDefinitionRowViewModel(element, optionalCorrespondence.get().middle.MappingDirection);
             
-            if(this.HubController.TryGetThingById(optionalCorrespondence.get().right, refElementDefinition))
+            MappedElementDefinitionRowViewModel mappedElement = new MappedElementDefinitionRowViewModel(this.transactionService.Clone(element), mappingDirection);
+            
+            if(this.HubController.TryGetThingById(internalId, refElementDefinition))
             {
-                mappedElement.SetHubElement(refElementDefinition.Get().clone(true));
+                mappedElement.SetHubElement(refElementDefinition.Get().clone(false));
             }
-            
+                        
             refMappedElementRowViewModel.Set(mappedElement);
         }
         else if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
         {      
-            Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
-            
-            MappedRequirementsSpecificationRowViewModel mappedElement = new MappedRequirementsSpecificationRowViewModel(element, optionalCorrespondence.get().middle.MappingDirection);
-            
-            if(this.HubController.TryGetThingById(optionalCorrespondence.get().right, refRequirementsSpecification))
+            if(mappingDirection == MappingDirection.FromHubToDst)
             {
-                mappedElement.SetHubElement(refRequirementsSpecification.Get().clone(true));
+                MappedHubRequirementRowViewModel mappedElement = new MappedHubRequirementRowViewModel(this.transactionService.Clone(element), mappingDirection);
+                this.GetMappedRequirement(mappedElement, internalId, cdp4common.engineeringmodeldata.Requirement.class);
+                
+                refMappedElementRowViewModel.Set(mappedElement);
             }
-            
-            refMappedElementRowViewModel.Set(mappedElement);
+            else
+            {
+                MappedDstRequirementRowViewModel mappedElement = new MappedDstRequirementRowViewModel(element, mappingDirection);
+                this.GetMappedRequirement(mappedElement, internalId, RequirementsSpecification.class);
+                refMappedElementRowViewModel.Set(mappedElement);
+            }            
         }
         
         return refMappedElementRowViewModel.HasValue();
     }
 
+    /**
+     * Gets the mapped {@linkplain #TThing}
+     * 
+     * @param <TThing> the type of {@linkplain Thing} to query from the cache
+     * @param mappedElement the {@linkplain MappedRequirementBaseRowViewModel}
+     * @param internalId the internal id of the queried Thing
+     * @param clazz the {@linkplain Class} of the queried Thing
+     */
+    @SuppressWarnings("unchecked")
+    private <TThing extends Thing & NamedThing> void GetMappedRequirement(MappedRequirementBaseRowViewModel<TThing> mappedElement, UUID internalId, java.lang.Class<TThing> clazz)
+    {
+        Ref<TThing> refHubRequirement = new Ref<>(clazz);
+        
+        if(this.HubController.TryGetThingById(internalId, refHubRequirement))
+        {
+            mappedElement.SetHubElement((TThing) refHubRequirement.Get().clone(true));
+        }
+    }
     /**
      * Creates a new {@linkplain ExternalIdentifierMap} and sets the current as the new one
      * 
