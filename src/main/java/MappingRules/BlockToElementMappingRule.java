@@ -1,5 +1,5 @@
 /*
- * BlockDefinitionMappingRule.java
+ * BlockToElementMappingRule.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -43,6 +43,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
+import com.nomagic.magicdraw.sysml.util.SysMLUtilities;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
@@ -60,17 +61,21 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import App.AppContainer;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
+import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
+import Utils.Stereotypes.StereotypeUtils;
+import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
@@ -102,9 +107,9 @@ import cdp4dal.operations.ThingTransactionImpl;
 import cdp4dal.operations.TransactionContextResolver;
 
 /**
- * The {@linkplain BlockDefinitionMappingRule} is the mapping rule implementation for transforming {@linkplain Element} to {@linkplain ElementDefinition}
+ * The {@linkplain BlockToElementMappingRule} is the mapping rule implementation for transforming {@linkplain Element} to {@linkplain ElementDefinition}
  */
-public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollection, ArrayList<MappedElementDefinitionRowViewModel>>
+public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDrawBlockCollection, ArrayList<MappedElementDefinitionRowViewModel>>
 {
     /**
      * The string that indicates the language code for the {@linkplain Definition} for {@linkplain ElementDefinition}s
@@ -116,16 +121,11 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * The string that specifies the {@linkplain ElementDefinition} representing ports
      */
     private static final String PORTELEMENTDEFINITIONNAME = "Port";
-    
+        
     /**
-     * The {@linkplain IHubController}
+     * The {@linkplain IMagicDrawSessionService} instance
      */
-    private IHubController hubController;
-
-    /**
-     * The {@linkplain IMagicDrawMappingConfigurationService} instance
-     */
-    private IMagicDrawMappingConfigurationService mappingConfiguration;
+    private final IMagicDrawSessionService sessionService;
     
     /**
      * The isLeaf category names where pair.item0 is the short name
@@ -188,15 +188,16 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     private ElementDefinition portElementDefinition;
 
     /**
-     * Initializes a new {@linkplain BlockDefinitionMappingRule}
+     * Initializes a new {@linkplain BlockToElementMappingRule}
      * 
      * @param HubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
+     * @param sessionService the {@linkplain IMagicDrawSessionService}
      */
-    public BlockDefinitionMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
+    public BlockToElementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawSessionService sessionService)
     {
-        this.hubController = hubController;
-        this.mappingConfiguration = mappingConfiguration;
+        super(hubController, mappingConfiguration);
+        this.sessionService = sessionService;
     }
     
     /**
@@ -258,7 +259,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         this.ProcessInterfaces();
         this.ProcessConnectorProperties();
     }
-
+    
     /**
      * Creates the {@linkplain BinaryRelationShip} that connects ports between each others
      * 
@@ -388,12 +389,33 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             elementUsage.setIid(UUID.randomUUID());
             elementUsage.setOwner(this.hubController.GetCurrentDomainOfExpertise());
             elementUsage.setElementDefinition(this.GetPortElementDefinition());
-            elementUsage.setInterfaceEnd(InterfaceEndKind.UNDIRECTED);
+            
+            elementUsage.setInterfaceEnd(this.GetInterfaceEndKind(port));
                         
             mappedElement.GetHubElement().getContainedElement().add(elementUsage);
             
             this.portsToConnect.add(Triple.of(port, mappedElement, elementUsage));
         }
+    }
+
+    /**
+     * Gets the {@linkplain InterfaceEndKind} of the specified {@linkplain Port}
+     * 
+     * @param port the {@linkplain Port}
+     * @return the {@linkplain InterfaceEndKind}
+     */
+    private InterfaceEndKind GetInterfaceEndKind(Port port)
+    {
+        if (port.getProvided().isEmpty() && !port.getRequired().isEmpty())
+        {
+            return InterfaceEndKind.INPUT;
+        }
+        else if(port.getRequired().isEmpty() && !port.getProvided().isEmpty())
+        {
+            return InterfaceEndKind.OUTPUT;
+        }
+        
+        return InterfaceEndKind.UNDIRECTED;
     }
 
     /**
@@ -428,8 +450,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         
         if(port.getType() != null)
         {
-            String shortName = AppContainer.Container.getComponent(IDstController.class)
-                    .GetProjectElements().stream()
+            String shortName = this.sessionService.GetProjectElements().stream()
                     .flatMap(x -> x.getOwnedElement().stream())
                     .filter(p -> MDCustomizationForSysMLProfile.isPartProperty(p)
                                 && AreTheseEquals(((Property)p).getType().getID(), port.getOwner().getID()))
@@ -619,7 +640,8 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             }
             
             Predicate<Parameter> areParameterParameterTypeShortNameEqualsPredicate = 
-                    x -> this.AreShortNamesEquals(x.getParameterType(), GetShortName(property.getName()));
+                    x -> this.AreShortNamesEquals(x.getParameterType(), GetShortName(property)) 
+                    || x.getParameterType().getName().compareToIgnoreCase(property.getName()) == 0;
             
             Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
                     .filter(areParameterParameterTypeShortNameEqualsPredicate)
@@ -628,8 +650,8 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             Ref<ParameterType> refParameterType = new Ref<>(ParameterType.class);
             Parameter parameter = null;
             
-            Ref<String> refValue = new Ref<>(String.class, "");
-            boolean hasValue = this.TryGetValueFromProperty(property, refValue);
+            Ref<String> refValue = new Ref<>(String.class, "-");
+            boolean hasValue = StereotypeUtils.TryGetValueFromProperty(property, refValue);
             
             if(property.getAppliedStereotypeInstance() != null && property.getAppliedStereotypeInstance().getName().toLowerCase().contains("ConnectorProperty")
                     && property.getDefaultValue() instanceof ElementValue
@@ -638,8 +660,8 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                 this.connectedElements.add(Pair.of(property, elementDefinition));
                 continue;
             }
-            
-            if(!existingParameter.isPresent() && hasValue)
+
+            if(!existingParameter.isPresent())
             {
                 if(this.TryCreateParameterType(property, refParameterType))
                 {
@@ -661,7 +683,7 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     continue;
                 }
             }   
-            else if (existingParameter.isPresent() && hasValue)
+            else if (existingParameter.isPresent())
             {
                 parameter = existingParameter.get().clone(true);
             }
@@ -803,73 +825,27 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     }
 
     /**
-     * Tries to extract the value from the provided property and returns it as string
-     * 
-     * @return a value indicating whether the value has been extracted
-     */
-    private boolean TryGetValueFromProperty(Property property, Ref<String> refValue)
-    {
-        ValueSpecification valueSpecification = property.getDefaultValue();
-        
-        if(valueSpecification instanceof LiteralInteger)
-        {
-            refValue.Set(String.valueOf(((LiteralInteger)property.getDefaultValue()).getValue()));
-        }
-        else if(valueSpecification instanceof LiteralUnlimitedNatural)
-        {
-            refValue.Set(String.valueOf(((LiteralUnlimitedNatural)property.getDefaultValue()).getValue()));
-        }
-        else if(valueSpecification instanceof LiteralReal)
-        {
-            refValue.Set(String.valueOf(((LiteralReal)property.getDefaultValue()).getValue()));
-        }
-        else if(valueSpecification instanceof LiteralString)
-        {
-            refValue.Set(((LiteralString)property.getDefaultValue()).getValue());
-        }
-        else if(valueSpecification instanceof LiteralBoolean)
-        {
-            refValue.Set(String.valueOf(((LiteralBoolean)property.getDefaultValue()).isValue()));
-        }
-        
-        return refValue.HasValue();
-    }
-
-    /**
      * Tries to create a {@linkplain ParameterType} if it doesn't exist yet in the chain of rdls
      * 
      * @param property the {@linkplain Property} to create the {@linkplain ParameterType} from
      * @param refParameterType the {@linkplain Ref} of {@linkplain ParameterType} 
      * @return a value indicating whether the {@linkplain ParameterType} has been successfully created or retrieved from the chain of rdls
      */
-    @SuppressWarnings("resource")
     private boolean TryCreateParameterType(Property property, Ref<ParameterType> refParameterType)
     {
         try
         {
             String shortName = GetShortName(property.getName());
             
-            if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> this.AreShortNamesEquals(x, shortName), refParameterType))
+            if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> this.AreShortNamesEquals(x, shortName) 
+                    || x.getName().compareToIgnoreCase(property.getName()) == 0, refParameterType))
             {
                 ParameterType parameterType = null;
                 ValueSpecification valueSpecification = property.getDefaultValue();
-                
-                if(valueSpecification instanceof LiteralInteger || valueSpecification instanceof LiteralUnlimitedNatural || valueSpecification instanceof LiteralReal)
-                {
-                    parameterType = new SimpleQuantityKind();
 
-                    SimpleQuantityKind quantityKind = ((SimpleQuantityKind)parameterType);
-                    
-                    Ref<MeasurementScale> refScale = new Ref<>(MeasurementScale.class);
-                    
-                    if(!this.TryCreateOrGetMeasurementScale(valueSpecification, property, refScale))
-                    {
-                        this.Logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", shortName));
-                        return false;
-                    }
-                    
-                    quantityKind.getAllPossibleScale().add(refScale.Get());
-                    quantityKind.setDefaultScale(refScale.Get());
+                if(valueSpecification == null || valueSpecification instanceof LiteralInteger || valueSpecification instanceof LiteralUnlimitedNatural || valueSpecification instanceof LiteralReal)
+                {
+                    parameterType = this.CreateQuantityKind(property);
                 }
                 
                 else if(valueSpecification instanceof LiteralBoolean)
@@ -882,10 +858,9 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     parameterType = new TextParameterType();
                 }
                 
-                if(!(valueSpecification instanceof LiteralSpecification) || valueSpecification instanceof LiteralNull)
+                else
                 {
-                    this.Logger.error(String.format("The property %s value type isn't supported by the adapter because its not a LiteralSpecification ? %s or it is a LiteralNull ? %s", 
-                            property.getName(), !(valueSpecification instanceof LiteralSpecification), valueSpecification instanceof LiteralNull));
+                    this.Logger.error(String.format("The property %s isn't supported by the adapter because it is %s or %s", property.getName(), valueSpecification.getHumanType(), valueSpecification.getHumanName()));
                 }
                                 
                 if(parameterType != null)
@@ -899,18 +874,39 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
                     referenceDataLibrary.getParameterType().add(parameterType);
                     return this.TryCreateReferenceDataLibraryThing(parameterType, referenceDataLibrary, refParameterType);
                 }
-                
-                return false;
             }
             
-            return true;
+            return refParameterType.HasValue();
         }
         catch(Exception exception)
         {
-            this.Logger.error(String.format("Could not create the parameter type with the shortname: %s, because %s", property.getName(), exception));
+            this.Logger.error(String.format("Could not create the parameter type with the name: %s, because %s", property.getName(), exception));
             this.Logger.catching(exception);
             return false;
         }
+    }
+
+    /**
+     * Creates a parameter type base on the measurement scale and unit
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain QuantityKind}
+     */
+    private QuantityKind CreateQuantityKind(Property property)
+    {
+        Ref<MeasurementScale> refScale = new Ref<>(MeasurementScale.class);
+        
+        if(!this.TryCreateOrGetMeasurementScale(property.getDefaultValue(), property, refScale))
+        {
+            this.Logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", property.getName()));
+            return null;
+        }
+
+        SimpleQuantityKind quantityKind = new SimpleQuantityKind();
+        
+        quantityKind.getAllPossibleScale().add(refScale.Get());
+        quantityKind.setDefaultScale(refScale.Get());
+        return quantityKind;
     }
 
     /**
@@ -924,19 +920,19 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
     @SuppressWarnings("resource")
     private boolean TryCreateOrGetMeasurementScale(ValueSpecification valueSpecification, Property property, Ref<MeasurementScale> refScale)
     {
-        Pair<Property, Property> scaleAndUnit = this.GetScaleAndUnit(property); 
+        Pair<String, String> scaleAndUnit = this.GetScaleAndUnit(property); 
         
         if(scaleAndUnit.getLeft() == null || scaleAndUnit.getRight() == null)
         {
             return false;
         }
         
-        String scaleShortName = GetShortName(scaleAndUnit.getLeft().getName());
-        
+        String scaleShortName = scaleAndUnit.getLeft();
+
         if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(scaleShortName), refScale))
         {
             MeasurementScale newScale = new RatioScale();
-            newScale.setName(scaleAndUnit.getLeft().getName());
+            newScale.setName(scaleAndUnit.getLeft());
             
             if(valueSpecification instanceof LiteralInteger)
             {
@@ -946,14 +942,14 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             {
                 newScale.setNumberSet(NumberSetKind.NATURAL_NUMBER_SET);                            
             }
-            else if(valueSpecification instanceof LiteralReal)
+            else
             {
                 newScale.setNumberSet(NumberSetKind.REAL_NUMBER_SET);                            
             }
             
             Ref<MeasurementUnit> refMeasurementUnit = new Ref<>(MeasurementUnit.class);
             
-            if(!this.TryCreateOrGetMeasurementUnit(valueSpecification, scaleAndUnit.getRight().getName(), refMeasurementUnit))
+            if(!this.TryCreateOrGetMeasurementUnit(scaleAndUnit.getRight(), refMeasurementUnit))
             {   
                 return false;
             }
@@ -975,23 +971,19 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * @param property the {@linkplain Property}
      * @return a {@linkplain Pair} of {@linkplain Property} where left is the scale and right is the unit
      */
-    private Pair<Property, Property> GetScaleAndUnit(Property property)
+    private Pair<String, String> GetScaleAndUnit(Property property)
     {
-        Type dataType = property.getDatatype() != null ? property.getDatatype() : property.getType();
+        String type = StereotypeUtils.GetTypeRepresentation(property);
+
+        String[] scaleAndUnit = type.replaceAll("[^a-zA-Z0-9]|\\s", " ").split(" ");
         
-        if(dataType != null)
+        if(scaleAndUnit.length == 1)
         {
-            Property quantityKind = StereotypesHelper.findStereotypePropertyFor(dataType, "quantityKind");
-            Property scale = null;
-            
-            if(quantityKind != null)
-            {
-                scale = StereotypesHelper.findStereotypePropertyFor(quantityKind, "scale");
-            }
-            
-            Property unit = StereotypesHelper.findStereotypePropertyFor(dataType, "Unit");
-            
-            return Pair.of(scale, unit);
+            return Pair.of(scaleAndUnit[0], "-");
+        }
+        else if(scaleAndUnit.length == 2)
+        {
+            return Pair.of(scaleAndUnit[0], scaleAndUnit[1].trim());
         }
         
         return Pair.of(null, null);
@@ -1001,16 +993,15 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
      * Tries to create a new {@linkplain MeasurementScale} based on the provided {@linkplain valueSpecification}
      * or to retrieve it from the cache
      * 
-     * @param valueSpecification the {@linkplain ValueSpecification}
      * @param unitName the unit name
      * @param refMeasurementUnit the {@linkplain Ref} of {@linkplain MeasurementUnit} as out parameter
      * @return a {@linkplain boolean} indicating whether the {@linkplain refMeasurementUnit} is not null
      */
-    private boolean TryCreateOrGetMeasurementUnit(ValueSpecification valueSpecification, String unitName, Ref<MeasurementUnit> refMeasurementUnit)
+    private boolean TryCreateOrGetMeasurementUnit(String unitName, Ref<MeasurementUnit> refMeasurementUnit)
     {
         String unitShortName = GetShortName(unitName);
         
-        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(unitShortName) || x.getName().equals(unitName), refMeasurementUnit))
+        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(unitShortName) || x.getName().equals(unitName) || x.getShortName().equals("-"), refMeasurementUnit))
         {
             SimpleUnit newMeasurementUnit = new SimpleUnit();
             newMeasurementUnit.setName(unitName);
@@ -1037,22 +1028,10 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
             return;
         }
         
-        Boolean isEncapsulated = null;
-
-        Optional<String> optionalIsEncapsulated = 
-                StereotypesHelper.getStereotypePropertyValueAsString(block, 
-                        block.getAppliedStereotypeInstance().getName(), this.isEncapsulatedCategoryNames.getRight())
-                .stream().findFirst();
-                
-        if(optionalIsEncapsulated.isPresent())
-        {
-            isEncapsulated = Boolean.valueOf(optionalIsEncapsulated.get());
-        }
-        
         this.MapCategory(elementDefinition, this.isLeafCategoryNames, block.isLeaf(), false);
         this.MapCategory(elementDefinition, this.isAbstractCategoryNames, block.isAbstract(), true);
         this.MapCategory(elementDefinition, this.isActiveCategoryNames, block.isActive(), false);
-        this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, isEncapsulated, true);
+        this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, SysMLUtilities.isEncapsulated(block), true);
         
         this.Logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
     }
@@ -1099,58 +1078,5 @@ public class BlockDefinitionMappingRule extends MappingRule<MagicDrawBlockCollec
         {
             this.Logger.catching(exception);
         }
-    }
-    
-    /**
-     * Tries to create the category with the specified {@linkplain categoryShortName}
-     * 
-     * @param categoryNames the {@linkplain Pair} of short name and name
-     * @param refCategory the {@linkplain Ref} of Category
-     * @param params of permissive classes
-     * 
-     * @return a value indicating whether the category has been successfully created and retrieved from the cache
-     */
-    private boolean TryCreateCategory(Pair<String, String> categoryNames, Ref<Category> refCategory, ClassKind... permissibleClass)
-    {
-        Category newCategory = new Category();
-        newCategory.setName(categoryNames.getRight());
-        newCategory.setShortName(categoryNames.getLeft());
-        newCategory.setIid(UUID.randomUUID());
-        newCategory.getPermissibleClass().addAll(Arrays.asList(permissibleClass)); 
-
-        ReferenceDataLibrary rdl = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
-        rdl.getDefinedCategory().add(newCategory);
-        
-        return TryCreateReferenceDataLibraryThing(newCategory, rdl, refCategory);        
-    }
-
-    /**
-     * Tries to add the specified {@linkplain newThing} to the provided {@linkplain ContainerList} and retrieved the new reference from the cache after save
-     * 
-     * @param <TThing> the type of {@linkplain Thing}
-     * @param newThing the new {@linkplain Thing}
-     * @param clonedReferenceDataLibrary the cloned {@linkplain ReferenceDataLibrary} where the {@linkplain newThing} is contained
-     * @param refThing the {@linkplain Ref} acting as an out parameter here
-     * @return a value indicating whether the {@linkplain newThing} has been successfully created and retrieved from the cache
-     */
-    private <TThing extends Thing> boolean TryCreateReferenceDataLibraryThing(TThing newThing, ReferenceDataLibrary clonedReferenceDataLibrary, Ref<TThing> refThing)
-    {
-        try
-        {
-            ThingTransaction transaction = new ThingTransactionImpl(TransactionContextResolver.resolveContext(clonedReferenceDataLibrary), clonedReferenceDataLibrary);
-            transaction.createOrUpdate(clonedReferenceDataLibrary);
-            transaction.createOrUpdate(newThing);
-            
-            this.hubController.Write(transaction);
-            this.hubController.RefreshReferenceDataLibrary(clonedReferenceDataLibrary);
-            
-            return this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getIid().compareTo(newThing.getIid()) == 0, refThing);
-        }
-        catch(Exception exception)
-        {
-            this.Logger.error(String.format("Could not create the %s because %s", newThing.getClassKind(), exception));
-            this.Logger.catching(exception);
-            return false;
-        }       
     }
 }

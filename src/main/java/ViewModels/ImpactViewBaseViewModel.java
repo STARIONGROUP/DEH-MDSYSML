@@ -31,6 +31,7 @@ import HubController.IHubController;
 import Utils.Ref;
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -84,7 +85,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         this.DstController.GetDstMapResult()
             .ItemsAdded()
-            .subscribe(x -> this.ComputeDifferences(), e -> this.Logger.catching(e));
+            .subscribe(x -> this.ComputeDifferences(), e -> this.logger.catching(e));
         
         this.DstController.GetDstMapResult()
             .IsEmpty()
@@ -160,7 +161,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
             this.SetOutlineModel(this.hubController.GetOpenIteration());
         }
     
-        this.IsTheTreeVisible.Value(isConnected);
+        this.isTheTreeVisible.Value(isConnected);
     }
     
     /**
@@ -230,7 +231,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         OutlineModel model = this.CreateNewModel(iteration);
         this.UpdateHighlightOnRows(model);
-        this.BrowserTreeModel.Value(model);
+        this.browserTreeModel.Value(model);
     }
 
     /**
@@ -271,7 +272,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
     {
         if(selectedRow != null && selectedRow.GetThing() != null)
         {
-            Optional<MappedElementRowViewModel<? extends Thing, com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class>> optionalMappedElement = 
+            Optional<MappedElementRowViewModel<? extends Thing, ? extends com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class>> optionalMappedElement = 
                     this.DstController.GetDstMapResult().stream()
                         .filter(r -> AreTheseEquals(r.GetHubElement().getIid(), selectedRow.GetThing().getIid()))
                         .findFirst();

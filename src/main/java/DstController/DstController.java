@@ -33,23 +33,34 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.nomagic.magicdraw.core.Application;
-import com.nomagic.magicdraw.core.Project;
-import com.nomagic.magicdraw.core.project.ProjectEventListener;
+import com.nomagic.magicdraw.foundation.MDObject;
+import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
+import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
-import MappingRules.BlockDefinitionMappingRule;
+import MappingRules.BlockToElementMappingRule;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
+import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
+import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.MagicDrawTransaction.ClonedReferenceElement;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingConfiguration.IMappingConfigurationService;
@@ -57,15 +68,23 @@ import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
 import Utils.Stereotypes.HubElementCollection;
-import Utils.Stereotypes.HubRequirementsSpecificationCollection;
+import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
+import Utils.Stereotypes.StereotypeUtils;
+import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
+import ViewModels.Rows.MappedDstRequirementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
-import ViewModels.Rows.MappedRequirementsSpecificationRowViewModel;
+import ViewModels.Rows.MappedHubRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementBaseRowViewModel;
+import cdp4common.ChangeKind;
 import cdp4common.commondata.ClassKind;
+import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Definition;
+import cdp4common.commondata.NamedThing;
+import cdp4common.commondata.ShortNamedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -79,6 +98,11 @@ import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import cdp4common.engineeringmodeldata.ValueSet;
+import cdp4common.sitedirectorydata.MeasurementScale;
+import cdp4common.sitedirectorydata.MeasurementUnit;
+import cdp4common.sitedirectorydata.ParameterType;
+import cdp4common.sitedirectorydata.QuantityKind;
+import cdp4common.sitedirectorydata.SpecializedQuantityKind;
 import cdp4common.types.ContainerList;
 import cdp4dal.exceptions.TransactionException;
 import cdp4dal.operations.ThingTransaction;
@@ -100,11 +124,6 @@ public final class DstController implements IDstController
     private final Logger logger = LogManager.getLogger();
     
     /**
-     * The {@linkplain ProjectEventListener} to monitor project open and closed in Cameo/MagicDraw
-     */
-    private final IMagicDrawProjectEventListener projectEventListener;
-
-    /**
      * The {@linkplain IMappingEngine} instance
      */
     private final IMappingEngineService mappingEngine;
@@ -123,55 +142,31 @@ public final class DstController implements IDstController
      * The {@linkplain IMappingConfigurationService} instance
      */
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
-    
-    /**
-     * Gets the open Document ({@linkplain Project}) from the running instance of Cameo/MagicDraw
-     * 
-     * @return the {@linkplain Project}
-     */
-    @Override
-    public Project OpenDocument() 
-    {
-        return this.projectEventListener.OpenDocument().Value();
-    }
-    
-    /**
-     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating the subscribers whenever the open document gets saved
-     * 
-     * @return an {@linkplain Observable} of {@linkplain Boolean}
-     */
-    @Override
-    public Observable<Boolean> OpenDocumentHasBeenSaved() 
-    {
-        return this.projectEventListener.ProjectSaved();
-    }
 
     /**
-     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating if Cameo/MagicDraw has an open document
-     * 
-     * @return a {@linkplain Observable} of {@linkplain Boolean}
+     * The {@linkplain IMagicDrawLocalExchangeHistoryService} instance
      */
-    @Override
-    public Observable<Boolean> HasOneDocumentOpenObservable()
-    {
-        return this.projectEventListener.HasOneDocumentOpen().Observable();
-    }
+    private final IMagicDrawLocalExchangeHistoryService exchangeHistory;
     
     /**
-     * Gets a value indicating if Cameo/MagicDraw has an open document
-     * 
-     * @return a {@linkplain boolean}
+     * The {@linkplain IMagicDrawSessionService} instance
      */
-    @Override
-    public boolean HasOneDocumentOpen()
-    {
-        return this.projectEventListener.HasOneDocumentOpen().Value().booleanValue();
-    }
+    private final IMagicDrawSessionService sessionService;
+    
+    /**
+     * The {@linkplain IMagicDrawTransactionService} instance
+     */
+    private final IMagicDrawTransactionService transactionService;
+
+    /**
+     * A value indicating whether the {@linkplain DstController} should load mapping when the HUB session is refresh or reloaded
+     */
+    private boolean isHubSessionRefreshSilent;
     
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> hubMapResult = new ObservableCollection<>();
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> hubMapResult = new ObservableCollection<>();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
@@ -179,7 +174,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
     @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetHubMapResult()
+    public ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetHubMapResult()
     {
         return this.hubMapResult;
     }    
@@ -187,7 +182,7 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> dstMapResult = new ObservableCollection<>();
+    private ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> dstMapResult = new ObservableCollection<>();
 
     /**
      * Gets The {@linkplain ObservableCollection} of DST map result
@@ -195,7 +190,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
     @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends Thing, Class>> GetDstMapResult()
+    public ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetDstMapResult()
     {
         return this.dstMapResult;
     }
@@ -282,16 +277,21 @@ public final class DstController implements IDstController
      * @param HubController the {@linkplain IHubController} instance
      * @param logService the {@linkplain IMagicDrawUILogService} instance
      * @param mappingConfigurationService the {@linkplain IMagicDrawMappingConfigurationService} instance
-     * @param projectEventListener the {@linkplain IMagicDrawProjectEventListener} instance
+     * @param sessionService the {@linkplain IMagicDrawSessionService} instance
+     * @param exchangeHistory the {@linkplain IMagicDrawLocalExchangeHistoryService} instance
+     * @param transactionService the {@linkplain IMagicDrawTransactionService} instance
      */
     public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawUILogService logService, 
-            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawProjectEventListener projectEventListener)
+            IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawSessionService sessionService,
+            IMagicDrawLocalExchangeHistoryService exchangeHistory, IMagicDrawTransactionService transactionService)
     {
         this.mappingEngine = mappingEngine;
         this.hubController = hubController;
         this.logService = logService;
         this.mappingConfigurationService = mappingConfigurationService;
-        this.projectEventListener = projectEventListener;
+        this.sessionService = sessionService;
+        this.exchangeHistory = exchangeHistory;
+        this.transactionService = transactionService;
         
         this.InitializeObservables();
     }
@@ -301,7 +301,7 @@ public final class DstController implements IDstController
      */
     private void InitializeObservables()
     {            
-        this.OpenDocumentHasBeenSaved().subscribe(x -> this.LoadMapping());
+        this.sessionService.SessionUpdated().subscribe(x -> this.LoadMapping());
         
         this.hubController.GetIsSessionOpenObservable().subscribe(isSessionOpen -> 
         {
@@ -311,6 +311,14 @@ public final class DstController implements IDstController
                 this.hubMapResult.clear();
                 this.selectedDstMapResultForTransfer.clear();
                 this.selectedHubMapResultForTransfer.clear();
+            }
+        });
+
+        this.hubController.GetSessionEventObservable().subscribe(x -> 
+        {
+            if(!this.isHubSessionRefreshSilent)
+            {
+                this.LoadMapping(); 
             }
         });
     }
@@ -325,7 +333,7 @@ public final class DstController implements IDstController
     {
         StopWatch timer = StopWatch.createStarted();
         
-        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.OpenDocument().getAllElements()
+        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.sessionService.GetProject().getAllElements()
                 .stream()
                 .filter(Class.class::isInstance)
                 .map(Class.class::cast)
@@ -335,7 +343,7 @@ public final class DstController implements IDstController
         MagicDrawRequirementCollection allMappedMagicDrawRequirements = new MagicDrawRequirementCollection();
         
         HubElementCollection allMappedHubElement = new HubElementCollection();
-        HubRequirementsSpecificationCollection allMappedHubRequirements = new HubRequirementsSpecificationCollection();
+        HubRequirementCollection allMappedHubRequirements = new HubRequirementCollection();
         
         things.stream()
             .filter(x -> x.GetMappingDirection() == MappingDirection.FromDstToHub)
@@ -385,19 +393,23 @@ public final class DstController implements IDstController
      * Sorts the {@linkplain IMappedElementRowViewModel} and adds it to the relevant collection of one of the two provided
      * 
      * @param allMappedElement the {@linkplain Collection} of {@linkplain MappedElementDefinitionRowViewModel}
-     * @param allMappedRequirements the {@linkplain Collection} of {@linkplain MappedRequirementsSpecificationRowViewModel}
+     * @param allMappedRequirements the {@linkplain Collection} of {@linkplain MappedDstRequirementRowViewModel}
      * @param mappedRowViewModel the {@linkplain IMappedElementRowViewModel} to sort
      */
     private void SortMappedElementByType(ArrayList<MappedElementDefinitionRowViewModel> allMappedElement,
-            ArrayList<MappedRequirementsSpecificationRowViewModel> allMappedRequirements, IMappedElementRowViewModel mappedRowViewModel)
+            ArrayList<? extends MappedRequirementBaseRowViewModel<?>> allMappedRequirements, IMappedElementRowViewModel mappedRowViewModel)
     {
         if(mappedRowViewModel.GetTThingClass().isAssignableFrom(ElementDefinition.class))
         {
             allMappedElement.add((MappedElementDefinitionRowViewModel) mappedRowViewModel);
         }
+        else if(mappedRowViewModel.GetTThingClass().isAssignableFrom(Requirement.class))
+        {
+            ((HubRequirementCollection)allMappedRequirements).add((MappedHubRequirementRowViewModel) mappedRowViewModel);
+        }
         else if(mappedRowViewModel.GetTThingClass().isAssignableFrom(RequirementsSpecification.class))
         {
-            allMappedRequirements.add((MappedRequirementsSpecificationRowViewModel) mappedRowViewModel);
+            ((MagicDrawRequirementCollection)allMappedRequirements).add((MappedDstRequirementRowViewModel) mappedRowViewModel);
         }
     }
     
@@ -419,13 +431,14 @@ public final class DstController implements IDstController
         }
         
         Object resultAsObject = this.mappingEngine.Map(input);
-
+        
         if(!(resultAsObject instanceof ArrayList<?>))
         {
             return false;
         }
 
-        ArrayList<MappedElementRowViewModel<? extends Thing, Class>> resultAsCollection = (ArrayList<MappedElementRowViewModel<? extends Thing, Class>>) resultAsObject;
+        ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>> resultAsCollection = 
+                (ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) resultAsObject;
         
         if(!resultAsCollection.isEmpty())
         {
@@ -439,7 +452,7 @@ public final class DstController implements IDstController
                 return this.dstMapResult.addAll(resultAsCollection);
             }
             else if (mappingDirection == MappingDirection.FromHubToDst
-                    && resultAsCollection.stream().allMatch(Class.class::isInstance))
+                    && resultAsCollection.stream().allMatch(x -> x.GetDstElement() instanceof Class))
             {
                 this.hubMapResult.removeIf(x -> resultAsCollection.stream()
                         .anyMatch(d -> AreTheseEquals(d.GetDstElement().getID(), x.GetDstElement().getID())));
@@ -468,7 +481,7 @@ public final class DstController implements IDstController
                 result = this.TransferToHub();
                 break;
             case FromHubToDst:
-                result = true;
+                result = this.TransferToDst();
                 break;
             default:
                 result = false;
@@ -478,7 +491,218 @@ public final class DstController implements IDstController
         this.LoadMapping();
         return result;
     }
+    /**
+     * Transfers all the {@linkplain Class} contained in the {@linkplain huMapResult} to the DST
+     * 
+     * @return a value indicating that all transfer could be completed
+     */
+    @Override
+    public boolean TransferToDst()
+    {
+        try
+        {
+            boolean result = this.transactionService.Commit(() -> PrepareThingsForTransfer());
+
+            this.logService.Append(String.format("Transfered %s elements to MagicDraw/Cameo", this.selectedHubMapResultForTransfer.size()), result);
+            
+            if(!this.mappingConfigurationService.IsTheCurrentIdentifierMapTemporary())
+            {
+                this.logService.Append("Saving the mapping configuration in progress...");
+
+                this.isHubSessionRefreshSilent = true;
+                Pair<Iteration, ThingTransaction> iterationTransaction = this.hubController.GetIterationTransaction();
     
+                Iteration iterationClone = iterationTransaction.getLeft();
+                ThingTransaction transaction = iterationTransaction.getRight();
+                this.mappingConfigurationService.PersistExternalIdentifierMap(transaction, iterationClone);
+                transaction.createOrUpdate(iterationClone);
+                
+                this.hubController.Write(transaction);
+                result &= this.hubController.Refresh();
+                this.mappingConfigurationService.RefreshExternalIdentifierMap();
+            }
+            
+            this.selectedHubMapResultForTransfer.clear();
+            this.logService.Append("Reloading the mapping configuration in progress...");
+            return result & this.hubController.Refresh();
+        } 
+        catch (Exception exception)
+        {
+            this.logService.Append(exception.toString(), exception);
+            return false;
+        }
+        finally
+        {
+            this.selectedHubMapResultForTransfer.clear();
+            this.isHubSessionRefreshSilent = false;
+        }
+    }
+    
+    /**
+     * Prepares all the element from {@linkplain #GetSelectedHubMapResult()} for transfer
+     */
+    private void PrepareThingsForTransfer()
+    {
+        for (Class element : selectedHubMapResultForTransfer)
+        {
+            Class reference = element;
+            
+            if(this.transactionService.IsCloned(element))
+            {
+                reference = this.transactionService.GetClone(element).GetOriginal();
+            }
+        
+            if(StereotypeUtils.DoesItHaveTheStereotype(reference, Stereotypes.Block))
+            {
+                this.PrepareBlocks(element);
+            }
+            else if(StereotypeUtils.DoesItHaveTheStereotype(reference, Stereotypes.Requirement))
+            {
+                this.PrepareRequirement(element);
+            }
+        }
+    }
+
+    /**
+     * Prepares the specified {@linkplain Class} requirement for transfer
+     * 
+     * @param element the {@linkplain Class} element
+     */
+    private void PrepareRequirement(Class element)
+    {
+        if(this.transactionService.IsCloned(element))
+        {
+            Class original = this.transactionService.GetClone(element).GetOriginal();
+            this.transactionService.SetRequirementId(original, element);
+            this.transactionService.SetRequirementText(original, element);
+            original.setName(element.getName());
+            this.exchangeHistory.Append(element, ChangeKind.UPDATE);
+        }
+        else
+        {
+            this.UpdateRequirementPackage(element);
+        }
+    }
+
+    /**
+     * Prepares the specified {@linkplain Class} block for transfer
+     * 
+     * @param element the {@linkplain Class} element
+     */
+    private void PrepareBlocks(Class element)
+    {
+        if(this.transactionService.IsCloned(element))
+        {
+            Class original = this.transactionService.GetClone(element).GetOriginal();
+            
+            for (Property property : element.getOwnedAttribute().stream().collect(Collectors.toList()))
+            {
+                try
+                {
+                    Optional<Property> optionalOriginalProperty = original.getOwnedAttribute().stream()
+                            .filter(x -> AreTheseEquals(x.getID(), property.getID()))
+                            .findFirst();
+                    
+                    if(optionalOriginalProperty.isPresent())
+                    {
+                        ModelElementsManager.getInstance().removeElement(optionalOriginalProperty.get());
+                    }
+                    
+                    original.getOwnedAttribute().add(property);    
+                }
+                catch(Exception exception)
+                {
+                    this.logger.catching(Level.INFO, exception);
+                    this.logger.error(String.format("Removing/Adding the property %s from %s threw an error", property.getName(), element.getName()));
+                }
+                
+                this.exchangeHistory.Append(property, ChangeKind.UPDATE);
+            }
+            
+            this.exchangeHistory.Append(element, ChangeKind.UPDATE);
+        }
+        else
+        {
+            this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(element);
+            this.exchangeHistory.Append(element, ChangeKind.CREATE);
+        }
+    }
+
+    /**
+     *  Updates the provided requirement owning {@linkplain Package}s
+     * 
+     * @param requirement the {@linkplain Class} requirement
+     */
+    private void UpdateRequirementPackage(Class requirement)
+    {        
+        Package container = (Package)requirement.eContainer();
+        Boolean containerIsCloned = null;
+        
+        while(container != null && !(containerIsCloned = this.transactionService.IsCloned(container)) 
+                && container.eContainer() instanceof Package 
+                && !(AreTheseEquals(((Package)container.eContainer()).getName(), "Model", true)))
+        {
+            container = (Package)container.eContainer();
+        }
+
+        final Package containerToUpdate = container;
+        
+        if(containerToUpdate == null)
+        {
+            return;
+        }        
+
+        this.logger.debug(String.format("DEBUG UPDATE REQUIREMENT PACKAGE container to update = %s, %s", container.getName(), container.getHumanType()));
+                
+        if(containerIsCloned.booleanValue())
+        {
+            this.UpdateRequirementPackage(containerToUpdate);
+            this.exchangeHistory.Append(containerToUpdate, ChangeKind.UPDATE);
+        }
+        else
+        {
+            if(!this.sessionService.GetProject().getPrimaryModel().getOwnedElement().removeIf(x -> AreTheseEquals(((MDObject) x).getID(), containerToUpdate.getID())))
+            {
+                this.exchangeHistory.Append(containerToUpdate, ChangeKind.CREATE);
+            }
+            
+            this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(containerToUpdate);
+
+            this.exchangeHistory.Append(requirement, ChangeKind.CREATE);
+        }
+    }
+    
+    /**
+     * Updates the provided cloned {@linkplain Package}
+     * 
+     * @param containerToUpdate the {@linkplain Package}
+     */
+    private void UpdateRequirementPackage(Package containerToUpdate)
+    {
+        ClonedReferenceElement<Package> requirementPkgCloneReference = this.transactionService.GetClone(containerToUpdate);
+        
+        this.UpdateChildrenOfType(requirementPkgCloneReference.GetOriginal().getOwnedElement(), 
+                requirementPkgCloneReference.GetClone().getOwnedElement());
+    }
+
+    /**
+     * Adds the new {@linkplain #TElement} contained in the cloned collection to the original collection
+     * 
+     * @param <TElement> the type of {@linkplain Element} the collections contains
+     * @param originalCollection the original collection
+     * @param clonedCollection the cloned collection
+     */
+    private <TElement extends Element> void UpdateChildrenOfType(Collection<TElement> originalCollection,
+            Collection<TElement> clonedCollection)
+    {
+        List<TElement> childrenPackagesToAdd = clonedCollection.stream()
+                .filter(x -> originalCollection.stream()
+                            .noneMatch(e -> AreTheseEquals(x.getID(), e.getID(), true)))
+                .collect(Collectors.toList());
+
+        originalCollection.addAll(childrenPackagesToAdd);
+    }
+
     /**
      * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub
      * 
@@ -492,6 +716,12 @@ public final class DstController implements IDstController
             Pair<Iteration, ThingTransaction> iterationTransaction = this.hubController.GetIterationTransaction();
             Iteration iterationClone = iterationTransaction.getLeft();
             ThingTransaction transaction = iterationTransaction.getRight();
+            
+            if(!this.hubController.TrySupplyAndCreateLogEntry(transaction))
+            {
+                this.logService.Append("Transfer to the HUB aborted!", NotificationSeverity.WARNING);
+                return true;
+            }            
             
             this.PrepareThingsForTransfer(iterationClone, transaction);
 
@@ -566,6 +796,8 @@ public final class DstController implements IDstController
      */
     private void UpdateValueSet(ParameterValueSetBase clone, ValueSet valueSet)
     {
+        this.exchangeHistory.Append(clone, valueSet);
+        
         clone.setManual(valueSet.getManual());
         clone.setValueSwitch(valueSet.getValueSwitch());
     }
@@ -581,7 +813,7 @@ public final class DstController implements IDstController
     {
         ArrayList<Thing> thingsToTransfer = new ArrayList<>(this.selectedDstMapResultForTransfer);
         
-        Predicate<? super MappedElementRowViewModel<? extends Thing, Class>> selectedMappedElement = 
+        Predicate<? super MappedElementRowViewModel<? extends Thing, ? extends Class>> selectedMappedElement = 
                 x -> this.selectedDstMapResultForTransfer.stream().anyMatch(t -> t.getIid().equals(x.GetHubElement().getIid()));
                 
         Collection<Relationship> relationships = this.dstMapResult.stream()
@@ -658,7 +890,7 @@ public final class DstController implements IDstController
     private void PrepareDefinition(ThingTransaction transaction, ElementDefinition elementDefinition) throws TransactionException
     {
         Optional<Definition> definition = elementDefinition.getDefinition().stream()
-                                                .filter(x -> AreTheseEquals(x.getLanguageCode(), BlockDefinitionMappingRule.MDIID))
+                                                .filter(x -> AreTheseEquals(x.getLanguageCode(), BlockToElementMappingRule.MDIID))
                                                 .findFirst();
         
         if(definition.isPresent())
@@ -731,8 +963,13 @@ public final class DstController implements IDstController
             if(thing.getContainer() == null || containerList.stream().noneMatch(x -> x.getIid().equals(thing.getIid())))
             {
                 containerList.add(thing);
+                this.exchangeHistory.Append(thing, ChangeKind.CREATE);
             }
-            
+            else
+            {
+                this.exchangeHistory.Append(thing, ChangeKind.UPDATE);
+            }
+                        
             transaction.createOrUpdate(thing);
         }
         catch (Exception exception)
@@ -794,20 +1031,175 @@ public final class DstController implements IDstController
         
         if(!shouldRemove)
         {
-            this.selectedHubMapResultForTransfer.addAll(this.hubMapResult.stream()
+            List<? extends Class> elements = this.hubMapResult.stream()
                     .map(MappedElementRowViewModel::GetDstElement)
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList());
+            
+            this.selectedHubMapResultForTransfer.addAll(elements);
         }
+    }
+
+    /**
+     * Tries to get the corresponding element based on the provided {@linkplain DefinedThing} name or short name. 
+     * 
+     * @param <TElement> the type of {@linkplain Element} to query
+     * @param thing the {@linkplain DefinedThing} that can potentially match a {@linkplain #TElement} 
+     * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
+     * @return a value indicating whether the {@linkplain Element} has been found
+     */
+    @Override
+    public <TElement extends NamedElement> boolean TryGetElementByName(DefinedThing thing, Ref<TElement> refElement)
+    {
+        return this.TryGetElementBy(x -> x instanceof NamedElement
+                && (AreTheseEquals(thing.getName(), ((NamedElement)x).getName(), true)
+                || AreTheseEquals(thing.getShortName(), ((NamedElement)x).getName(), true)), refElement);
+    }
+        
+    /**
+     * Tries to get the corresponding element that has the provided Id
+     * 
+     * @param <TElement> the type of {@linkplain Element} to query
+     * @param elementId the {@linkplain String} id of the searched element
+     * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
+     * @return a value indicating whether the {@linkplain Element} has been found
+     */
+    public <TElement extends NamedElement> boolean TryGetElementById(String elementId, Ref<TElement> refElement)
+    {
+        return this.TryGetElementBy(x -> AreTheseEquals(elementId, x.getID()), refElement);
     }
     
     /**
-     * Gets the open project element
+     * Tries to get the corresponding element that answer to the provided {@linkplain Predicate}
      * 
-     * @return a {@linkplain Collection} of {@linkplain Element}
+     * @param <TElement> the type of {@linkplain NamedElement} to query
+     * @param predicate the {@linkplain Predicate} to verify in order to match the element
+     * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
+     * @return a value indicating whether the {@linkplain #TElement} has been found
      */
     @Override
-    public Collection<Element> GetProjectElements()
+    @SuppressWarnings("unchecked")
+    public <TElement extends NamedElement> boolean TryGetElementBy(Predicate<TElement> predicate, Ref<TElement> refElement)
     {
-        return this.OpenDocument().getPrimaryModel().getPackagedElement().stream().map(Element.class::cast).collect(Collectors.toList());
+        Optional<TElement> element = this.sessionService.GetProject().getAllElements().stream()
+                .filter(x -> refElement.GetType().isInstance(x))
+                .map(x -> (TElement)x)
+                .filter(predicate)
+                .findFirst();
+        
+        if(element.isPresent() && refElement.GetType().isInstance(element.get()))
+        {
+            refElement.Set(element.get());
+        }
+        
+        return refElement.HasValue();
+    }
+
+    /**
+     * Tries to get a {@linkplain InstanceSpecification} unit that matches the provided {@linkplain MeasurementUnit}
+     * 
+     * @param unit the {@linkplain MeasurementUnit} of reference
+     * @param refDataType the {@linkplain Ref} of {@linkplain InstanceSpecification}
+     * @return a {@linkplain boolean}
+     */
+    @Override
+    public boolean TryGetUnit(MeasurementUnit unit, Ref<InstanceSpecification> refUnit)
+    {
+        for (InstanceSpecification dataType :  this.sessionService.GetUnits())
+        {
+            boolean doesItMatch = this.VerifyNames(unit, dataType.getName());
+            
+            if(doesItMatch)
+            {
+                refUnit.Set(dataType);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Tries to get a {@linkplain DataType} that matches the provided {@linkplain MeasurementScale}
+     * 
+     * @param parameterType the {@linkplain ParameterType} of reference
+     * @param scale the {@linkplain MeasurementScale} of reference
+     * @param refDataType the {@linkplain Ref} of {@linkplain DataType}
+     * @return a {@linkplain boolean}
+     */
+    @Override
+    public boolean TryGetDataType(ParameterType parameterType, MeasurementScale scale, Ref<DataType> refDataType)
+    {
+        Ref<QuantityKind> refGeneral = new Ref<>(QuantityKind.class);
+        
+        if(parameterType instanceof SpecializedQuantityKind)
+        {
+            refGeneral.Set(((SpecializedQuantityKind)parameterType).getGeneral());
+        }
+                        
+        this.sessionService.GetDataTypes().stream()
+                .filter(x -> this.VerifyNames(parameterType, scale, x) || (refGeneral.HasValue() && this.VerifyNames(refGeneral.Get(), scale, x)))
+                .findFirst()
+                .ifPresent(x -> refDataType.Set(x));
+        
+        return refDataType.HasValue();
+    }
+
+    /**
+     * Verifies that the provided {@linkplain ParameterType} and {@linkplain DataType} have matching names
+     * 
+     * @param thing the {@linkplain ParameterType}
+     * @param scale the {@linkplain MeasurementScale} of reference
+     * @return a {@linkplain boolean}
+     */
+    private boolean VerifyNames(ParameterType thing, MeasurementScale scale, DataType dataType)
+    {        
+        if(thing instanceof QuantityKind && scale != null && StringUtils.isNotBlank(scale.getName()) && dataType.getName().contains("["))
+        {
+            return this.VerifyQuantityKindNameAndUnit((QuantityKind)thing, scale, dataType);
+        }
+        else if(scale == null)
+        {
+            return this.VerifyNames(thing, dataType.getName());
+        }
+        
+        return false;
+    }
+
+    /**
+     * Verifies that the provided {@linkplain ParameterType} and {@linkplain DataType} have matching names
+     * 
+     * @param <TThing> the type of the thing used to constraint the thing to be a {@linkplain NamedThing} and {@linkplain ShortNamedThing}
+     * @param thing the {@linkplain #TThing} of reference
+     * @param dataTypeName the {@linkplain String} {@linkplain DataType} name
+     * @return a {@linkplain boolean}
+     */
+    private <TThing extends NamedThing & ShortNamedThing> boolean VerifyNames(TThing thing, String dataTypeName)
+    {
+        return AreTheseEquals(dataTypeName, thing.getName(), true) 
+              || AreTheseEquals(dataTypeName, thing.getShortName(), true);
+    }
+
+    /**
+     * Verifies that the provided {@linkplain ParameterType} and {@linkplain DataType} have matching names, 
+     * and also that the provided {@linkplain MeasurementScale} matches the {@linkplain DataType} unit
+     * 
+     * @param quantityKind the {@linkplain QuantityKind} parameter type
+     * @param scale the {@linkplain MeasurementScale} of reference
+     * @param dataType the {@linkplain DataType}
+     * @return a {@linkplain boolean}
+     */
+    private boolean VerifyQuantityKindNameAndUnit(QuantityKind quantityKind, MeasurementScale scale, DataType dataType)
+    {
+        try
+        {
+            String[] dataTypeNameAndUnit = dataType.getName().split("[\\[\\]]");
+                        
+            return this.VerifyNames(quantityKind, dataTypeNameAndUnit[0]) && this.VerifyNames(scale, dataTypeNameAndUnit[1]);
+        }
+        catch(Exception exception)
+        {
+            this.logger.catching(exception);
+            return false;
+        }
     }
 }

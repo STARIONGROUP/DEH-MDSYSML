@@ -31,6 +31,8 @@ import org.apache.commons.lang3.time.StopWatch;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import Reactive.ObservableValue;
+import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
+import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import ViewModels.Interfaces.ITransferControlViewModel;
 import io.reactivex.Observable;
@@ -40,6 +42,21 @@ import io.reactivex.Observable;
  */
 public class TransferControlViewModel implements ITransferControlViewModel
 {
+    /**
+     * The {@linkplain IDstController}
+     */
+    private final IDstController dstController;
+    
+    /**
+     * The {@linkplain IMagicDrawUILogService}
+     */
+    private final IMagicDrawUILogService logService;
+
+    /**
+     * The {@linkplain IMagicDrawLocalExchangeHistoryService}
+     */
+    private final IMagicDrawLocalExchangeHistoryService exchangeHistory;
+
     /**
      * The number of selected things to transfer
      */
@@ -57,35 +74,29 @@ public class TransferControlViewModel implements ITransferControlViewModel
     }
     
     /**
-     * The {@linkplain IDstController}
-     */
-    private IDstController dstController;
-    
-    /**
-     * The {@linkplain IMagicDrawUILogService}
-     */
-    private IMagicDrawUILogService logService;
-
-    /**
      * Initializes a new {@linkplain TransferControlViewModel}
      * 
      * @param dstController the {@linkplain IDstController}
      * @param logService the {@linkplain IMagicDrawUILogService}
+     * @param exchangeHistory the {@linkplain IMagicDrawLocalExchangeHistoryService}
      */
-    public TransferControlViewModel(IDstController dstController, IMagicDrawUILogService logService)
+    public TransferControlViewModel(IDstController dstController, IMagicDrawUILogService logService, IMagicDrawLocalExchangeHistoryService exchangeHistory)
     {
         this.dstController = dstController;
         this.logService = logService;
+        this.exchangeHistory = exchangeHistory;
         
         this.dstController.GetSelectedDstMapResultForTransfer()
             .Changed()
             .subscribe(x -> this.UpdateNumberOfSelectedThing(this.dstController.CurrentMappingDirection()));
         
+        this.dstController.GetSelectedHubMapResultForTransfer()
+            .Changed()
+            .subscribe(x -> this.UpdateNumberOfSelectedThing(this.dstController.CurrentMappingDirection()));
+    
+        
         this.dstController.GetMappingDirection()
-            .subscribe(mappingDirection ->
-            {
-                this.UpdateNumberOfSelectedThing(mappingDirection);
-            });
+            .subscribe(x -> this.UpdateNumberOfSelectedThing(x));
     }
 
     /**
@@ -116,11 +127,13 @@ public class TransferControlViewModel implements ITransferControlViewModel
            
            boolean result = this.dstController.Transfer();
 
+           this.exchangeHistory.Write();
+           
            if(timer.isStarted())
            {
                timer.stop();
            }
-           
+
            this.logService.Append(String.format("Transfer done in %s ms", timer.getTime(TimeUnit.MILLISECONDS)), result);
            
            return result;

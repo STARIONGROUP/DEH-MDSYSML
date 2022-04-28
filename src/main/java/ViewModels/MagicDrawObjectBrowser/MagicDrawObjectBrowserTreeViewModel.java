@@ -64,4 +64,14 @@ public class MagicDrawObjectBrowserTreeViewModel extends BrowserTreeBaseViewMode
     {
         this.root = new RootRowViewModel(modelName, elements);
     }
+    
+    /**
+     * Initializes a new {@linkplain MagicDrawObjectBrowserTreeRowViewModel}
+     * 
+     * @param rootRowViewModel the {@linkplain RootRowViewModel}
+     */
+    public MagicDrawObjectBrowserTreeViewModel(RootRowViewModel rootRowViewModel)
+    {
+        this.root = rootRowViewModel;
+    }
 }

@@ -74,7 +74,8 @@ public class PartPropertyRowViewModel extends PropertyRowViewModel implements IH
     @Override
     public void UpdateProperties()
     {
-        this.SetName(String.format("%s : %s" , this.GetElement().getName(), this.GetElement().getType().getName()));
+        Type type = this.GetElement().getType();        
+        this.SetName(String.format("%s : %s" , this.GetElement().getName(), type != null ? type.getName() : ""));
     }
 
     /**

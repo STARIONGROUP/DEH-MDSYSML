@@ -25,14 +25,39 @@ package Utils.Stereotypes;
 
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+
+import com.nomagic.magicdraw.core.Project;
+import com.nomagic.magicdraw.sysml.util.SysMLProfile;
+import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralInteger;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralUnlimitedNatural;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Slot;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
+
+import App.AppContainer;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Utils.Ref;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 /**
  * The {@linkplain StereotypeUtils} provides useful methods to verify stereotypes used in MagicDraw/Cameo
  */
 public final class StereotypeUtils
-{
+{    
     /**
      * Initializes a new {@linkplain StereotypeUtils} and
      * Prevents the {@linkplain StereotypeUtils} to initialized because static classes don't exist out of the box in java
@@ -48,9 +73,10 @@ public final class StereotypeUtils
      */
     public static boolean DoesItHaveTheStereotype(Element element, Stereotypes stereotype)
     {
-        return element.getHumanType().toLowerCase().contains(stereotype.name().toLowerCase());
+        String elementName = element.getHumanType().toLowerCase().replaceAll("\\s", "");
+        return elementName.contains(stereotype.name().toLowerCase());
     }
-    
+        
     /**
      * Verifies the provided {@linkplain Element} element is owned by the provided {@linkplain Element} parent
      * 
@@ -101,5 +127,218 @@ public final class StereotypeUtils
     public static String GetShortName(NamedElement name)
     {
         return name.getName().replaceAll("[^a-zA-Z0-9]|\\s", "");
+    }
+      
+    /**
+     * Gets value representation string out of the specified {@linkplain LiteralNumericValue}
+     * 
+     * @param value the {@linkplain LiteralNumericValue}
+     * @return a {@linkplain String}
+     */
+    public static String GetValueRepresentation(Property property)
+    {         
+        String unit = StereotypeUtils.GetUnitRepresention(property);
+        
+        String valueString = StereotypeUtils.GetValueFromProperty(property);
+        
+        return String.format("%s%s", valueString, unit == null ? String.format(" %s", StereotypeUtils.GetTypeRepresentation(property)) : String.format(" [%s]", unit));
+    }
+    
+    /**
+     * Tries to extract the value from the provided property and returns it as string
+     * 
+     * @return a value indicating whether the value has been extracted
+     */
+    public static boolean TryGetValueFromProperty(Property property, Ref<String> refValue)
+    {
+        refValue.Set(StereotypeUtils.GetValueFromProperty(property));
+        return refValue.HasValue();
+    }
+    
+    /**
+     * Gets the default value from the specified {@linkplain Property} as string
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain String}
+     */
+    public static String GetValueFromProperty(Property property)
+    {
+        ValueSpecification value = property.getDefaultValue();
+        String valueString = "";
+        
+        if(value instanceof LiteralInteger)
+        {
+            valueString = String.valueOf(((LiteralInteger)value).getValue());
+        }
+        else if(value instanceof LiteralReal)
+        {
+            valueString = String.valueOf(((LiteralReal)value).getValue());
+        }
+        else if(value instanceof LiteralUnlimitedNatural)
+        {
+            valueString = String.valueOf(((LiteralUnlimitedNatural)value).getValue());
+        }
+        else if(value instanceof LiteralBoolean)
+        {
+            valueString = String.valueOf(((LiteralBoolean)value).isValue());
+        }
+        else if(value instanceof LiteralString)
+        {
+            valueString = ((LiteralString)value).getValue();
+        }
+        
+        return valueString;
+    }
+    
+    /**
+     * Gets the type of the provided value as string
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain String}
+     */
+    public static String GetTypeRepresentation(Property property)
+    {
+        Type type = property.getType();
+        
+        if(type != null)
+        {
+            return type.getName();
+        }
+        
+        return " ";
+    }
+
+    /**
+     * Gets the {@linkplain Unit} as string
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain String}
+     */
+    public static String GetUnitRepresention(Property property)
+    {
+        if(property.getType() == null)
+        {
+            return null;
+        }
+        
+        Stereotype stereotype = StereotypeUtils.GetStereotype(property.getType(), "unit");
+
+        if(stereotype == null)
+        {
+            return null;
+        }
+        
+        List<String> unit = StereotypesHelper.getStereotypePropertyValueAsString(property.getType(), stereotype, "unit");
+        
+        if(unit != null && !unit.isEmpty())
+        {
+            return unit.get(0);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Gets the {@linkplain Stereotype} that is applied to the provided property
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain Stereotype}
+     */
+    public static Stereotype GetPropertyStereotype(Property property)
+    {
+        if(StereotypeUtils.DoesItHaveTheStereotype(property, Stereotypes.PartProperty))
+        {
+            return StereotypeUtils.GetStereotype(property, Stereotypes.PartProperty);
+        }
+        if(StereotypeUtils.DoesItHaveTheStereotype(property, Stereotypes.ValueProperty))
+        {
+            return StereotypeUtils.GetStereotype(property, Stereotypes.ValueProperty);
+        }
+        if(StereotypeUtils.DoesItHaveTheStereotype(property, Stereotypes.ReferenceProperty))
+        {
+            return StereotypeUtils.GetStereotype(property, Stereotypes.ReferenceProperty);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain Stereotype} {@linkplain String} name
+     * 
+     * @param project the {@linkplain Project}
+     * @param stereotype the {@linkplain Stereotype}
+     * @return a {@linkplain Stereotype}
+     */
+    public static Stereotype GetStereotype(Project project, Stereotypes stereotype)
+    {
+        return StereotypeUtils.GetStereotype(project, stereotype.name());
+    }
+    
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain RequirementType} {@linkplain String} name
+     * 
+     * @param project the {@linkplain Project}
+     * @param requirementType the {@linkplain RequirementType}
+     * @return a {@linkplain Stereotype}
+     */
+    public static Stereotype GetStereotype(Project project, RequirementType requirementType)
+    {
+        return StereotypeUtils.GetStereotype(project, requirementType.name());
+    }
+
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain Stereotype} {@linkplain String} name
+     * 
+     * @param namedElement the {@linkplain NamedElement}
+     * @param stereotype the {@linkplain Stereotype}
+     * @return a {@linkplain Stereotype}
+     */
+    public static Stereotype GetStereotype(NamedElement namedElement, Stereotypes stereotype)
+    {
+        return StereotypeUtils.GetStereotype(namedElement, stereotype.name());
+    }
+
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain RequirementType} {@linkplain String} name
+     * 
+     * @param namedElement the {@linkplain NamedElement}
+     * @param requirementType the {@linkplain RequirementType}
+     * @return a {@linkplain Stereotype}
+     */
+    public static Stereotype GetStereotype(NamedElement namedElement, RequirementType requirementType)
+    {
+        return StereotypeUtils.GetStereotype(namedElement, requirementType.name());
+    }
+
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain String}
+     * 
+     * @param element the {@linkplain Element}
+     * @param stereotypeName the {@linkplain String} stereotype name
+     * @return a {@linkplain Stereotype}
+     */
+    private static Stereotype GetStereotype(NamedElement element, String stereotypeName)
+    {
+        return StereotypesHelper.getAppliedStereotypeByString(element, stereotypeName);
+    }
+    
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain String}
+     * 
+     * @param project the {@linkplain Project}
+     * @param stereotypeName the {@linkplain String} stereotype name
+     * @return a {@linkplain Stereotype}
+     */
+    private static Stereotype GetStereotype(Project project, String stereotypeName)
+    {
+      Collection<Stereotype> allStereoType = StereotypesHelper.getAllStereotypes(project);
+      Optional<Stereotype> optionalStereotype = allStereoType.stream().filter(x -> AreTheseEquals(x.getName(), stereotypeName, true)).findFirst();
+      
+      if(optionalStereotype.isPresent())
+      {
+          return optionalStereotype.get();
+      }
+      
+      return null;
     }
 }

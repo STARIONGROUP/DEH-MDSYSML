@@ -32,7 +32,7 @@ import ViewModels.Interfaces.IMappedElementRowViewModel;
 /**
  * The {@linkplain IMagicDrawMappingConfigurationService} is the main interface definition for the {@linkplain MagicDrawMappingConfigurationService}
  */
-public interface IMagicDrawMappingConfigurationService extends IMappingConfigurationService
+public interface IMagicDrawMappingConfigurationService extends IMappingConfigurationService<ExternalIdentifier>
 {
     /**
      * Loads the mapping configuration and generates the map result respectively

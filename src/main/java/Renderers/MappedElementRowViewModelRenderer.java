@@ -133,7 +133,7 @@ public class MappedElementRowViewModelRenderer extends JPanel implements ListCel
         
         value.GetShouldCreateNewTargetElement().subscribe(x -> this.UpdateLabelsAndStatus(value));
         
-        value.GetIsSelected().subscribe(x -> this.SetIsSelected(list, x));
+        value.GetIsSelectedObservable().subscribe(x -> this.SetIsSelected(list, x));
                 
         this.SetIsSelected(list, isSelected);
  

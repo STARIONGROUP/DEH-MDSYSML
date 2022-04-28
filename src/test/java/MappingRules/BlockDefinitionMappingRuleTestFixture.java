@@ -41,7 +41,7 @@ import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 class BlockDefinitionMappingRuleTestFixture
 {
     private IHubController hubController;
-    private BlockDefinitionMappingRule rule;
+    private BlockToElementMappingRule rule;
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
 
     /**
@@ -52,7 +52,7 @@ class BlockDefinitionMappingRuleTestFixture
     {
         this.hubController = mock(IHubController.class);
         this.mappingConfigurationService = mock(IMagicDrawMappingConfigurationService.class);
-        this.rule = new BlockDefinitionMappingRule(this.hubController, this.mappingConfigurationService);
+        this.rule = new BlockToElementMappingRule(this.hubController, this.mappingConfigurationService, null);
     }
 
     @Test

@@ -23,12 +23,11 @@
  */
 package Views;
 
-import org.apache.logging.log4j.LogManager;
-
 import Utils.ImageLoader.ImageLoader;
+import ViewModels.Interfaces.IContextMenuViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
+import Views.ContextMenu.ContextMenu;
 import Views.ContextMenu.ImpactViewContextMenu;
-import cdp4common.commondata.ClassKind;
 import io.reactivex.Observable;
 
 /**

@@ -38,7 +38,7 @@ public abstract class ClassRowViewModel extends ElementRowViewModel<Class> imple
     /**
      * The {@linkplain ObservableCollection} of {@linkplain IElementRowViewModel}
      */
-    private ObservableCollection<IElementRowViewModel<?>> containedRows = new ObservableCollection<IElementRowViewModel<?>>();
+    private ObservableCollection<IElementRowViewModel<?>> containedRows = new ObservableCollection<>();
 
     /**
      * Gets the contained row the implementing view model has
@@ -55,7 +55,7 @@ public abstract class ClassRowViewModel extends ElementRowViewModel<Class> imple
      * @param parent the {@linkplain IElementRowViewModel} parent view model of this row view model
      * @param element the represented {@linkplain Class}
      */
-    public ClassRowViewModel(IElementRowViewModel<?> parent, Class element)
+    protected ClassRowViewModel(IElementRowViewModel<?> parent, Class element)
     {
         super(parent, element);
     }
