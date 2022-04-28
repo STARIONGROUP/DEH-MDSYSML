@@ -40,7 +40,6 @@ import io.reactivex.Observable;
  */
 public class HubBrowserContextMenuViewModel implements IHubBrowserContextMenuViewModel
 {
-
     /**
      * The current class logger
      */

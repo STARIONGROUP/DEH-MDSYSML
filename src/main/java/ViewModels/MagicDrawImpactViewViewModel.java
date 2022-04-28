@@ -293,6 +293,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
         
         return refRowViewModel.HasValue();
     }
+    
     /**
      * Gets the {@linkplain Thing} by its Iid from the child row view models
      * 
@@ -429,22 +430,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
         if(selectedRow != null && selectedRow.GetElement() != null && this.dstController.GetHubMapResult().stream()
                 .anyMatch(r -> AreTheseEquals(r.GetDstElement().getID(), selectedRow.GetElement().getID())))
         {
-            boolean isSelected = this.AddOrRemoveSelectedRowToTransfer(selectedRow);
-            
-            for (Property partProperty : selectedRow.GetElement().getOwnedAttribute().stream()
-                    .filter(x -> StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.PartProperty))
-                    .collect(Collectors.toList()))
-                
-            {
-                Ref<ElementRowViewModel<? extends Element>> refRowViewModel = new Ref<>(null);
-                                
-                if(this.TryGetRowViewModelBy(this.GetRootRowViewModel().GetContainedRows(), 
-                        x -> AreTheseEquals(x.GetElement().getID(), partProperty.getType().getID()), refRowViewModel)
-                        && refRowViewModel.Get() instanceof ClassRowViewModel)
-                {
-                    this.AddOrRemoveSelectedRowToTransfer((ClassRowViewModel)refRowViewModel.Get(), isSelected);
-                }
-            }
+            this.AddOrRemoveSelectedRowToTransfer(selectedRow);
         }
     }
 
@@ -454,10 +440,10 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
      * @param thing the {@linkplain Thing} to add or remove
      * @return a value indicating whether the row has been selected
      */
-    private boolean AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel)
-    {    
-        this.AddOrRemoveSelectedRowToTransfer(rowViewModel, rowViewModel.SwitchIsSelectedValue());        
-        return rowViewModel.GetIsSelected();
+    private void AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel)
+    {
+        this.AddOrRemoveSelectedRowToTransfer(rowViewModel, rowViewModel.SwitchIsSelectedValue());
+        this.AddOrRemoveForTransfer(rowViewModel.GetIsSelected(), rowViewModel);
     }
 
     /**
@@ -467,6 +453,35 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
      * @param isSelected a value indicating whether the row is selected
      */
     private void AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel, boolean isSelected)
+    {
+        for (Property partProperty : rowViewModel.GetElement().getOwnedAttribute().stream()
+                .filter(x -> StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.PartProperty) || x.getType() instanceof Class)
+                .collect(Collectors.toList()))
+            
+        {
+            Ref<ElementRowViewModel<? extends Element>> refRowViewModel = new Ref<>(null);
+
+            if(this.TryGetRowViewModelBy(this.GetRootRowViewModel().GetContainedRows(), 
+                    x -> AreTheseEquals(x.GetElement().getID(), partProperty.getType().getID()), refRowViewModel)
+                    && refRowViewModel.Get() instanceof ClassRowViewModel && this.dstController.GetHubMapResult().stream()
+                    .anyMatch(r -> AreTheseEquals(r.GetDstElement().getID(), refRowViewModel.Get().GetElement().getID())))
+            {
+                ClassRowViewModel childRowViewModel = (ClassRowViewModel)refRowViewModel.Get();
+                
+                childRowViewModel.SetIsSelected(isSelected);                
+                this.AddOrRemoveForTransfer(isSelected, childRowViewModel);
+                this.AddOrRemoveSelectedRowToTransfer(childRowViewModel, isSelected);
+            }
+        }
+    }
+
+    /**
+     * Adds or remove the {@linkplain Thing} to/from the relevant collection depending on the {@linkplain MappingDirection}
+     * 
+     * @param isSelected a value indicating whether the row is selected
+     * @param rowViewModel the {@linkplain Thing} to add or remove
+     */
+    private void AddOrRemoveForTransfer(boolean isSelected, ClassRowViewModel rowViewModel)
     {
         if(isSelected)
         {

@@ -320,38 +320,6 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
 
     /**
-     * Tries to extract the value from the provided property and returns it as string
-     * 
-     * @return a value indicating whether the value has been extracted
-     */
-    private boolean TryGetValueFromProperty(Property property, Ref<String> refValue)
-    {
-        ValueSpecification valueSpecification = property.getDefaultValue();
-        
-        if(valueSpecification instanceof LiteralInteger)
-        {
-            refValue.Set(String.valueOf(((LiteralInteger)property.getDefaultValue()).getValue()));
-        }
-        else if(valueSpecification instanceof LiteralUnlimitedNatural)
-        {
-            refValue.Set(String.valueOf(((LiteralUnlimitedNatural)property.getDefaultValue()).getValue()));
-        }
-        else if(valueSpecification instanceof LiteralReal)
-        {
-            refValue.Set(String.valueOf(((LiteralReal)property.getDefaultValue()).getValue()));
-        }
-        else if(valueSpecification instanceof LiteralString)
-        {
-            refValue.Set(((LiteralString)property.getDefaultValue()).getValue());
-        }
-        else if(valueSpecification instanceof LiteralBoolean)
-        {
-            refValue.Set(String.valueOf(((LiteralBoolean)property.getDefaultValue()).isValue()));
-        }
-        
-        return refValue.HasValue();
-    }
-    /**
      * Updates or creates the definition according to the provided {@linkplain Class} assignable to the {@linkplain Requirement}  
      * 
      * @param element the {@linkplain Class} element that represents the requirement in MagicDraw

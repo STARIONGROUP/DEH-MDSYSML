@@ -311,7 +311,6 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
         }
     }
 
-
     /**
      * Creates the possible {@linkplain EnumerationLiteral} for the provided {@linkplain Enumeration} based on the provided {@linkplain EnumerationParameterType}
      * 

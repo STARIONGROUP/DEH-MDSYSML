@@ -180,6 +180,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             mappedElement.SetHubElement((TThing) refHubRequirement.Get().clone(true));
         }
     }
+    
     /**
      * Creates a new {@linkplain ExternalIdentifierMap} and sets the current as the new one
      * 

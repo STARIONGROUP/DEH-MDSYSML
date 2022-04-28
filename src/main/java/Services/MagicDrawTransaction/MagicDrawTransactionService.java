@@ -322,7 +322,6 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * @param name the name of the newly created {@linkplain Class}, used to query the {@linkplain #newReferences} collection
      * @return an instance of a {@linkplain Class}
      */
-    
     @Override
     @SuppressWarnings("unchecked")
     public <TElement extends Element> TElement Create(Stereotypes stereotype, String name)
@@ -428,8 +427,10 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain RequirementType}
      * 
-     * @param magicDrawStereotype
-     * @return
+     * @param <TElement> the type of {@linkplain Element} to create
+     * @param magicDrawStereotype the {@linkplain Stereotype}
+     * @param createFunction the {@linkplain Supplier} of {@linkplain #TElement}
+     * @return a {@linkplain #TElement}
      */
     private <TElement extends Element> TElement Create(Stereotype magicDrawStereotype, Supplier<TElement> createFunction)
     {
@@ -460,7 +461,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     /**
      * Gets the existing or create the {@linkplain Package} that is meant to hold parameter types created from COMET
      * 
-     * @param dataPackageName the name of the package to get ror create
+     * @param dataPackageName the name of the package to get or create
      * @return a {@linkplain Package}
      */
     private Package GetOrCreateDataPackage(String dataPackageName)
@@ -564,7 +565,6 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         return GetStereotypePropertyValue(requirement, this.GetRequirementStereotype(requirement), RequirementIdStereotypeString);
     }
 
-
     /**
      * Gets the provided {@linkplain Class} requirement Text
      * 
@@ -601,8 +601,10 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     }
 
     /**
-     * @param requirement
-     * @return
+     * Gets the requirement {@linkplain Stereotype}
+     * 
+     * @param requirement the {@linkplain Class} requirement
+     * @return a {@linkplain Stereotype}
      */
     private Stereotype GetRequirementStereotype(Class requirement)
     {

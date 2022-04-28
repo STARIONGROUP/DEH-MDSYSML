@@ -33,7 +33,6 @@ import Services.MappingEngineService.MappingRule;
 import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 
-
 /**
  * The CapellaBaseMappingRule is the base mapping rule for all the Capella adapter rules
  *  

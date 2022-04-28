@@ -39,26 +39,18 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EObject;
 
-import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.foundation.MDObject;
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
+import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
+import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
-import com.nomagic.requirements.util.RequirementUtilities;
-import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.PackageImport;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -66,7 +58,6 @@ import MappingRules.BlockToElementMappingRule;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
 import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
-import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.ClonedReferenceElement;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
@@ -604,17 +595,25 @@ public final class DstController implements IDstController
         {
             Class original = this.transactionService.GetClone(element).GetOriginal();
             
-            for (Property property : element.getOwnedAttribute())
+            for (Property property : element.getOwnedAttribute().stream().collect(Collectors.toList()))
             {
                 try
                 {
-                    original.getOwnedAttribute().removeIf(x -> AreTheseEquals(x.getID(), property.getID()));
+                    Optional<Property> optionalOriginalProperty = original.getOwnedAttribute().stream()
+                            .filter(x -> AreTheseEquals(x.getID(), property.getID()))
+                            .findFirst();
+                    
+                    if(optionalOriginalProperty.isPresent())
+                    {
+                        ModelElementsManager.getInstance().removeElement(optionalOriginalProperty.get());
+                    }
+                    
                     original.getOwnedAttribute().add(property);    
                 }
                 catch(Exception exception)
                 {
                     this.logger.catching(Level.INFO, exception);
-                    this.logger.error(String.format("Removing/Adding the property %s from %s threw an error even if the transfer succeeded", property.getName(), element.getName()));
+                    this.logger.error(String.format("Removing/Adding the property %s from %s threw an error", property.getName(), element.getName()));
                 }
                 
                 this.exchangeHistory.Append(property, ChangeKind.UPDATE);
