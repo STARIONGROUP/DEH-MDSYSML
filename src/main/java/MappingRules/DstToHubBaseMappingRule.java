@@ -79,7 +79,8 @@ public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> ex
             Ref<Category> refCategory = new Ref<>(Category.class);
             String categoryShortName = GetShortName(categoryName);
             
-            if(!(this.hubController.TryGetThingFromChainOfRdlBy(x -> AreTheseEquals(x.getShortName(),categoryShortName), refCategory))
+            if(!(this.hubController.TryGetThingFromChainOfRdlBy(x -> AreTheseEquals(x.getShortName(), categoryShortName, true)
+                    || AreTheseEquals(x.getName(), categoryShortName, true) , refCategory))
                     && !this.TryCreateCategory(Pair.of(categoryShortName, categoryName), refCategory, permissibleClass))
             {
                 return;
@@ -127,34 +128,35 @@ public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> ex
         ReferenceDataLibrary rdl = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
         rdl.getDefinedCategory().add(newCategory);
         
-        return TryCreateReferenceDataLibraryThing(newCategory, rdl, refCategory);        
+        return TryCreateOrUpdateReferenceDataLibraryThing(newCategory, rdl, refCategory);        
     }
     
     /**
      * Tries to add the specified {@linkplain newThing} to the provided {@linkplain ContainerList} and retrieved the new reference from the cache after save
      * 
      * @param <TThing> the type of {@linkplain Thing}
-     * @param newThing the new {@linkplain Thing}
+     * @param thing the new {@linkplain Thing}
      * @param clonedReferenceDataLibrary the cloned {@linkplain ReferenceDataLibrary} where the {@linkplain newThing} is contained
      * @param refThing the {@linkplain Ref} acting as an out parameter here
      * @return a value indicating whether the {@linkplain newThing} has been successfully created and retrieved from the cache
      */
-    protected <TThing extends Thing> boolean TryCreateReferenceDataLibraryThing(TThing newThing, ReferenceDataLibrary clonedReferenceDataLibrary, Ref<TThing> refThing)
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
+    protected <TThing extends Thing> boolean TryCreateOrUpdateReferenceDataLibraryThing(TThing thing, ReferenceDataLibrary clonedReferenceDataLibrary, Ref<TThing> refThing)
     {
         try
         {
             ThingTransactionImpl transaction = new ThingTransactionImpl(TransactionContextResolver.resolveContext(clonedReferenceDataLibrary), clonedReferenceDataLibrary);
             transaction.createOrUpdate(clonedReferenceDataLibrary);
-            transaction.createOrUpdate(newThing);
+            transaction.createOrUpdate(thing);
             
             this.hubController.Write(transaction);
             this.hubController.RefreshReferenceDataLibrary(clonedReferenceDataLibrary);
             
-            return this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getIid().compareTo(newThing.getIid()) == 0, refThing);
+            return this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getIid().compareTo(thing.getIid()) == 0, refThing);
         }
         catch(Exception exception)
         {
-            this.Logger.error(String.format("Could not create the %s because %s", newThing.getClassKind(), exception));
+            this.Logger.error(String.format("Could not create the %s because %s", thing.getClassKind(), exception));
             this.Logger.catching(exception);
             return false;
         }

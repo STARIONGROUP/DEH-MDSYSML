@@ -33,6 +33,7 @@ import Utils.ImageLoader.ImageLoader;
  * The {@linkplain MagicDrawAdapterRibbonActionCategory} is the {@linkplain ActionsCategory} that groups all visual entry points for the MagicDraw adapter 
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawAdapterRibbonActionCategory extends ActionsCategory
 {
     /**

@@ -28,8 +28,10 @@ import java.util.function.Predicate;
 
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.BaseElement;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
@@ -44,6 +46,7 @@ import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.NamedThing;
 import cdp4common.commondata.ShortNamedThing;
 import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.sitedirectorydata.MeasurementScale;
 import cdp4common.sitedirectorydata.MeasurementUnit;
 import cdp4common.sitedirectorydata.ParameterType;
@@ -189,4 +192,18 @@ public interface IDstController extends IDstControllerBase<Class>
      * @return a {@linkplain boolean}
      */
     boolean TryGetUnit(MeasurementUnit unit, Ref<InstanceSpecification> refUnit);
+
+    /**
+     * Gets the {@linkplain ObservableCollection} of mapped {@linkplain BinaryRelationship}s
+     * 
+     * @return a {@linkplain ObservableCollection} of mapped {@linkplain BinaryRelationship}s
+     */
+    ObservableCollection<BinaryRelationship> GetMappedDirectedRelationshipToBinaryRelationships();
+
+    /**
+     * Gets the {@linkplain ObservableCollection} of mapped {@linkplain DirectedRelationship}s
+     * 
+     * @return a {@linkplain ObservableCollection} of mapped {@linkplain DirectedRelationship}s
+     */
+    ObservableCollection<Abstraction> GetMappedBinaryRelationshipsToDirectedRelationships();
 }

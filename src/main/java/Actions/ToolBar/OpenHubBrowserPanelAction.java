@@ -23,6 +23,8 @@
  */
 package Actions.ToolBar;
 
+import java.awt.Container;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.util.Collection;
 
@@ -46,6 +48,7 @@ import Views.MagicDrawImpactViewPanel;
  * The {@link OpenHubBrowserPanelAction} is a {@link MDAction} that can be added to one toolbar in Cameo or MagicDraw
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class OpenHubBrowserPanelAction extends MDAction
 {
     /**
@@ -62,6 +65,8 @@ public class OpenHubBrowserPanelAction extends MDAction
      * The {@link MagicDrawImpactViewPanel} instance
      */
     private MagicDrawImpactViewPanel impactViewPanel;
+
+    private IMagicDrawSessionService sessionService;
     
     /**
      * Initializes a new {@link OpenHubBrowserPanelAction}
@@ -73,7 +78,9 @@ public class OpenHubBrowserPanelAction extends MDAction
 
          this.InitializesPanels();
          
-         AppContainer.Container.getComponent(IMagicDrawSessionService.class).HasAnyOpenSessionObservable().subscribe(x -> 
+         this.sessionService = AppContainer.Container.getComponent(IMagicDrawSessionService.class);
+                  
+         this.sessionService.HasAnyOpenSessionObservable().subscribe(x -> 
          {
              if(!x.booleanValue())
              {
@@ -101,7 +108,7 @@ public class OpenHubBrowserPanelAction extends MDAction
     */
     @Override
     public void actionPerformed(ActionEvent actionEvent)
-    {            
+    {
         try
         {
             Application applicationInstance = Application.getInstance();
@@ -109,8 +116,13 @@ public class OpenHubBrowserPanelAction extends MDAction
             DockingManager dockingManager = mainFrame.getDockingManager();
             Collection<String> allFrames = dockingManager.getAllFrames();
             
-            boolean isHubBrowserPanelPresent = false, 
-                    isImpactViewPanelPresent = false;
+            for (String string : allFrames)
+            {
+                this.logger.debug(String.format("FRAME => [%s]", string));
+            }
+            
+            boolean isHubBrowserPanelPresent = false;
+            boolean isImpactViewPanelPresent = false;
             
             for(String key : allFrames)
             {

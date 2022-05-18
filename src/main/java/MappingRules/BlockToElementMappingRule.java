@@ -34,6 +34,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -44,42 +45,32 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.magicdraw.sysml.util.SysMLUtilities;
-import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ElementValue;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralInteger;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralNull;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralUnlimitedNatural;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
-import App.AppContainer;
-import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
-import Services.MappingEngineService.MappingRule;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.StereotypeUtils;
-import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
-import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ElementUsage;
@@ -100,17 +91,18 @@ import cdp4common.sitedirectorydata.ReferenceDataLibrary;
 import cdp4common.sitedirectorydata.SimpleQuantityKind;
 import cdp4common.sitedirectorydata.SimpleUnit;
 import cdp4common.sitedirectorydata.TextParameterType;
-import cdp4common.types.ContainerList;
 import cdp4common.types.ValueArray;
-import cdp4dal.operations.ThingTransaction;
-import cdp4dal.operations.ThingTransactionImpl;
-import cdp4dal.operations.TransactionContextResolver;
 
 /**
  * The {@linkplain BlockToElementMappingRule} is the mapping rule implementation for transforming {@linkplain Element} to {@linkplain ElementDefinition}
  */
 public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDrawBlockCollection, ArrayList<MappedElementDefinitionRowViewModel>>
 {
+    /**
+     * A string that is used when retrieving scale and unit
+     */
+    private static final String scaleAndUnitSeparator = "~";
+
     /**
      * The string that indicates the language code for the {@linkplain Definition} for {@linkplain ElementDefinition}s
      * That contains the MagicDraw Id of the mapped {@linkplain Block}
@@ -220,6 +212,13 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         {
             this.Logger.catching(exception);
             return new ArrayList<>();
+        }
+        finally
+        {
+            this.elements.clear();
+            this.portsToConnect.clear();
+            this.connectedElements.clear();
+            this.binaryRelationShips.clear();
         }
     }
     
@@ -442,23 +441,10 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      * @return the port name as a string
      */
     private String GetPortName(MappedElementDefinitionRowViewModel mappedElement, Port port)
-    {
-        if(!StringUtils.isBlank(port.getName()))
-        {
-            return port.getName();
-        }
-        
+    {        
         if(port.getType() != null)
         {
-            String shortName = this.sessionService.GetProjectElements().stream()
-                    .flatMap(x -> x.getOwnedElement().stream())
-                    .filter(p -> MDCustomizationForSysMLProfile.isPartProperty(p)
-                                && AreTheseEquals(((Property)p).getType().getID(), port.getOwner().getID()))
-                    .map(x -> ((Property)x).getName())
-                    .findFirst()
-                    .orElse(mappedElement.GetHubElement().getName());
-            
-            return String.format("%s_%s", shortName, port.getType().getName());
+            return String.format("%s_%s", port.getName(), port.getType().getName());
         }
         
         long portNumber = mappedElement.GetHubElement().getContainedElement().stream().filter(x -> x.getInterfaceEnd() != InterfaceEndKind.NONE).count();
@@ -497,14 +483,16 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
     {
         String shortName = GetShortName(dstElementName);
         
+        Predicate<ElementDefinition> verifyNames = x -> AreTheseEquals(x.getShortName(), shortName, true) || AreTheseEquals(x.getName(), dstElementName, true);
+        
         ElementDefinition elementDefinition = this.elements.stream()
-                .filter(x -> x.GetHubElement() != null && AreTheseEquals(x.GetHubElement().getShortName(), shortName))
+                .filter(x -> x.GetHubElement() != null && verifyNames.test(x.GetHubElement()))
                 .map(x -> x.GetHubElement())
                 .findFirst()
                 .orElse(this.hubController.GetOpenIteration()
                     .getElement()
                     .stream()
-                    .filter(x -> AreTheseEquals(x.getShortName(), shortName))
+                    .filter(x -> verifyNames.test(x))
                     .map(x -> x.clone(true))
                     .findFirst()
                     .orElse(null));
@@ -630,12 +618,17 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         {
             if (MDCustomizationForSysMLProfile.isPartProperty(property))
             {
-                if(parentPartProperty != null && AreTheseEquals(parentPartProperty.getID(), property.getID()))
+                if(parentPartProperty == null || !AreTheseEquals(parentPartProperty.getID(), property.getID()))
                 {
-                    continue;
+                    this.MapPartProperty(elementDefinition, property);
                 }
-                    
-                this.MapPartProperty(elementDefinition, property);
+                
+                continue;
+            }
+            
+            if (!MDCustomizationForSysMLProfile.isValueProperty(property))
+            {
+                this.Logger.error(String.format("Coulnd map property %s, since it is not a value property", property.getName()));
                 continue;
             }
             
@@ -648,10 +641,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                     .findAny();
 
             Ref<ParameterType> refParameterType = new Ref<>(ParameterType.class);
-            Parameter parameter = null;
-            
-            Ref<String> refValue = new Ref<>(String.class, "-");
-            boolean hasValue = StereotypeUtils.TryGetValueFromProperty(property, refValue);
+            Ref<Parameter> refParameter = new Ref<>(Parameter.class);
             
             if(property.getAppliedStereotypeInstance() != null && property.getAppliedStereotypeInstance().getName().toLowerCase().contains("ConnectorProperty")
                     && property.getDefaultValue() instanceof ElementValue
@@ -665,17 +655,11 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             {
                 if(this.TryCreateParameterType(property, refParameterType))
                 {
-                    parameter = new Parameter();
-                    parameter.setIid(UUID.randomUUID());
-                    parameter.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-                    parameter.setParameterType(refParameterType.Get());
-
-                    elementDefinition.getParameter().add(parameter);
-                    
-                    if(refParameterType.Get() instanceof QuantityKind)
-                    {
-                        parameter.setScale(((QuantityKind)refParameterType.Get()).getDefaultScale());
-                    }
+                    Parameter newParameter = new Parameter();
+                    newParameter.setIid(UUID.randomUUID());
+                    newParameter.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+                    newParameter.setParameterType(refParameterType.Get());
+                    refParameter.Set(newParameter);
                 }
                 else
                 {
@@ -683,26 +667,75 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                     continue;
                 }
             }   
-            else if (existingParameter.isPresent())
-            {
-                parameter = existingParameter.get().clone(true);
-            }
             else
             {
-                this.Logger.error(String.format("Could not map attribute %s for element definition %s", property.getName(), elementDefinition.getName()));
-                continue;
+                refParameter.Set(existingParameter.get().clone(true));
             }
+            
+            this.ProcessBindingConnectors(connectors, property, refParameter.Get());
+            this.UpdateScale(refParameter.Get(), property);
+            this.UpdateValueSet(refParameter.Get(), property);
 
-            this.ProcessBindingConnectors(connectors, property, parameter);
-            this.UpdateValueSet(parameter, refValue);
-
-            elementDefinition.getParameter().removeIf(areParameterParameterTypeShortNameEqualsPredicate);
-            elementDefinition.getParameter().add(parameter);
+            elementDefinition.getParameter().removeIf(x -> AreTheseEquals(x.getIid(), refParameter.Get().getIid()));
+            elementDefinition.getParameter().add(refParameter.Get());
             
             this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
         }
         
         this.Logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
+    }
+
+    /**
+     * Sets the correct actual scale for the specified {@linkplain Parameter}
+     * 
+     * @param parameter the {@linkplain Parameter}
+     * @param property the {@linkplain Property}
+     */
+    private void UpdateScale(Parameter parameter, Property property)
+    {
+        if(parameter.getParameterType() instanceof QuantityKind)
+        {
+            QuantityKind parameterType = (QuantityKind)parameter.getParameterType();
+            Pair<String, String> scaleAndUnit = this.GetScaleAndUnit(property);
+            String unitName = scaleAndUnit.getRight();
+
+            this.Logger.debug(String.format("Got scaleAnUnit [%s] [%s]", scaleAndUnit.getLeft(), scaleAndUnit.getRight()));
+            
+            if(unitName == null)
+            {
+                parameter.setScale(parameterType.getDefaultScale());
+            }
+            else
+            {
+                Function<QuantityKind, MeasurementScale> findScaleFunction = x -> x.getPossibleScale().stream()
+                    .filter(q -> AreTheseEquals(q.getName(), unitName, true) || AreTheseEquals(q.getShortName(), unitName, true))
+                    .findFirst()
+                    .orElse(null);
+                
+                MeasurementScale scale = findScaleFunction.apply(parameterType);
+                
+                if(scale != null) 
+                {
+                    this.Logger.debug(String.format("Parameter [%s] Scale has changed for [%s]", parameter.getParameterType().getName(), scale.getName()));
+                    
+                    parameter.setScale(scale);
+                }
+                else
+                {
+                    Ref<ParameterType> refParameterType = new Ref<>(ParameterType.class, parameterType);
+                    
+                    if(this.TryUpdateQuantityKindScale(property, refParameterType))
+                    {
+                        MeasurementScale newScale = findScaleFunction.apply((QuantityKind)refParameterType.Get());
+
+                        this.Logger.debug(String.format("Parameter [%s] Scale has changed for [%s]", 
+                                parameter.getParameterType().getName(), newScale.getName()));
+                        
+                        parameter.setScale(newScale);
+                    }
+                }
+            }
+        }        
     }
 
     /**
@@ -737,10 +770,10 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         this.MapProperties(mappedElement.GetHubElement(), definitionBlock, partProperty);
 
         if(elementDefinition.getContainedElement()
-                .stream().anyMatch(x -> AreTheseEquals(x.getElementDefinition().getIid(), mappedElement.GetHubElement().getIid())
-                && x.getElementDefinition().getDefinition().stream()
-                        .filter(d -> AreTheseEquals(d.getLanguageCode(), MDIID))
-                        .anyMatch(d -> AreTheseEquals(d.getContent(), definitionBlock.getID()))))
+                .stream().anyMatch(x -> AreTheseEquals(x.getElementDefinition().getIid(), mappedElement.GetHubElement().getIid())))
+//            && x.getElementDefinition().getDefinition().stream()
+//            .filter(d -> AreTheseEquals(d.getLanguageCode(), MDIID))
+//            .anyMatch(d -> AreTheseEquals(d.getContent(), definitionBlock.getID())))
         {
             return;
         }
@@ -759,9 +792,9 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      * Updates the correct value set depending on the selected @Link
      * 
      * @param parameter the {@linkplain Parameter}
-     * @param refValue the {@linkplain Ref} of {@linkplain String} holding the value to assign
+     * @param property the {@linkplain Property}
      */
-    private void UpdateValueSet(Parameter parameter, Ref<String> refValue)
+    private void UpdateValueSet(Parameter parameter, Property property)
     {
         ParameterValueSet valueSet = null;
         
@@ -780,8 +813,11 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             valueSet.setValueSwitch(ParameterSwitchKind.MANUAL);
             parameter.getValueSet().add(valueSet);
         }
-
-        valueSet.setManual(new ValueArray<>(Arrays.asList(refValue.Get()), String.class));
+        
+        String value = StereotypeUtils.GetValueFromProperty(property);
+        
+        this.Logger.debug(String.format("Parameter [%s] value is being updated with [%s]", parameter.getParameterType().getName(), StringUtils.isBlank(value) ? "-" : value));
+        valueSet.setManual(new ValueArray<>(Arrays.asList(StringUtils.isBlank(value) ? "-" : value), String.class));
     }
 
     /**
@@ -838,7 +874,8 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             String shortName = GetShortName(property.getName());
             
             if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> this.AreShortNamesEquals(x, shortName) 
-                    || x.getName().compareToIgnoreCase(property.getName()) == 0, refParameterType))
+                    || x.getName().compareToIgnoreCase(property.getName()) == 0 
+                    || (property.getType() != null && AreTheseEquals(property.getType().getName(), x.getName(), true)), refParameterType))
             {
                 ParameterType parameterType = null;
                 ValueSpecification valueSpecification = property.getDefaultValue();
@@ -846,18 +883,15 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 if(valueSpecification == null || valueSpecification instanceof LiteralInteger || valueSpecification instanceof LiteralUnlimitedNatural || valueSpecification instanceof LiteralReal)
                 {
                     parameterType = this.CreateQuantityKind(property);
-                }
-                
-                else if(valueSpecification instanceof LiteralBoolean)
+                }                
+                if(parameterType == null && (valueSpecification == null || valueSpecification instanceof LiteralBoolean))
                 {
                     parameterType = new BooleanParameterType();
                 }
-
-                else if(valueSpecification instanceof LiteralString)
+                if(parameterType == null && (valueSpecification == null || valueSpecification instanceof LiteralString))
                 {
                     parameterType = new TextParameterType();
                 }
-                
                 else
                 {
                     this.Logger.error(String.format("The property %s isn't supported by the adapter because it is %s or %s", property.getName(), valueSpecification.getHumanType(), valueSpecification.getHumanName()));
@@ -868,12 +902,16 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                     parameterType.setIid(UUID.randomUUID());
                     parameterType.setName(property.getName());
                     parameterType.setShortName(shortName);
-                    parameterType.setSymbol(shortName.substring(0, 1));
+                    parameterType.setSymbol(property.getName().substring(0, 1));
                     
                     ReferenceDataLibrary referenceDataLibrary = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
                     referenceDataLibrary.getParameterType().add(parameterType);
-                    return this.TryCreateReferenceDataLibraryThing(parameterType, referenceDataLibrary, refParameterType);
+                    return this.TryCreateOrUpdateReferenceDataLibraryThing(parameterType, referenceDataLibrary, refParameterType);
                 }
+            }
+            else
+            {
+                return this.TryUpdateQuantityKindScale(property, refParameterType);
             }
             
             return refParameterType.HasValue();
@@ -884,6 +922,44 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             this.Logger.catching(exception);
             return false;
         }
+    }
+    
+    /**
+     * Tries to update the provided parameter based on the specified {@linkplain Property} valu type if it is a {@linkplain QuantityKind}
+     * 
+     * @param property the {@linkplain Property} to create the {@linkplain ParameterType} from
+     * @param refParameterType the {@linkplain Ref} of {@linkplain ParameterType} 
+     * @return an assert
+     */
+    private boolean TryUpdateQuantityKindScale(Property property, Ref<ParameterType> refParameterType)
+    { 
+        if(!(refParameterType.Get() instanceof QuantityKind))
+        {
+            return true;
+        }
+        
+        QuantityKind quantityKind = ((QuantityKind)refParameterType.Get());
+        String scaleName = this.GetScaleName(property);
+        
+        if(quantityKind.getPossibleScale().stream().noneMatch(x -> AreTheseEquals(scaleName, x.getName(), true)
+                    || AreTheseEquals(scaleName, x.getShortName(), true)))
+        {
+            Ref<MeasurementScale> refScale = new Ref<>(MeasurementScale.class);
+            
+            if(!this.TryCreateOrGetMeasurementScale(property.getDefaultValue(), property, refScale))
+            {
+                this.Logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", property.getName()));
+                return false;
+            }
+            
+            QuantityKind clone = quantityKind.clone(false);
+            clone.getPossibleScale().add(refScale.Get());
+
+            ReferenceDataLibrary referenceDataLibrary = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
+            return this.TryCreateOrUpdateReferenceDataLibraryThing(clone, referenceDataLibrary, refParameterType);
+        }
+        
+        return true;
     }
 
     /**
@@ -920,19 +996,13 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
     @SuppressWarnings("resource")
     private boolean TryCreateOrGetMeasurementScale(ValueSpecification valueSpecification, Property property, Ref<MeasurementScale> refScale)
     {
-        Pair<String, String> scaleAndUnit = this.GetScaleAndUnit(property); 
+        String scaleName = this.GetScaleName(property);
         
-        if(scaleAndUnit.getLeft() == null || scaleAndUnit.getRight() == null)
-        {
-            return false;
-        }
-        
-        String scaleShortName = scaleAndUnit.getLeft();
-
-        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(scaleShortName), refScale))
+        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> AreTheseEquals(x.getShortName(), scaleName, true) 
+                ||  AreTheseEquals(x.getName(), scaleName, true) , refScale))
         {
             MeasurementScale newScale = new RatioScale();
-            newScale.setName(scaleAndUnit.getLeft());
+            newScale.setName(scaleName);
             
             if(valueSpecification instanceof LiteralInteger)
             {
@@ -949,7 +1019,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             
             Ref<MeasurementUnit> refMeasurementUnit = new Ref<>(MeasurementUnit.class);
             
-            if(!this.TryCreateOrGetMeasurementUnit(scaleAndUnit.getRight(), refMeasurementUnit))
+            if(!this.TryCreateOrGetMeasurementUnit(scaleName, refMeasurementUnit))
             {   
                 return false;
             }
@@ -959,10 +1029,31 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             
             ReferenceDataLibrary referenceDataLibrary = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
             referenceDataLibrary.getScale().add(newScale);
-            return this.TryCreateReferenceDataLibraryThing(newScale, referenceDataLibrary, refScale);
+            return this.TryCreateOrUpdateReferenceDataLibraryThing(newScale, referenceDataLibrary, refScale);
         }
         
         return true;
+    }
+
+    /**
+     * Gets the possible scale name
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain String}
+     */
+    private String GetScaleName(Property property)
+    {
+        Pair<String, String> scaleAndUnit = this.GetScaleAndUnit(property);
+        String scaleName = scaleAndUnit.getRight();
+
+        this.Logger.debug(String.format("Got scaleAnUnit [%s] [%s]", scaleAndUnit.getLeft(), scaleAndUnit.getRight()));
+        
+        if(scaleAndUnit.getRight() == null)
+        {
+            scaleName = "one";
+        }
+        
+        return scaleName;
     }
     
     /**
@@ -975,15 +1066,15 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
     {
         String type = StereotypeUtils.GetTypeRepresentation(property);
 
-        String[] scaleAndUnit = type.replaceAll("[^a-zA-Z0-9]|\\s", " ").split(" ");
+        String[] scaleAndUnit = type.replaceAll("\\[|\\]", scaleAndUnitSeparator).split(scaleAndUnitSeparator);
         
         if(scaleAndUnit.length == 1)
         {
-            return Pair.of(scaleAndUnit[0], "-");
+            return Pair.of(scaleAndUnit[0], StereotypeUtils.GetUnitRepresention(property));
         }
         else if(scaleAndUnit.length == 2)
         {
-            return Pair.of(scaleAndUnit[0], scaleAndUnit[1].trim());
+            return Pair.of(scaleAndUnit[0], scaleAndUnit[1].replace(scaleAndUnitSeparator, ""));
         }
         
         return Pair.of(null, null);
@@ -999,17 +1090,15 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      */
     private boolean TryCreateOrGetMeasurementUnit(String unitName, Ref<MeasurementUnit> refMeasurementUnit)
     {
-        String unitShortName = GetShortName(unitName);
-        
-        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(unitShortName) || x.getName().equals(unitName) || x.getShortName().equals("-"), refMeasurementUnit))
+        if(!this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(unitName) || x.getName().equals(unitName) || x.getShortName().equals("-"), refMeasurementUnit))
         {
             SimpleUnit newMeasurementUnit = new SimpleUnit();
             newMeasurementUnit.setName(unitName);
-            newMeasurementUnit.setShortName(unitShortName);
+            newMeasurementUnit.setShortName(unitName);
 
             ReferenceDataLibrary referenceDataLibrary = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
             referenceDataLibrary.getUnit().add(newMeasurementUnit);
-            return this.TryCreateReferenceDataLibraryThing(newMeasurementUnit, referenceDataLibrary, refMeasurementUnit);
+            return this.TryCreateOrUpdateReferenceDataLibraryThing(newMeasurementUnit, referenceDataLibrary, refMeasurementUnit);
         }
         
         return true;

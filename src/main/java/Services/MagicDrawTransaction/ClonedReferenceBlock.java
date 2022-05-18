@@ -38,6 +38,7 @@ import Utils.Stereotypes.StereotypeUtils;
 /**
  * The ClonedReferenceElement is a POJO class that represents a cloned Block with it's original reference
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class ClonedReferenceBlock extends ClonedReferenceElement<Class>
 {    
     /**

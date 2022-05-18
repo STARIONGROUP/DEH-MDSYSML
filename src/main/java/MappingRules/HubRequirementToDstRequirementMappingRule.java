@@ -28,7 +28,6 @@ import static Utils.Operators.Operators.AreTheseEquals;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import com.nomagic.requirements.util.RequirementUtilities;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
@@ -44,10 +43,8 @@ import Utils.Ref;
 import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.RequirementType;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
-import ViewModels.Rows.MappedHubRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.NamedThing;
 import cdp4common.commondata.Thing;
@@ -59,7 +56,7 @@ import cdp4common.sitedirectorydata.Category;
 /**
  * The {@linkplain HubRequirementToDstRequirementMappingRule} is the mapping rule implementation for transforming {@linkplain HubRequirementCollection} to Magic Draw {@linkplain Requirement}
  */
-public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappingRule<HubRequirementCollection, ArrayList<MappedHubRequirementRowViewModel>>
+public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappingRule<HubRequirementCollection, ArrayList<MappedRequirementRowViewModel>>
 {
     /**
      * The collection of {@linkplain RequirementsSpecification} that are being mapped
@@ -90,7 +87,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      * @return the {@linkplain ArrayList} of {@linkplain MappedDstRequirementRowViewModel}
      */
     @Override
-    public ArrayList<MappedHubRequirementRowViewModel> Transform(Object input)
+    public ArrayList<MappedRequirementRowViewModel> Transform(Object input)
     {
         try
         {
@@ -124,7 +121,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      */
     private void Map(HubRequirementCollection mappedRequirements)
     {
-        for (MappedHubRequirementRowViewModel mappedRequirementRowViewModel : mappedRequirements)
+        for (MappedRequirementRowViewModel mappedRequirementRowViewModel : mappedRequirements)
         {
             if(mappedRequirementRowViewModel.GetDstElement() == null)
             {
@@ -157,7 +154,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      * @param mappedRequirementRowViewModel the {@linkplain MappedDstRequirementRowViewModel}
      * @return a {@linkplain RequirementsPkg}
      */
-    private Class GetOrCreateRequirement(MappedHubRequirementRowViewModel mappedRequirementRowViewModel)
+    private Class GetOrCreateRequirement(MappedRequirementRowViewModel mappedRequirementRowViewModel)
     {
         Ref<RequirementType> refRequirementType = new Ref<>(RequirementType.class);
         

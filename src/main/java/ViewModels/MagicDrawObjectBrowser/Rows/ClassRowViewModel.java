@@ -33,6 +33,7 @@ import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
  * The {@linkplain ClassRowViewModel} is the row view model that represents either a block or a requirement, 
  * as in the {@linkplain BlockRowViewModel} or the {@linkplain RequirementRowViewModel}
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public abstract class ClassRowViewModel extends ElementRowViewModel<Class> implements IHaveContainedRows<IElementRowViewModel<?>>
 {
     /**

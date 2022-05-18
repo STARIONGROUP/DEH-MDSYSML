@@ -23,18 +23,16 @@
  */
 package Services.HistoryService;
 
-import org.eclipse.emf.ecore.xml.type.internal.DataValue;
-
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import HubController.IHubController;
+import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.LocalExchangeHistory.LocalExchangeHistoryService;
 import Services.VersionNumber.IAdapterVersionNumberService;
+import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.StereotypeUtils;
 import cdp4common.ChangeKind;
 
@@ -54,6 +52,21 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
         super(hubController, versionService);
     }
 
+    /**
+     * Appends a change in the log regarding the specified {@linkplain DirectedRelationship}
+     * 
+     * @param relationship the {@linkplain DirectedRelationship}
+     * @param changeKind the {@linkplain ChangeKind}
+     */
+    @Override
+    public void Append(Abstraction relationship, ChangeKind changeKind)
+    {
+        DirectedRelationshipType type = DirectedRelationshipType.From(relationship);
+        String elementType = type != null ? type.name() : relationship.getClass().getSimpleName().replace("Impl", "");
+
+        this.Append(String.format("%s [%s] has been %sD", elementType, relationship.getName(), changeKind));
+    }
+    
     /**
      * Appends a change in the log regarding the specified {@linkplain CapellaElement}
      * 

@@ -27,8 +27,7 @@ import java.util.ArrayList;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Services.MappingEngineService.IMappableThingCollection;
-import ViewModels.Rows.MappedElementDefinitionRowViewModel;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 
 /**
  * The {@linkplain MagicDrawRequirementCollection} class represents a collection of {@linkplain MappedDstRequirementRowViewModel}.
@@ -44,4 +43,4 @@ import ViewModels.Rows.MappedDstRequirementRowViewModel;
  * Meaning that defining a rule that takes as input a {@linkplain ArrayList} of any type isn't supported because of the java generic implementation.
  */
 @SuppressWarnings("serial")
-public class MagicDrawRequirementCollection extends ArrayList<MappedDstRequirementRowViewModel> implements IMappableThingCollection { }
+public class MagicDrawRequirementCollection extends ArrayList<MappedRequirementRowViewModel> implements IMappableThingCollection { }

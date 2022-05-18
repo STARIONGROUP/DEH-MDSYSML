@@ -31,15 +31,15 @@ import HubController.IHubController;
 import Utils.Ref;
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementUsageRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
-import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
 
@@ -246,16 +246,34 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
         
         if(root instanceof IHaveContainedRows)
         {
-            for (IRowViewModel row : ((IHaveContainedRows<IRowViewModel>)root).GetContainedRows())
+            this.UpdateHighlightOnRows((IHaveContainedRows<IRowViewModel>) root, false);
+        }
+    }
+
+    /**
+     * Updates the <code>IsHighlighted</code> property on each row of the specified model
+     * 
+     * @param rowViewModel a {@linkplain IHaveContainedRows} row view model
+     * @param a value indicating whether child rows should be highlighted
+     */
+    @SuppressWarnings("unchecked")
+    private void UpdateHighlightOnRows(IHaveContainedRows<IRowViewModel> rowViewModel, boolean shouldHighlight)
+    {
+        for (IRowViewModel row : rowViewModel.GetContainedRows())
+        {
+            if(row instanceof IThingRowViewModel)
             {
-                if(row instanceof IThingRowViewModel)
+                IThingRowViewModel<?> thingRowViewModel = (IThingRowViewModel<?>)row;
+                
+                boolean isHighlighted = shouldHighlight || this.DstController.GetDstMapResult().stream()
+                        .anyMatch(r -> AreTheseEquals(r.GetHubElement().getIid(), thingRowViewModel.GetThing().getIid()));
+                
+                thingRowViewModel.SetIsHighlighted(isHighlighted);
+                thingRowViewModel.GetParent().SetIsHighlighted(isHighlighted);
+                
+                if(row instanceof IHaveContainedRows)
                 {
-                    IThingRowViewModel<?> thingRowViewModel = (IThingRowViewModel<?>)row;
-                    
-                    boolean isHighlighted = this.DstController.GetDstMapResult().stream()
-                            .anyMatch(r -> AreTheseEquals(r.GetHubElement().getIid(), thingRowViewModel.GetThing().getIid()));
-                    
-                    thingRowViewModel.SetIsHighlighted(isHighlighted);
+                    this.UpdateHighlightOnRows((IHaveContainedRows<IRowViewModel>)row, isHighlighted);
                 }
             }
         }
@@ -265,40 +283,95 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      * Compute eligible rows where the represented {@linkplain Thing} can be transfered,
      * and return the filtered collection for feedback application on the tree
      * 
-     * @param selectedRow the collection of selected view model {@linkplain IThingRowViewModel}
+     * @param selectedRow the selected row view model {@linkplain IThingRowViewModel}
      */
     @Override
     public void OnSelectionChanged(ThingRowViewModel<?> selectedRow) 
     {
         if(selectedRow != null && selectedRow.GetThing() != null)
         {
-            Optional<MappedElementRowViewModel<? extends Thing, ? extends com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class>> optionalMappedElement = 
-                    this.DstController.GetDstMapResult().stream()
-                        .filter(r -> AreTheseEquals(r.GetHubElement().getIid(), selectedRow.GetThing().getIid()))
-                        .findFirst();
+            Ref<Boolean> refShouldSelect = new Ref<>(Boolean.class, null);
             
-            if(optionalMappedElement.isPresent())
+            Collection<IThingRowViewModel<?>> allSelectableRows = this.GetAllSelectableRows(selectedRow, null);
+            
+            for(IThingRowViewModel<?> rowViewModel : allSelectableRows)
             {
-                this.AddOrRemoveSelectedRowToTransfer(selectedRow, optionalMappedElement.get().GetHubElement());
-            }            
+                this.AddOrRemoveSelectedRowToTransfer(rowViewModel, refShouldSelect);
+            }
         }
+    }
+
+    /**
+     * Gets all the select-able rows recursively from the children of the provided {@linkplain IThingRowViewModel}, 
+     * and adds them to the specified {@linkplain Collection} of {@linkplain IThingRowViewModel}
+     * 
+     * @param selectedRow the {@linkplain IThingRowViewModel}
+     * @param selectableRows {@linkplain Collection} of {@linkplain IThingRowViewModel}
+     * @return the {@linkplain Collection} of select-able {@linkplain IThingRowViewModel}
+     */
+    @SuppressWarnings("unchecked")
+    private Collection<IThingRowViewModel<?>> GetAllSelectableRows(IThingRowViewModel<?> selectedRow, Collection<IThingRowViewModel<?>> selectableRows)
+    {
+        if(selectableRows == null)
+        {
+            selectableRows = new ArrayList<>();
+        }
+        
+        if(!selectedRow.GetIsHighlighted())
+        {
+            return selectableRows;
+        }
+        
+        if(this.DstController.GetDstMapResult().stream()
+                    .anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getIid())))
+        {
+            selectableRows.add(selectedRow);
+        }
+        else if(this.DstController.GetDstMapResult().stream()
+                .anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getContainer().getIid())) 
+                && selectableRows.stream().noneMatch(x -> AreTheseEquals(x.GetThing().getIid(), selectedRow.GetThing().getContainer().getIid()))
+                && selectedRow.GetParent() instanceof IThingRowViewModel)
+        {
+            selectableRows.add((IThingRowViewModel<?>) selectedRow.GetParent());
+        }
+        
+        if(selectedRow instanceof IHaveContainedRows)
+        {
+            for (IThingRowViewModel<?> childRow : ((IHaveContainedRows<IThingRowViewModel<?>>)selectedRow).GetContainedRows())
+            {
+                if(childRow instanceof ElementUsageRowViewModel)
+                {
+                    this.GetAllSelectableRows(this.GetRowViewModelFromThing((TThing) ((ElementUsageRowViewModel)childRow).GetThing().getElementDefinition()), selectableRows);
+                }
+                
+                this.GetAllSelectableRows(childRow, selectableRows);
+            }
+        }
+        
+        return selectableRows;
     }
 
     /**
      * Adds or remove the {@linkplain Thing} to/from the relevant collection depending on the {@linkplain MappingDirection}
      * 
-     * @param x the {@linkplain IThingRowViewModel} that represents the {@linkplain Thing}
-     * @param thing the {@linkplain Thing} to add or remove
+     * @param rowViewModel the {@linkplain IThingRowViewModel} that represents the {@linkplain Thing}
+     * @param shouldSelect a {@linkplain Ref} of a {@linkplain Boolean} value which indicates whether the provided rowViewModel should be selected
      */
-    private void AddOrRemoveSelectedRowToTransfer(IThingRowViewModel<?> x, Thing thing)
+    private void AddOrRemoveSelectedRowToTransfer(IThingRowViewModel<?> rowViewModel, Ref<Boolean> shouldSelect)
     {
-        if(x.SwitchIsSelectedValue())
+        if(!shouldSelect.HasValue())
         {
-            this.DstController.GetSelectedDstMapResultForTransfer().add(thing);
+            shouldSelect.Set(rowViewModel.SwitchIsSelectedValue());
         }
-        else
+        
+        if(shouldSelect.Get() && this.DstController.GetSelectedDstMapResultForTransfer().stream()
+                .noneMatch(x -> AreTheseEquals(rowViewModel.GetThing().getIid(), x.getIid())))
         {
-            this.DstController.GetSelectedDstMapResultForTransfer().Remove(thing);
+            this.DstController.GetSelectedDstMapResultForTransfer().add(rowViewModel.GetThing());
+        }
+        else if(!shouldSelect.Get())
+        {
+            this.DstController.GetSelectedDstMapResultForTransfer().Remove(rowViewModel.GetThing());
         }
     }
 }

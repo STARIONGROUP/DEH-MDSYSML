@@ -34,6 +34,7 @@ import Utils.Ref;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeViewModel;
+import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.IterationElementDefinitionRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import cdp4common.commondata.Thing;
@@ -103,7 +104,7 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
     protected OutlineModel CreateNewModel(Iteration iteration)
     {
         return DefaultOutlineModel.createOutlineModel(
-                new ElementDefinitionBrowserTreeViewModel(iteration), 
+                new ElementDefinitionBrowserTreeViewModel(iteration),
                 new ElementDefinitionBrowserTreeRowViewModel(), true);
     }
     
@@ -118,9 +119,16 @@ public class ElementDefinitionImpactViewViewModel extends ImpactViewBaseViewMode
     {
         IterationElementDefinitionRowViewModel iterationRowViewModel = (IterationElementDefinitionRowViewModel) this.browserTreeModel.Value().getRoot();
         
-        return iterationRowViewModel.GetContainedRows().stream()
+        ElementDefinitionRowViewModel result = iterationRowViewModel.GetContainedRows().stream()
             .filter(x -> AreTheseEquals(thing.getIid(), x.GetThing().getIid()))
             .findFirst()
             .orElse(null);
+
+        if(result == null)
+        {
+            this.logger.debug(String.format("GetRowViewModelFromThing from [%s] => [null]", thing != null ? thing.getName() : "null"));
+        }
+        
+        return result;
     }
 }

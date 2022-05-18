@@ -145,17 +145,6 @@ public final class StereotypeUtils
     }
     
     /**
-     * Tries to extract the value from the provided property and returns it as string
-     * 
-     * @return a value indicating whether the value has been extracted
-     */
-    public static boolean TryGetValueFromProperty(Property property, Ref<String> refValue)
-    {
-        refValue.Set(StereotypeUtils.GetValueFromProperty(property));
-        return refValue.HasValue();
-    }
-    
-    /**
      * Gets the default value from the specified {@linkplain Property} as string
      * 
      * @param property the {@linkplain Property}
@@ -269,21 +258,9 @@ public final class StereotypeUtils
      * @param stereotype the {@linkplain Stereotype}
      * @return a {@linkplain Stereotype}
      */
-    public static Stereotype GetStereotype(Project project, Stereotypes stereotype)
+    public static Stereotype GetStereotype(Project project, Enum<?> stereotype)
     {
         return StereotypeUtils.GetStereotype(project, stereotype.name());
-    }
-    
-    /**
-     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain RequirementType} {@linkplain String} name
-     * 
-     * @param project the {@linkplain Project}
-     * @param requirementType the {@linkplain RequirementType}
-     * @return a {@linkplain Stereotype}
-     */
-    public static Stereotype GetStereotype(Project project, RequirementType requirementType)
-    {
-        return StereotypeUtils.GetStereotype(project, requirementType.name());
     }
 
     /**
@@ -293,21 +270,9 @@ public final class StereotypeUtils
      * @param stereotype the {@linkplain Stereotype}
      * @return a {@linkplain Stereotype}
      */
-    public static Stereotype GetStereotype(NamedElement namedElement, Stereotypes stereotype)
+    public static Stereotype GetStereotype(NamedElement namedElement, Enum<?> stereotype)
     {
         return StereotypeUtils.GetStereotype(namedElement, stereotype.name());
-    }
-
-    /**
-     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain RequirementType} {@linkplain String} name
-     * 
-     * @param namedElement the {@linkplain NamedElement}
-     * @param requirementType the {@linkplain RequirementType}
-     * @return a {@linkplain Stereotype}
-     */
-    public static Stereotype GetStereotype(NamedElement namedElement, RequirementType requirementType)
-    {
-        return StereotypeUtils.GetStereotype(namedElement, requirementType.name());
     }
 
     /**
