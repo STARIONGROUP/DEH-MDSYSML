@@ -1,5 +1,5 @@
 /*
- * MappedRequirementBaseRowViewModel.java
+ * MappedRequirementRowViewModel.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -26,39 +26,32 @@ package ViewModels.Rows;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Enumerations.MappingDirection;
-import cdp4common.commondata.NamedThing;
-import cdp4common.commondata.Thing;
-
 /**
- * The MappedRequirementBaseRowViewModel is the base {@linkplain MappedRequirement}
- * 
- * @param <TThing> the type of {@linkplain Thing}
+ * The MappedRequirementBaseRowViewModel represents a mapping between a {@linkplain cdp4common.engineeringmodeldata.Requirement} a stereotyped {@linkplain Class} as requirement
  */
-public abstract class MappedRequirementBaseRowViewModel<TThing extends Thing & NamedThing> extends MappedElementRowViewModel<TThing, Class>
+public class MappedRequirementRowViewModel extends MappedElementRowViewModel<cdp4common.engineeringmodeldata.Requirement, Class>
 {
     /**
-     * Initializes a new {@linkplain MappedRequirementBaseRowViewModel}
+     * Initializes a new {@linkplain MappedRequirementRowViewModel}
      * 
-     * @param thing the {@linkplain #TThing} that is at one end of the mapping
+     * @param thing the {@linkplain cdp4common.engineeringmodeldata.Requirement} that is at one end of the mapping
      * @param dstElement the {@linkplain Requirement} that is at the other end
      * @param mappingDirection the {@linkplain MappingDirection} to which this mapping applies to
-     * @param thingClass the {@linkplain Class} of {@linkplain #TThing}
      */
-    public MappedRequirementBaseRowViewModel(TThing thing, Class dstElement, MappingDirection mappingDirection, java.lang.Class<TThing> thingClass)
+    public MappedRequirementRowViewModel(cdp4common.engineeringmodeldata.Requirement thing, Class dstElement, MappingDirection mappingDirection)
     {
-        super(thing, thingClass, dstElement, mappingDirection);
+        super(thing, cdp4common.engineeringmodeldata.Requirement.class, dstElement, mappingDirection);
     }
 
     /**
-     * Initializes a new {@linkplain MappedRequirementBaseRowViewModel} with {@linkplain MappingDirection}.{@code FromDstToHub}
+     * Initializes a new {@linkplain MappedRequirementRowViewModel} with {@linkplain MappingDirection}.{@code FromDstToHub}
      * 
-     * @param dstElement the {@linkplain TDstElement} that is at the other end
+     * @param dstElement the {@linkplain Class} that is at the other end
      * @param mappingDirection the {@linkplain MappingDirection} to which this mapping applies to
-     * @param thingClass the {@linkplain Class} of {@linkplain #TThing}
      */
-    public MappedRequirementBaseRowViewModel(Class dstElement, MappingDirection mappingDirection, java.lang.Class<TThing> thingClass)
+    public MappedRequirementRowViewModel(Class dstElement, MappingDirection mappingDirection)
     {
-        super(thingClass, dstElement, mappingDirection);
+        super(cdp4common.engineeringmodeldata.Requirement.class, dstElement, mappingDirection);
     }
 
     /**

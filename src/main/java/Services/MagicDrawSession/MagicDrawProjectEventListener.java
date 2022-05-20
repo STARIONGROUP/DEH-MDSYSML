@@ -33,6 +33,7 @@ import io.reactivex.Observable;
 /**
  * The {@linkplain MagicDrawProjectEventListener} is a {@linkplain ProjectEventListener}. It listens for changes happening in Cameo/MagicDraw on the open project
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public final class MagicDrawProjectEventListener implements ProjectEventListener, IMagicDrawProjectEventListener
 {
     /**
@@ -99,7 +100,7 @@ public final class MagicDrawProjectEventListener implements ProjectEventListener
     @Override
     public void projectSaved(Project project, boolean isSaved) 
     {
-        this.openDocument.Value(this.application.getProject());
+        this.openDocument.Value(project);
         this.projectSaved.Value(isSaved);
     }
     

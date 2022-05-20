@@ -40,6 +40,10 @@ import org.eclipse.emf.ecore.EObject;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
 import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
@@ -57,6 +61,7 @@ import com.nomagic.uml2.impl.ElementsFactory;
 
 import App.AppContainer;
 import Services.MagicDrawSession.IMagicDrawSessionService;
+import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
@@ -221,7 +226,22 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         
         return this.cloneReferences.containsKey(((Element)element).getID()) 
                 && this.cloneReferences.get(((Element)element).getID()).GetClone() == element;
+    }    
+
+    /**
+     *  Verifies that the provided {@linkplain #TElement} is a new element
+     *  
+     * @param <TElement> the type of the element
+     * @param element the {@linkplain #TElement} to check
+     * @return an assert
+     */
+    @Override
+    public <TElement extends Element> boolean IsNew(TElement element)
+    {
+        return this.newReferences.containsKey(((Element)element).getID())
+                && this.newReferences.get(((Element)element).getID()) == element;
     }
+    
     /**
      * Verifies that the provided {@linkplain #TElement} is a clone or a new element
      * 
@@ -269,8 +289,25 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         }
         
         return null;
+    }    
+
+    /**
+     * Creates a new {@linkplain Abstraction} relationship based on the provided {@linkplain DirectedRelationshipType} stereotype
+     * 
+     * @param relationshipType the {@linkplain DirectedRelationshipType}
+     * @return an {@linkplain Abstraction}
+     */
+    @Override
+    public Abstraction Create(DirectedRelationshipType relationshipType)
+    {
+        Abstraction relationship = this.Create(
+                StereotypeUtils.GetStereotype(this.sessionService.GetProject(), relationshipType), 
+                () -> this.elementFactory.createAbstractionInstance());
+        
+        this.newReferences.put(relationship.getID(), relationship);
+        return relationship;
     }
-    
+        
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain #Class}
      * 
@@ -386,15 +423,16 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     @Override
     public Class Create(RequirementType requirementType)
     {        
-        return Create(StereotypeUtils.GetStereotype(this.sessionService.GetProject(), requirementType), () -> this.elementFactory.createClassInstance());
-    }
-    
+        return this.Create(StereotypeUtils.GetStereotype(this.sessionService.GetProject(), requirementType), () -> this.elementFactory.createClassInstance());
+    }   
+
     /**
      * Creates an {@linkplain #TElement} with the specified name
      * 
      * @param <TElement> the type of element to create
      * @param elementClass the {@linkplain java.lang.Class} of {@linkplain #TElement}
      * @param name the {@linkplain String} name of the new element
+     * @return a new instance of a TElement
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -414,10 +452,23 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         {
             newElement = this.elementFactory.createPortInstance();         
         }
+        else if(elementClass == Interface.class)
+        {
+            newElement = this.elementFactory.createInterfaceInstance();         
+        }
+        else if(elementClass == Usage.class)
+        {
+            newElement = this.elementFactory.createUsageInstance();         
+        }
+        else if(elementClass == InterfaceRealization.class)
+        {
+            newElement = this.elementFactory.createInterfaceRealizationInstance();         
+        }
         
         if(newElement != null)
         {
             newElement.setName(name);
+            this.newReferences.put(newElement.getID(), newElement);
             return (TElement)newElement;
         }
         

@@ -38,6 +38,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Reactive.ObservableValue;
 import Services.MagicDrawSelection.IMagicDrawSelectionService;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
@@ -52,15 +53,13 @@ import Utils.Tasks.TaskStatus;
 import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
 import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
 import ViewModels.Dialogs.Interfaces.IMappingConfigurationDialogViewModel;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
-import ViewModels.Rows.MappedHubRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import Views.Dialogs.MagicDrawDstToHubMappingConfigurationDialog;
 import Views.Dialogs.MagicDrawHubToDstMappingConfigurationDialog;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
-import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import io.reactivex.Observable;
 
 /**
@@ -117,7 +116,7 @@ public class MapCommandService implements IMapCommandService
     /**
      * Backing field for {@linkplain CanExecuteObservable}
      */
-    private Observable<Boolean> canExecute;
+    private ObservableValue<Boolean> canExecute = new ObservableValue<>();
     
     /**
      * Initializes a new {@linkplain MapCommandService}
@@ -154,9 +153,10 @@ public class MapCommandService implements IMapCommandService
     @Override
     public void Initialize()
     {
-        this.canExecute = Observable.combineLatest(this.sessionService.HasAnyOpenSessionObservable().startWith(this.sessionService.HasAnyOpenSession()), 
+        Observable.combineLatest(this.sessionService.HasAnyOpenSessionObservable().startWith(this.sessionService.HasAnyOpenSession()), 
                     this.hubController.GetIsSessionOpenObservable().startWith(this.hubController.GetIsSessionOpen()),
-                (hasAnyOpenSession, isHubSessionOpen) -> hasAnyOpenSession && isHubSessionOpen);
+                (hasAnyOpenSession, isHubSessionOpen) -> hasAnyOpenSession && isHubSessionOpen)
+        .subscribe(x -> this.canExecute.Value(x));
     }
     
     /**
@@ -167,7 +167,7 @@ public class MapCommandService implements IMapCommandService
     @Override
     public Observable<Boolean> CanExecuteObservable()
     {
-        return this.canExecute;
+        return this.canExecute.Observable();
     }
 
     /**
@@ -353,8 +353,8 @@ public class MapCommandService implements IMapCommandService
         HubElementCollection mappedElementDefinitions = new HubElementCollection();
         
         mappedHubRequirements.addAll(mappableElements.stream()
-                .filter(x -> x instanceof MappedHubRequirementRowViewModel)
-                .map(x -> (MappedHubRequirementRowViewModel)x)
+                .filter(x -> x instanceof MappedRequirementRowViewModel)
+                .map(x -> (MappedRequirementRowViewModel)x)
                 .collect(Collectors.toList()));
         
         mappedElementDefinitions.addAll(mappableElements.stream()
@@ -391,8 +391,8 @@ public class MapCommandService implements IMapCommandService
         MagicDrawRequirementCollection mappedDstRequirements = new MagicDrawRequirementCollection();
         
         mappedDstRequirements.addAll(mappableElements.stream()
-                .filter(x -> x.GetTThingClass().isAssignableFrom(RequirementsSpecification.class))
-                .map(x -> (MappedDstRequirementRowViewModel)x)
+                .filter(x -> x.GetTThingClass().isAssignableFrom(cdp4common.engineeringmodeldata.Requirement.class))
+                .map(x -> (MappedRequirementRowViewModel)x)
                 .collect(Collectors.toList()));
 
         mappedComponents.addAll(mappableElements.stream()

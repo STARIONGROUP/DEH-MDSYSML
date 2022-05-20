@@ -29,6 +29,7 @@ import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 /**
  * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
 {
     /**

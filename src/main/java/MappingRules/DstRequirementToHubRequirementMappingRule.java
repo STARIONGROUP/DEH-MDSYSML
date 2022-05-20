@@ -32,10 +32,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.emf.ecore.EObject;
 import org.javafmi.framework.FmiContainer.Var;
 
-import com.nomagic.magicdraw.autoid.NumberingData;
 import com.nomagic.magicdraw.autoid.NumberingInfo;
 import com.nomagic.magicdraw.autoid.custom.AbstractionNumbering;
 import com.nomagic.magicdraw.core.Application;
@@ -43,7 +43,6 @@ import com.nomagic.magicdraw.foundation.MDExtension;
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.magicdraw.sysml.util.SysMLConstants;
 import com.nomagic.magicdraw.sysml.util.SysMLProfile;
-import com.nomagic.requirements.util.MDCustomizationForRequirements;
 import com.nomagic.requirements.util.RequirementUtilities;
 import com.nomagic.requirements.util.RequirementsConstants;
 import com.nomagic.uml2.UML2Constants;
@@ -77,7 +76,7 @@ import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.engineeringmodeldata.Requirement;
@@ -89,7 +88,7 @@ import net.bytebuddy.dynamic.scaffold.MethodRegistry.Handler.ForAbstractMethod;
 /**
  * The {@linkplain BlockToElementMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
  */
-public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappingRule<MagicDrawRequirementCollection, ArrayList<MappedDstRequirementRowViewModel>>
+public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappingRule<MagicDrawRequirementCollection, ArrayList<MappedRequirementRowViewModel>>
 {
     /**
      * The collection of {@linkplain RequirementsSpecification} that are being mapped
@@ -126,7 +125,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      * @return the {@linkplain ArrayList} of {@linkplain MappedDstRequirementRowViewModel}
      */
     @Override
-    public ArrayList<MappedDstRequirementRowViewModel> Transform(Object input)
+    public ArrayList<MappedRequirementRowViewModel> Transform(Object input)
     {
         try
         {
@@ -154,7 +153,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      */
     private void Map(MagicDrawRequirementCollection mappedRequirements)
     {
-        for (MappedDstRequirementRowViewModel mappedRequirement : mappedRequirements)
+        for (MappedRequirementRowViewModel mappedRequirement : mappedRequirements)
         {
             try
             {
@@ -164,7 +163,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                    
                 if(!mappedRequirement.GetShouldCreateNewTargetElementValue() && mappedRequirement.GetHubElement() != null)
                 {
-                    refRequirementsSpecification.Set(mappedRequirement.GetHubElement());
+                    refRequirementsSpecification.Set(mappedRequirement.GetHubElement().getContainerOfType(RequirementsSpecification.class));
                 }
                 else
                 {
@@ -179,14 +178,12 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 if(!refRequirementsSpecification.HasValue())
                 {
                     this.Logger.error(
-                            String.format("The mapping of the current requirement %s is no possible, because no eligible parent could be found current package name %s", 
+                            String.format("The mapping of the current requirement %s is not possible, because no eligible parent could be found current package name %s", 
                                     mappedRequirement.GetDstElement().getName(), mappedRequirement.GetDstElement().getOwner().getHumanName()));
                     
                     continue;
                 }
     
-                mappedRequirement.SetHubElement(refRequirementsSpecification.Get());
-                
                 Ref<RequirementsGroup> refRequirementsGroup = new Ref<>(RequirementsGroup.class);
                 Ref<Requirement> refRequirement = new Ref<>(Requirement.class);
                 
@@ -196,11 +193,13 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 {
                     this.Logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
                 }
-                else
+                
+                if(refRequirement.HasValue())
                 {
-                    this.UpdateOrCreateDefinition(mappedRequirement.GetDstElement(), refRequirement);
-                    refRequirement.Get().setShortName(this.transactionService.GetRequirementId(mappedRequirement.GetDstElement()));
+                    this.UpdateProperties(mappedRequirement.GetDstElement(), refRequirementsSpecification, refRequirement);
                 }
+
+                mappedRequirement.SetHubElement(refRequirement.Get());
             }
             catch(Exception exception)
             {
@@ -209,6 +208,27 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
         }
     }
     
+   /**
+    * Updates the target {@linkplain cdp4common.engineeringmodeldata.Requirement} properties
+    * 
+    * @param dstRequirement the source {@linkplain Requirement}
+    * @param refRequirementsSpecification the {@linkplain Ref} of {@linkplain RequirementsSpecification} container
+    * @param refRequirement the {@linkplain Ref} of {@linkplain cdp4common.engineeringmodeldata.Requirement} target
+    */
+   private void UpdateProperties(Class dstRequirement,
+           Ref<RequirementsSpecification> refRequirementsSpecification,
+           Ref<cdp4common.engineeringmodeldata.Requirement> refRequirement)
+   {
+       this.UpdateOrCreateDefinition(dstRequirement, refRequirement);
+       refRequirement.Get().setName(dstRequirement.getName());
+       refRequirement.Get().setShortName(this.transactionService.GetRequirementId(dstRequirement));
+
+       refRequirementsSpecification.Get().getRequirement().removeIf(x -> x.getIid().equals(refRequirement.Get().getIid()));
+       refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
+
+       this.MapCategories(dstRequirement, refRequirement.Get());
+   }
+
     /**
      * Tries to create the groups between the current {@linkplain RequirementsSpecification} and the current {@linkplain Requirement} to be created,
      * and creates the {@linkplain Requirement}. This method is called recursively until the methods reaches the {@linkplain Requirement}
@@ -284,12 +304,8 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
         {
             Requirement requirement = new Requirement();
             requirement.setIid(UUID.randomUUID());
-            requirement.setName(element.getName());
-            requirement.setShortName(this.transactionService.GetRequirementId(element));
             requirement.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-            this.MapCategory(element, requirement);
             requirement.setGroup(refRequirementsGroup.Get());
-            refRequirementsSpecification.Get().getRequirement().add(requirement);
             refRequirement.Set(requirement);
         }
 
@@ -305,15 +321,15 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      * @param element the {@linkplain Class} element
      * @param requirement the 10-25 requirement
      */
-    private void MapCategory(Class element, Requirement requirement)
+    private void MapCategories(Class element, Requirement requirement)
     {
         for(Stereotype stereotype : MDCustomizationForSysMLProfile.getInstance(element).getAllStereotypes())
         {
-            this.Logger.debug("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType());
             RequirementType requirementType = RequirementType.From(stereotype);
             
             if(requirementType != null)
             {
+                this.Logger.debug(String.format("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType()));
                 this.MapCategory(requirement, requirementType.name(), ClassKind.Requirement);
             }
         }
@@ -336,7 +352,8 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                     .map(x -> x.clone(true))
                     .orElse(this.createDefinition());
 
-            definition.setContent(RequirementUtilities.getRequirementText(element));
+            String requirementText  = RequirementUtilities.getRequirementText(element);
+            definition.setContent(StringUtils.isBlank(requirementText) ? "-" : requirementText);
             
             refRequirement.Get().getDefinition().removeIf(x -> x.getIid().equals(definition.getIid()));
             

@@ -32,6 +32,9 @@ import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
 
+/**
+ * The {@linkplain MagicDrawObjectBrowserTreeRowViewModel} is the {@linkplain RowModel} for the MagicDrawObjectBrowser
+ */
 public class MagicDrawObjectBrowserTreeRowViewModel implements RowModel
 {
     /**
