@@ -24,6 +24,8 @@
 package Utils.Stereotypes;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
+
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
@@ -79,7 +81,12 @@ public enum Stereotypes
     /**
      * The ValueType represents a DataType with the ValueType stereotype applied
      */
-    Unit(InstanceSpecification.class);
+    Unit(InstanceSpecification.class), 
+
+    /**
+     * The ValueType represents a {@linkplain State} in a state machine diagram
+     */
+    State(State.class);
 
     /**
      * The {@linkplain java.lang.Class} that represents the represented concept in MagicDraw

@@ -50,12 +50,8 @@ import Actions.ToolBar.MagicDrawAdapterRibbonActionCategory;
 import DstController.DstController;
 import DstController.IDstController;
 import HubController.IHubController;
-import MappingRules.BinaryRelationshipsToDirectedRelationshipsMappingRule;
-import MappingRules.BlockToElementMappingRule;
-import MappingRules.DirectedRelationshipsToBinaryRelationshipsMappingRule;
-import MappingRules.DstRequirementToHubRequirementMappingRule;
-import MappingRules.ElementToBlockMappingRule;
-import MappingRules.HubRequirementToDstRequirementMappingRule;
+import MappingRules.*;
+import MappingRules.Interfaces.*;
 import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.HistoryService.MagicDrawLocalExchangeHistoryService;
 import Services.MagicDrawSelection.IMagicDrawSelectionService;
@@ -223,6 +219,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(HubRequirementToDstRequirementMappingRule.class.getName(), HubRequirementToDstRequirementMappingRule.class);
             AppContainer.Container.addComponent(DirectedRelationshipsToBinaryRelationshipsMappingRule.class.getName(), DirectedRelationshipsToBinaryRelationshipsMappingRule.class);
             AppContainer.Container.addComponent(BinaryRelationshipsToDirectedRelationshipsMappingRule.class.getName(), BinaryRelationshipsToDirectedRelationshipsMappingRule.class);
+            AppContainer.Container.addComponent(IStateMappingRule.class, StateMappingRule.class);
 
             AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
             AppContainer.Container.addComponent(IMagicDrawUILogService.class, MagicDrawUILogService.class);
