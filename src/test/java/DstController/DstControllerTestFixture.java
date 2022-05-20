@@ -205,28 +205,28 @@ class DstControllerTestFixture
         when(this.mappingEngine.Map(any(MagicDrawRequirementCollection.class)))
             .thenReturn(new ArrayList<>(Arrays.asList(this.requirementsSpecification0, this.requirementsSpecification1)));
 
-//        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection(), MappingDirection.FromDstToHub));
-//        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection(), MappingDirection.FromDstToHub));
-//        assertEquals(4, this.controller.GetDstMapResult().size());
-//        
-//        when(this.hubController.TryGetThingById(eq(this.parameter0.getIid()), any(Ref.class)))
-//            .thenAnswer(invocation -> 
-//                {
-//                    Object[] args = invocation.getArguments();
-//                    ((Ref<Parameter>)args[1]).Set(this.parameter0);
-//                    return true;
-//                });
-//        
-//        when(this.hubController.TryGetThingById(eq(this.parameter1.getIid()), any(Ref.class)))
-//            .thenAnswer(invocation -> 
-//                {
-//                        Object[] args = invocation.getArguments();
-//                        ((Ref<Parameter>)args[1]).Set(this.parameter1);
-//                        return true;
-//                });
-//        
-//        assertTrue(this.controller.TransferToHub());
-//        assertEquals(0, this.controller.GetDstMapResult().size());
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawBlockCollection(), MappingDirection.FromDstToHub));
+        assertDoesNotThrow(() -> this.controller.Map(new MagicDrawRequirementCollection(), MappingDirection.FromDstToHub));
+        assertEquals(4, this.controller.GetDstMapResult().size());
+        
+        when(this.hubController.TryGetThingById(eq(this.parameter0.getIid()), any(Ref.class)))
+            .thenAnswer(invocation -> 
+                {
+                    Object[] args = invocation.getArguments();
+                    ((Ref<Parameter>)args[1]).Set(this.parameter0);
+                    return true;
+                });
+        
+        when(this.hubController.TryGetThingById(eq(this.parameter1.getIid()), any(Ref.class)))
+            .thenAnswer(invocation -> 
+                {
+                        Object[] args = invocation.getArguments();
+                        ((Ref<Parameter>)args[1]).Set(this.parameter1);
+                        return true;
+                });
+        
+        assertTrue(this.controller.TransferToHub());
+        assertEquals(0, this.controller.GetDstMapResult().size());
     }
 
     @Test
