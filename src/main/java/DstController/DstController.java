@@ -43,7 +43,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.nomagic.magicdraw.foundation.MDObject;
 import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
-import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
@@ -655,6 +654,7 @@ public final class DstController implements IDstController
      * @return a value indicating that all transfer could be completed
      */
     @Override
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public boolean TransferToDst()
     {
         try
@@ -700,6 +700,7 @@ public final class DstController implements IDstController
     /**
      * Prepares all the element from {@linkplain #GetSelectedHubMapResult()} for transfer
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void PrepareThingsForTransfer()
     {
         for (Class element : selectedHubMapResultForTransfer)
@@ -835,6 +836,7 @@ public final class DstController implements IDstController
      * 
      * @param element the {@linkplain Class} element
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void PrepareBlocks(Class element)
     {
         if(this.transactionService.IsCloned(element))
