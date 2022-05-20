@@ -61,6 +61,7 @@ import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import MappingRules.Interfaces.IStateMappingRule;
 import Reactive.ObservableCollection;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
@@ -71,6 +72,7 @@ import Utils.Stereotypes.StereotypeUtils;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
+import cdp4common.engineeringmodeldata.ActualFiniteState;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ElementUsage;
@@ -115,9 +117,9 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
     private static final String PORTELEMENTDEFINITIONNAME = "Port";
         
     /**
-     * The {@linkplain IMagicDrawSessionService} instance
+     * The {@linkplain IStateMappingRule} instance
      */
-    private final IMagicDrawSessionService sessionService;
+    private final IStateMappingRule stateMappingRule;
     
     /**
      * The isLeaf category names where pair.item0 is the short name
@@ -184,12 +186,12 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      * 
      * @param HubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
-     * @param sessionService the {@linkplain IMagicDrawSessionService}
+     * @param stateMappingRule the {@linkplain IStateMappingRule} instance
      */
-    public BlockToElementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawSessionService sessionService)
+    public BlockToElementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IStateMappingRule stateMappingRule)
     {
         super(hubController, mappingConfiguration);
-        this.sessionService = sessionService;
+        this.stateMappingRule = stateMappingRule;
     }
     
     /**
@@ -219,6 +221,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             this.portsToConnect.clear();
             this.connectedElements.clear();
             this.binaryRelationShips.clear();
+            this.stateMappingRule.Clear();
         }
     }
     
@@ -672,6 +675,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 refParameter.Set(existingParameter.get().clone(true));
             }
             
+            this.stateMappingRule.MapStateDependencies(refParameter.Get(), property, MappingDirection.FromDstToHub);
             this.ProcessBindingConnectors(connectors, property, refParameter.Get());
             this.UpdateScale(refParameter.Get(), property);
             this.UpdateValueSet(refParameter.Get(), property);
@@ -796,30 +800,62 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      */
     private void UpdateValueSet(Parameter parameter, Property property)
     {
-        ParameterValueSet valueSet = null;
-        
-        if(parameter.getOriginal() != null || !parameter.getValueSet().isEmpty())
+        if (parameter.getStateDependence() == null)
         {
-            valueSet = (ParameterValueSet) ValueSetUtils.QueryParameterBaseValueSet(parameter, null, null);    
+            this.CreateOrUpdateParameterValueSet(parameter, null);
         }
         else
         {
-            valueSet = new ParameterValueSet();
+            for (ActualFiniteState actualFiniteState : parameter.getStateDependence().getActualState())
+            {
+                this.CreateOrUpdateParameterValueSet(parameter, actualFiniteState);
+            }
+
+            if (parameter.getValueSet().stream().noneMatch(x -> x.getActualState() == null))
+            {
+                ParameterValueSet valueSet = new ParameterValueSet();
+                valueSet.setIid(UUID.randomUUID());
+                valueSet.setReference(new ValueArray<>(Arrays.asList(""), String.class));
+                valueSet.setFormula(new ValueArray<>(Arrays.asList(""), String.class));
+                valueSet.setPublished(new ValueArray<>(Arrays.asList(""), String.class));
+                valueSet.setComputed(new ValueArray<>(Arrays.asList(""), String.class));
+                valueSet.setValueSwitch(ParameterSwitchKind.MANUAL);
+                parameter.getValueSet().add(valueSet);
+            }
+        }
+                
+        String value = StereotypeUtils.GetValueFromProperty(property);
+        
+        for (ParameterValueSet valueSet : parameter.getValueSet())
+        {
+            this.Logger.debug(String.format("Parameter [%s] value is being updated with [%s]", parameter.getParameterType().getName(), StringUtils.isBlank(value) ? "-" : value));
+            valueSet.setManual(new ValueArray<>(Arrays.asList(StringUtils.isBlank(value) ? "-" : value), String.class));
+        }
+    }
+    
+    /**
+     * Creates or update a {@linkplain ParameterValueSetBase} for the given {@linkplain Parameter} and {@linkplain ActualFiniteState}
+     * 
+     * @param parameter the {@linkplain Parameter}
+     * @param actualFiniteState the {@linkplain ActualFiniteState}
+     */
+    private void CreateOrUpdateParameterValueSet(Parameter parameter, ActualFiniteState actualFiniteState)
+    {
+        if (!((parameter.getOriginal() != null || !parameter.getValueSet().isEmpty()) && actualFiniteState == null))
+        {
+            ParameterValueSet valueSet = new ParameterValueSet();
             valueSet.setIid(UUID.randomUUID());
             valueSet.setReference(new ValueArray<>(Arrays.asList(""), String.class));
             valueSet.setFormula(new ValueArray<>(Arrays.asList(""), String.class));
             valueSet.setPublished(new ValueArray<>(Arrays.asList(""), String.class));
             valueSet.setComputed(new ValueArray<>(Arrays.asList(""), String.class));
             valueSet.setValueSwitch(ParameterSwitchKind.MANUAL);
+            valueSet.setActualState(actualFiniteState);
+
             parameter.getValueSet().add(valueSet);
         }
-        
-        String value = StereotypeUtils.GetValueFromProperty(property);
-        
-        this.Logger.debug(String.format("Parameter [%s] value is being updated with [%s]", parameter.getParameterType().getName(), StringUtils.isBlank(value) ? "-" : value));
-        valueSet.setManual(new ValueArray<>(Arrays.asList(StringUtils.isBlank(value) ? "-" : value), String.class));
     }
-
+    
     /**
      * Processes the binding connectors for the provided {@linkplain Property}
      * 

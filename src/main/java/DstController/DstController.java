@@ -28,6 +28,7 @@ import static Utils.Operators.Operators.AreTheseEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -42,8 +43,10 @@ import org.apache.logging.log4j.Logger;
 
 import com.nomagic.magicdraw.foundation.MDObject;
 import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
+import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
@@ -56,6 +59,9 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.StateMachine;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -72,6 +78,7 @@ import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
+import Utils.StreamExtensions;
 import Utils.Stereotypes.HubElementCollection;
 import Utils.Stereotypes.HubRelationshipElementsCollection;
 import Utils.Stereotypes.HubRequirementCollection;
@@ -98,6 +105,8 @@ import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
 import cdp4common.engineeringmodeldata.ParameterValueSetBase;
+import cdp4common.engineeringmodeldata.PossibleFiniteState;
+import cdp4common.engineeringmodeldata.PossibleFiniteStateList;
 import cdp4common.engineeringmodeldata.Relationship;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
@@ -646,7 +655,6 @@ public final class DstController implements IDstController
      * @return a value indicating that all transfer could be completed
      */
     @Override
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public boolean TransferToDst()
     {
         try
@@ -676,7 +684,7 @@ public final class DstController implements IDstController
             this.logService.Append("Reloading the mapping configuration in progress...");
             this.isHubSessionRefreshSilent = false;
             return result & this.hubController.Refresh();
-        } 
+        }
         catch (Exception exception)
         {
             this.logService.Append(exception.toString(), exception);
@@ -692,7 +700,6 @@ public final class DstController implements IDstController
     /**
      * Prepares all the element from {@linkplain #GetSelectedHubMapResult()} for transfer
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void PrepareThingsForTransfer()
     {
         for (Class element : selectedHubMapResultForTransfer)
@@ -715,6 +722,67 @@ public final class DstController implements IDstController
         }
         
         this.PrepareDirectedRelationShip();
+        this.PrepareStates();
+    }
+
+    /**
+     * Prepare the {@linkplain State}
+     */
+    private void PrepareStates()
+    {
+        Package model = this.sessionService.GetProject().getPrimaryModel();
+        
+        StateMachine stateMachineModel = StreamExtensions.OfType(model.getOwnedElement().stream(), StateMachine.class)
+                .filter(x -> AreTheseEquals(x.getName(), "Model"))
+                .findFirst()
+                .orElseGet(() -> 
+                {
+                     StateMachine newStateMachine = this.transactionService.Create(StateMachine.class, "Model");
+                     model.getOwnedElement().add(newStateMachine);
+                     return newStateMachine;
+                });
+        
+        Region mainRegion = stateMachineModel.getRegion().stream()
+                .findFirst()
+                .orElse(this.transactionService.Create(Region.class, ""));
+        
+        for (Entry<State, List<Pair<Region, ChangeKind>>> stateAndModifiedRegions : this.transactionService.GetStatesModifiedRegions())
+        {
+            for (Pair<Region, ChangeKind> regionAndModification : stateAndModifiedRegions.getValue())
+            {
+                switch(regionAndModification.getRight())
+                {
+                    case CREATE:
+                        stateAndModifiedRegions.getKey().getRegion().add(regionAndModification.getLeft());
+                        break;
+                    case DELETE:
+                        try
+                        {
+                            ModelElementsManager.getInstance().removeElement(regionAndModification.getLeft());
+                        } catch (ReadOnlyElementException exception)
+                        {
+                            this.logService.Append("Error while trying to delete Region [%s], the region is readonly.", regionAndModification.getLeft().getName());
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            
+            if(StreamExtensions.OfType(mainRegion.getOwnedElement().stream(), State.class)
+                    .noneMatch(x -> AreTheseEquals(x.getID(), stateAndModifiedRegions.getKey().getID())))
+            {
+                mainRegion.getOwnedElement().add(stateAndModifiedRegions.getKey());
+            }
+            
+            for (Dependency dependency : StreamExtensions.OfType(stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget(), Dependency.class))
+            {
+                dependency.setOwner(model);
+                model.get_relationshipOfRelatedElement().add(dependency);
+                dependency.getSupplier().clear();
+                dependency.getSupplier().add(stateAndModifiedRegions.getKey());
+            }
+        }
     }
 
     /**
@@ -767,7 +835,6 @@ public final class DstController implements IDstController
      * 
      * @param element the {@linkplain Class} element
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void PrepareBlocks(Class element)
     {
         if(this.transactionService.IsCloned(element))
@@ -847,7 +914,7 @@ public final class DstController implements IDstController
      */
     private void PrepareInterfaces(Class element)
     {
-        for (Port port : element.getOwnedPort())
+        for (Port port : element.getOwnedPort().stream().filter(x -> x.getType() != null).collect(Collectors.toList()))
         {
             Collection<com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship> relationships = port.getType().get_relationshipOfRelatedElement();
             
@@ -1053,7 +1120,7 @@ public final class DstController implements IDstController
             {
                 Parameter newParameterCloned = refNewParameter.Get().clone(false);
     
-                for (int index = 0; index < parameter.getValueSet().size(); index++)
+                for (int index = 0; index < newParameterCloned.getValueSet().size(); index++)
                 {
                     ParameterValueSet clone = newParameterCloned.getValueSet().get(index).clone(false);
                     this.UpdateValueSet(clone, parameter.getValueSet().get(index));
@@ -1161,8 +1228,37 @@ public final class DstController implements IDstController
 
         for(Parameter parameter : elementDefinition.getParameter())
         {            
-            transaction.createOrUpdate(parameter);
+            transaction.createOrUpdate(parameter);            
+            this.PrepareStates(iterationClone, transaction, parameter);
         }
+    }
+
+    /**
+     * Prepares the {@linkplain ActualFiniteState} from the provided parameter state dependency
+     * 
+     * @param iterationClone the {@linkplain Iteration} clone
+     * @param transaction the {@linkplain ThingTransaction}
+     * @param parameter the {@linkplain Parameter}
+     * @throws TransactionException 
+     */
+    private void PrepareStates(Iteration iterationClone, ThingTransaction transaction, Parameter parameter) throws TransactionException
+    {
+        if(parameter.getStateDependence() == null)
+        {
+            return;
+        }
+        
+        for (PossibleFiniteStateList possibleFiniteStateList : parameter.getStateDependence().getPossibleFiniteStateList())
+        {
+            this.AddOrUpdateIterationAndTransaction(possibleFiniteStateList, iterationClone.getPossibleFiniteStateList(), transaction);
+            
+            for (PossibleFiniteState possibleFiniteState : possibleFiniteStateList.getPossibleState())
+            {
+                transaction.createOrUpdate(possibleFiniteState);
+            }
+        }
+        
+        this.AddOrUpdateIterationAndTransaction(parameter.getStateDependence(), iterationClone.getActualFiniteStateList(), transaction);
     }
 
     /**

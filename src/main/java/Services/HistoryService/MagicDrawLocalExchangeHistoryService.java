@@ -23,8 +23,12 @@
  */
 package Services.HistoryService;
 
+import java.util.Collection;
+import java.util.Optional;
+
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
@@ -61,10 +65,29 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
     @Override
     public void Append(Abstraction relationship, ChangeKind changeKind)
     {
-        DirectedRelationshipType type = DirectedRelationshipType.From(relationship);
+        DirectedRelationshipType type = DirectedRelationshipType.From(relationship.getHumanType());
         String elementType = type != null ? type.name() : relationship.getClass().getSimpleName().replace("Impl", "");
 
-        this.Append(String.format("%s [%s] has been %sD", elementType, relationship.getName(), changeKind));
+        this.Append(String.format("%s [%s -> %s] has been %sD", elementType, 
+                this.GetOneEndName(relationship.getSource()), this.GetOneEndName(relationship.getTarget()), changeKind));
+    }
+
+    /**
+     * Gets the first found element end of one relation from the provided collection of element
+     * 
+     * @param elements the relationship source of target element collection
+     * @return a {@linkplain String}
+     */
+    private String GetOneEndName(Collection<Element> elements)
+    {
+        Optional<Element> optionalElement = elements.stream().findFirst();
+        
+        if(optionalElement.isPresent())
+        {
+            return optionalElement.get() instanceof NamedElement ? ((NamedElement) optionalElement.get()).getName() : optionalElement.get().getHumanType();
+        }
+        
+        return null;
     }
     
     /**

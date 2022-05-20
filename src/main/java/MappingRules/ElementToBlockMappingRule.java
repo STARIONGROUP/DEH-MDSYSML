@@ -62,6 +62,7 @@ import App.AppContainer;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import MappingRules.Interfaces.IStateMappingRule;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
@@ -72,6 +73,7 @@ import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.DefinedThing;
+import cdp4common.engineeringmodeldata.ActualFiniteState;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementBase;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -100,6 +102,11 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * The {@linkplain IMagicDrawSessionService}
      */
     private final IMagicDrawSessionService sessionService;
+    
+    /**
+     * The {@linkplain IStateMappingRule}
+     */
+    private final IStateMappingRule stateMappingRule;
 
     /**
      * The {@linkplain HubElementCollection} of {@linkplain MappedElementDefinitionRowViewModel}
@@ -133,12 +140,14 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param transactionService the {@linkplain IMagicDrawTransactionService}
      * @param sessionService the {@linkplain IMagicDrawSessionService}
+     * @param stateMappingRule the {@linkplain IStateMappingRule}
      */
     public ElementToBlockMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration,
-            IMagicDrawTransactionService transactionService, IMagicDrawSessionService sessionService)
+            IMagicDrawTransactionService transactionService, IMagicDrawSessionService sessionService, IStateMappingRule stateMappingRule)
     {
         super(hubController, mappingConfiguration, transactionService);
         this.sessionService = sessionService;
+        this.stateMappingRule = stateMappingRule;
     }
     
     /**
@@ -359,6 +368,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
                 StereotypesHelper.addStereotype(refProperty.Get(), StereotypeUtils.GetStereotype(this.sessionService.GetProject(), Stereotypes.ValueProperty));
             }
             
+            this.stateMappingRule.MapStateDependencies(parameter, refProperty.Get(), MappingDirection.FromHubToDst);
             this.UpdateValue(parameter, refProperty, refParameterType);
         }
     }
@@ -518,7 +528,14 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      */
     private void UpdateValue(ValueSpecification valueSpecification, ParameterOrOverrideBase parameter)
     {
-        String value = ValueSetUtils.QueryParameterBaseValueSet(parameter, null, null).getActualValue().get(0);
+        ActualFiniteState state = null;
+        
+        if(parameter.getStateDependence() != null)
+        {
+            state = parameter.getStateDependence().getActualState().get(0);
+        }
+        
+        String value = ValueSetUtils.QueryParameterBaseValueSet(parameter, null, state).getActualValue().get(0);
         Optional<String> valueString = "-".equals(value) || StringUtils.isBlank(value) ? Optional.empty() : Optional.of(value);
         
         if(valueSpecification instanceof LiteralInteger && valueString.isPresent())
