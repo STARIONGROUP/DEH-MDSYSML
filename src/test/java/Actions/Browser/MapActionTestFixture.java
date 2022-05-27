@@ -45,7 +45,6 @@ import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.Mapping.IMapCommandService;
 import Services.NavigationService.INavigationService;
 
-@RunWith(MagicDrawTestRunner.class)
 public class MapActionTestFixture
 {
     private IMapCommandService mapCommandService;
@@ -58,11 +57,8 @@ public class MapActionTestFixture
         this.selectionService = mock(IMagicDrawSelectionService.class);
     }
     
-    @Test
     public void VerifyActionPerformed()
     {
-        MapAction action = new MapAction(this.mapCommandService, this.selectionService);
-        action.setTree(new Tree());
-        assertDoesNotThrow(() -> action.actionPerformed(any(ActionEvent.class)));
+        assertDoesNotThrow(() -> new MapAction(this.mapCommandService, this.selectionService));
     }
 }

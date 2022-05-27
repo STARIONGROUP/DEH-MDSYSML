@@ -26,11 +26,10 @@ package Utils.Stereotypes;
 import java.util.ArrayList;
 
 import Services.MappingEngineService.IMappableThingCollection;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
-import ViewModels.Rows.MappedHubRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 
 /**
  * The {@linkplain HubElementCollection} represents a collection {@linkplain MappedHubRequirementRowViewModel} usable by the {@linkplain MappingEngine}
  */
 @SuppressWarnings("serial")
-public class HubRequirementCollection extends ArrayList<MappedHubRequirementRowViewModel> implements IMappableThingCollection { }
+public class HubRequirementCollection extends ArrayList<MappedRequirementRowViewModel> implements IMappableThingCollection { }

@@ -52,6 +52,7 @@ import javax.swing.SwingConstants;
  * The {@linkplain MappedElementRowViewModelRenderer} is the custom renderer that allows to display {@linkplain MappedElementRowViewModel} in a {@linkplain JList}
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MappedElementRowViewModelRenderer extends JPanel implements ListCellRenderer<MappedElementRowViewModel<? extends Thing, ?>> 
 {
     /**

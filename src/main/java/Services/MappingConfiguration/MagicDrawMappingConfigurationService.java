@@ -43,14 +43,10 @@ import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
-import ViewModels.Rows.MappedHubRequirementRowViewModel;
-import ViewModels.Rows.MappedRequirementBaseRowViewModel;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
-import cdp4common.commondata.NamedThing;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
-import cdp4common.engineeringmodeldata.RequirementsSpecification;
 
 /**
  * The {@linkplain MagicDrawMappingConfigurationService} is the implementation of {@linkplain MappingConfigurationService} for the MagicDraw adapter
@@ -133,7 +129,10 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         {
             Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
             
-            MappedElementDefinitionRowViewModel mappedElement = new MappedElementDefinitionRowViewModel(this.transactionService.Clone(element), mappingDirection);
+            MappedElementDefinitionRowViewModel mappedElement = new MappedElementDefinitionRowViewModel(
+                    mappingDirection == MappingDirection.FromHubToDst 
+                    ? this.transactionService.Clone(element) 
+                    : element, mappingDirection);
             
             if(this.HubController.TryGetThingById(internalId, refElementDefinition))
             {
@@ -143,42 +142,23 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             refMappedElementRowViewModel.Set(mappedElement);
         }
         else if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
-        {      
-            if(mappingDirection == MappingDirection.FromHubToDst)
+        {
+            Ref<cdp4common.engineeringmodeldata.Requirement> refHubRequirement = new Ref<>(cdp4common.engineeringmodeldata.Requirement.class);
+            
+            MappedRequirementRowViewModel mappedElement = new MappedRequirementRowViewModel(
+                    mappingDirection == MappingDirection.FromHubToDst 
+                    ? this.transactionService.Clone(element) 
+                    : element, mappingDirection);
+
+            if(this.HubController.TryGetThingById(internalId, refHubRequirement))
             {
-                MappedHubRequirementRowViewModel mappedElement = new MappedHubRequirementRowViewModel(this.transactionService.Clone(element), mappingDirection);
-                this.GetMappedRequirement(mappedElement, internalId, cdp4common.engineeringmodeldata.Requirement.class);
-                
-                refMappedElementRowViewModel.Set(mappedElement);
+                mappedElement.SetHubElement(refHubRequirement.Get().clone(true));
             }
-            else
-            {
-                MappedDstRequirementRowViewModel mappedElement = new MappedDstRequirementRowViewModel(element, mappingDirection);
-                this.GetMappedRequirement(mappedElement, internalId, RequirementsSpecification.class);
-                refMappedElementRowViewModel.Set(mappedElement);
-            }            
+            
+            refMappedElementRowViewModel.Set(mappedElement);
         }
         
         return refMappedElementRowViewModel.HasValue();
-    }
-
-    /**
-     * Gets the mapped {@linkplain #TThing}
-     * 
-     * @param <TThing> the type of {@linkplain Thing} to query from the cache
-     * @param mappedElement the {@linkplain MappedRequirementBaseRowViewModel}
-     * @param internalId the internal id of the queried Thing
-     * @param clazz the {@linkplain Class} of the queried Thing
-     */
-    @SuppressWarnings("unchecked")
-    private <TThing extends Thing & NamedThing> void GetMappedRequirement(MappedRequirementBaseRowViewModel<TThing> mappedElement, UUID internalId, java.lang.Class<TThing> clazz)
-    {
-        Ref<TThing> refHubRequirement = new Ref<>(clazz);
-        
-        if(this.HubController.TryGetThingById(internalId, refHubRequirement))
-        {
-            mappedElement.SetHubElement((TThing) refHubRequirement.Get().clone(true));
-        }
     }
     
     /**

@@ -28,6 +28,7 @@ import static Utils.Operators.Operators.AreTheseEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -44,13 +45,23 @@ import com.nomagic.magicdraw.foundation.MDObject;
 import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
 import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.StateMachine;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -67,18 +78,19 @@ import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
 import Utils.Ref;
+import Utils.StreamExtensions;
 import Utils.Stereotypes.HubElementCollection;
+import Utils.Stereotypes.HubRelationshipElementsCollection;
 import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawBlockCollection;
+import Utils.Stereotypes.MagicDrawRelatedElementCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
-import ViewModels.Rows.MappedHubRequirementRowViewModel;
-import ViewModels.Rows.MappedRequirementBaseRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.ChangeKind;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.DefinedThing;
@@ -93,6 +105,8 @@ import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
 import cdp4common.engineeringmodeldata.ParameterValueSetBase;
+import cdp4common.engineeringmodeldata.PossibleFiniteState;
+import cdp4common.engineeringmodeldata.PossibleFiniteStateList;
 import cdp4common.engineeringmodeldata.Relationship;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
@@ -228,6 +242,38 @@ public final class DstController implements IDstController
     }
     
     /**
+     * The private collection of mapped {@linkplain BinaryRelationship} to {@linkplain DirectedRelationship}
+     */
+    private ObservableCollection<Abstraction> mappedBinaryRelationshipsToDirectedRelationships = new ObservableCollection<>();
+    
+    /**
+     * Gets the {@linkplain ObservableCollection} of mapped {@linkplain DirectedRelationship}s
+     * 
+     * @return a {@linkplain ObservableCollection} of mapped {@linkplain DirectedRelationship}s
+     */
+    @Override
+    public ObservableCollection<Abstraction> GetMappedBinaryRelationshipsToDirectedRelationships()
+    {
+        return this.mappedBinaryRelationshipsToDirectedRelationships;
+    }
+    
+    /**
+     * The private collection of mapped {@linkplain Traces} to  {@linkplain BinaryRelationship}
+     */
+    private ObservableCollection<BinaryRelationship> mappedDirectedRelationshipsToBinaryRelationships = new ObservableCollection<>();
+
+    /**
+     * Gets the {@linkplain ObservableCollection} of mapped {@linkplain BinaryRelationship}s
+     * 
+     * @return a {@linkplain ObservableCollection} of mapped {@linkplain BinaryRelationship}s
+     */
+    @Override
+    public ObservableCollection<BinaryRelationship> GetMappedDirectedRelationshipToBinaryRelationships()
+    {
+        return this.mappedDirectedRelationshipsToBinaryRelationships;
+    }
+    
+    /**
      * Backing field for {@linkplain GeMappingDirection}
      */
     private ObservableValue<MappingDirection> currentMappingDirection = new ObservableValue<>(MappingDirection.FromDstToHub, MappingDirection.class);
@@ -301,26 +347,45 @@ public final class DstController implements IDstController
      */
     private void InitializeObservables()
     {            
-        this.sessionService.SessionUpdated().subscribe(x -> this.LoadMapping());
+        this.sessionService.SessionUpdated().subscribe(x -> this.ReloadMapping());
+        this.hubController.GetSessionEventObservable().subscribe(x -> this.ReloadMapping());
         
-        this.hubController.GetIsSessionOpenObservable().subscribe(isSessionOpen -> 
-        {
-            if(!isSessionOpen)
-            {
-                this.dstMapResult.clear();
-                this.hubMapResult.clear();
-                this.selectedDstMapResultForTransfer.clear();
-                this.selectedHubMapResultForTransfer.clear();
-            }
-        });
+        this.hubController.GetIsSessionOpenObservable().subscribe(isSessionOpen -> this.WhenAnySessionCloses(isSessionOpen));
+        this.sessionService.HasAnyOpenSessionObservable().subscribe(isSessionOpen -> this.WhenAnySessionCloses(isSessionOpen));
 
-        this.hubController.GetSessionEventObservable().subscribe(x -> 
+        this.GetDstMapResult().ItemsAdded().subscribe(x -> this.MapRelationships(MappingDirection.FromDstToHub));
+        this.GetHubMapResult().ItemsAdded().subscribe(x -> this.MapRelationships(MappingDirection.FromHubToDst));
+    }
+
+    /**
+     * Gracefully clears mapping collections when a session is closed
+     * 
+     * @param isSessionOpen a value indicating whether the emitted value indicates that a session is open
+     */
+    private void WhenAnySessionCloses(boolean isSessionOpen)
+    {
+        if(!isSessionOpen)
         {
-            if(!this.isHubSessionRefreshSilent)
-            {
-                this.LoadMapping(); 
-            }
-        });
+            this.dstMapResult.clear();
+            this.hubMapResult.clear();
+            this.selectedDstMapResultForTransfer.clear();
+            this.selectedHubMapResultForTransfer.clear();
+            this.mappedDirectedRelationshipsToBinaryRelationships.clear();
+            this.mappedBinaryRelationshipsToDirectedRelationships.clear();
+        }
+    }
+
+    /**
+     * Reloads the saved mapping and applies the mapping rule to the loaded things
+     */
+    private void ReloadMapping()
+    {
+        if(this.isHubSessionRefreshSilent)
+        {
+            return;
+        }
+        
+        this.LoadMapping();
     }
     
     /**
@@ -385,7 +450,7 @@ public final class DstController implements IDstController
             things.clear();
             return;
         }
-        
+    
         this.logService.Append(String.format("Loaded %s saved mapping, done in %s ms", things.size(), timer.getTime(TimeUnit.MILLISECONDS)));
     }
 
@@ -397,7 +462,7 @@ public final class DstController implements IDstController
      * @param mappedRowViewModel the {@linkplain IMappedElementRowViewModel} to sort
      */
     private void SortMappedElementByType(ArrayList<MappedElementDefinitionRowViewModel> allMappedElement,
-            ArrayList<? extends MappedRequirementBaseRowViewModel<?>> allMappedRequirements, IMappedElementRowViewModel mappedRowViewModel)
+            ArrayList<MappedRequirementRowViewModel> allMappedRequirements, IMappedElementRowViewModel mappedRowViewModel)
     {
         if(mappedRowViewModel.GetTThingClass().isAssignableFrom(ElementDefinition.class))
         {
@@ -405,12 +470,95 @@ public final class DstController implements IDstController
         }
         else if(mappedRowViewModel.GetTThingClass().isAssignableFrom(Requirement.class))
         {
-            ((HubRequirementCollection)allMappedRequirements).add((MappedHubRequirementRowViewModel) mappedRowViewModel);
+            allMappedRequirements.add((MappedRequirementRowViewModel) mappedRowViewModel);
         }
-        else if(mappedRowViewModel.GetTThingClass().isAssignableFrom(RequirementsSpecification.class))
+    }
+    
+    /**
+     * Maps the traces/BinaryRelationship from either the {@linkplain #dstMapResult} or the {@linkplain #hubMapResult} depending on the provided {@linkplain MappingDirection}
+     * 
+     * @param mappingDirection the {@linkplain MappingDirection}
+     * @return a {@linkplain boolean} indicating whether the mapping operation went well
+     */
+    @SuppressWarnings("unchecked")
+    private boolean MapRelationships(MappingDirection mappingDirection)
+    {
+        IMappableThingCollection input = null;
+        
+        if(mappingDirection == MappingDirection.FromDstToHub)
         {
-            ((MagicDrawRequirementCollection)allMappedRequirements).add((MappedDstRequirementRowViewModel) mappedRowViewModel);
+            input = new MagicDrawRelatedElementCollection();
+            ((ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) input).addAll(this.dstMapResult);
         }
+        else if(mappingDirection == MappingDirection.FromHubToDst)
+        {
+            input = new HubRelationshipElementsCollection();
+            ((ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) input).addAll(this.hubMapResult);
+        }
+
+        return this.MapRelationships(input, mappingDirection);
+    }
+    
+
+    /**
+     * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
+     * and assign the map result to the dstMapResult or the hubMapResult
+     * 
+     * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
+     * @param mappingDirection the {@linkplain MappingDirection} towards the {@linkplain IMappableThingCollection} maps to
+     * @return a {@linkplain boolean} indicating whether the mapping operation went well
+     */
+    @SuppressWarnings("unchecked")
+    private boolean MapRelationships(IMappableThingCollection input, MappingDirection mappingDirection)
+    {
+        this.logService.Append(String.format("Mapping of Relationships from %s mappedElements in progress...", ((Collection<?>)input).size()));
+        Ref<ArrayList<?>> output = new Ref<>(null);
+        Ref<Boolean> result = new Ref<>(Boolean.class, false);
+        
+        if(this.TryMap(input, output, result))
+        {
+            if(mappingDirection == MappingDirection.FromDstToHub)
+            {
+                ArrayList<BinaryRelationship> mappedBinaryRelationship = (ArrayList<BinaryRelationship>)output.Get();
+                this.mappedDirectedRelationshipsToBinaryRelationships.removeIf(x -> mappedBinaryRelationship.stream().anyMatch(r -> AreTheseEquals(x.getIid(), r.getIid())));
+                this.mappedDirectedRelationshipsToBinaryRelationships.addAll(mappedBinaryRelationship);
+                this.logService.Append("%s Binary Relationships were mapped from MagicDraw Traces", output.Get().size());
+            }
+            else if(mappingDirection == MappingDirection.FromHubToDst)
+            {
+                ArrayList<Abstraction> mappedTraces = (ArrayList<Abstraction>)output.Get();
+                this.mappedBinaryRelationshipsToDirectedRelationships.removeIf(x -> mappedTraces.stream().anyMatch(t -> AreTheseEquals(t.getID(), x.getID())));
+                this.mappedBinaryRelationshipsToDirectedRelationships.addAll(mappedTraces);
+                this.logService.Append("%s MagicDraw Traces were mapped from Binary Relationships", output.Get().size());
+            }
+        }
+        
+        return result.Get();
+    }
+
+    /**
+     * Tries to map the provided {@linkplain IMappableThingCollection}
+     * 
+     * @param input the {@linkplain IMappableThingCollection}
+     * @param output the {@linkplain ArrayList} output of whatever mapping rule returns
+     * @param result the result to return {@linkplain #Map(IMappableThingCollection, MappingDirection)} from in case the mapping fails
+     * @return a value that is true when the {@linkplain IMappableThingCollection} mapping succeed
+     */
+    private boolean TryMap(IMappableThingCollection input, Ref<ArrayList<?>> output, Ref<Boolean> result)
+    {
+        if(input.isEmpty())
+        {
+            result.Set(true);
+        }
+        
+        Object outputAsObject = this.mappingEngine.Map(input);
+
+        if(outputAsObject instanceof ArrayList<?>)
+        {
+            output.Set((ArrayList<?>)outputAsObject);
+        }
+        
+        return output.HasValue();
     }
     
     /**
@@ -425,44 +573,54 @@ public final class DstController implements IDstController
     @Override
     public boolean Map(IMappableThingCollection input, MappingDirection mappingDirection)
     {
-        if(mappingDirection == null)
-        {
-            mappingDirection = this.CurrentMappingDirection();
-        }
+        Ref<ArrayList<?>> output = new Ref<>(null);
+        Ref<Boolean> result = new Ref<>(Boolean.class, false);
         
-        Object resultAsObject = this.mappingEngine.Map(input);
-        
-        if(!(resultAsObject instanceof ArrayList<?>))
+        if(this.TryMap(input, output, result))
         {
-            return false;
-        }
-
-        ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>> resultAsCollection = 
-                (ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) resultAsObject;
-        
-        if(!resultAsCollection.isEmpty())
-        {
-            if (mappingDirection == MappingDirection.FromDstToHub
-                    && resultAsCollection.stream().allMatch(x -> x.GetHubElement() instanceof Thing))
+            ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>> resultAsCollection = 
+                    (ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) output.Get();
+            
+            if(!resultAsCollection.isEmpty())
             {
-                this.dstMapResult.removeIf(x -> resultAsCollection.stream()
-                        .anyMatch(d -> AreTheseEquals(((Thing) d.GetHubElement()).getIid(), x.GetHubElement().getIid())));
+                if (mappingDirection == MappingDirection.FromDstToHub
+                        && resultAsCollection.stream().allMatch(x -> x.GetHubElement() instanceof Thing))
+                {
+                    this.dstMapResult.removeIf(x -> resultAsCollection.stream()
+                            .anyMatch(d -> AreTheseEquals(d.GetHubElement().getIid(), x.GetHubElement().getIid())));
+        
+                    this.selectedDstMapResultForTransfer.clear();                
+                    return this.dstMapResult.addAll(resultAsCollection);
+                }
+                else if (mappingDirection == MappingDirection.FromHubToDst
+                        && resultAsCollection.stream().allMatch(x -> x.GetDstElement() instanceof Class))
+                {
+                    this.hubMapResult.removeIf(x -> resultAsCollection.stream()
+                            .anyMatch(d -> AreTheseEquals(d.GetDstElement().getID(), x.GetDstElement().getID())));
     
-                this.selectedDstMapResultForTransfer.clear();                
-                return this.dstMapResult.addAll(resultAsCollection);
+                    this.selectedHubMapResultForTransfer.clear();
+                    return this.hubMapResult.addAll(resultAsCollection);
+                }            
             }
-            else if (mappingDirection == MappingDirection.FromHubToDst
-                    && resultAsCollection.stream().allMatch(x -> x.GetDstElement() instanceof Class))
-            {
-                this.hubMapResult.removeIf(x -> resultAsCollection.stream()
-                        .anyMatch(d -> AreTheseEquals(d.GetDstElement().getID(), x.GetDstElement().getID())));
-
-                this.selectedHubMapResultForTransfer.clear();
-                return this.hubMapResult.addAll(resultAsCollection);
-            }            
         }
         
-        return false;
+        return result.Get();
+    }
+    
+    /**
+     * Adds or removes available BinaryRelationship for transfer to the Hub
+     */
+    private void AddOrRemoveBinaryRelationshipForTransfer()
+    {
+        this.selectedHubMapResultForTransfer.removeIf(x -> x instanceof BinaryRelationship);
+
+        List<BinaryRelationship> transferableBinaryRelationship = this.mappedDirectedRelationshipsToBinaryRelationships.stream()
+                .filter(x -> this.selectedDstMapResultForTransfer.stream().anyMatch(m -> AreTheseEquals(m.getIid(), x.getTarget().getIid()))
+                        && this.selectedDstMapResultForTransfer.stream().anyMatch(m -> AreTheseEquals(m.getIid(), x.getSource().getIid())))
+                .collect(Collectors.toList());
+        
+        this.selectedDstMapResultForTransfer.addAll(transferableBinaryRelationship);
+        
     }
     
     /**
@@ -524,8 +682,9 @@ public final class DstController implements IDstController
             
             this.selectedHubMapResultForTransfer.clear();
             this.logService.Append("Reloading the mapping configuration in progress...");
+            this.isHubSessionRefreshSilent = false;
             return result & this.hubController.Refresh();
-        } 
+        }
         catch (Exception exception)
         {
             this.logService.Append(exception.toString(), exception);
@@ -559,6 +718,93 @@ public final class DstController implements IDstController
             else if(StereotypeUtils.DoesItHaveTheStereotype(reference, Stereotypes.Requirement))
             {
                 this.PrepareRequirement(element);
+            }
+        }
+        
+        this.PrepareDirectedRelationShip();
+        this.PrepareStates();
+    }
+
+    /**
+     * Prepare the {@linkplain State}
+     */
+    private void PrepareStates()
+    {
+        Package model = this.sessionService.GetProject().getPrimaryModel();
+        
+        StateMachine stateMachineModel = StreamExtensions.OfType(model.getOwnedElement().stream(), StateMachine.class)
+                .filter(x -> AreTheseEquals(x.getName(), "Model"))
+                .findFirst()
+                .orElseGet(() -> 
+                {
+                     StateMachine newStateMachine = this.transactionService.Create(StateMachine.class, "Model");
+                     model.getOwnedElement().add(newStateMachine);
+                     return newStateMachine;
+                });
+        
+        Region mainRegion = stateMachineModel.getRegion().stream()
+                .findFirst()
+                .orElse(this.transactionService.Create(Region.class, ""));
+        
+        for (Entry<State, List<Pair<Region, ChangeKind>>> stateAndModifiedRegions : this.transactionService.GetStatesModifiedRegions())
+        {
+            for (Pair<Region, ChangeKind> regionAndModification : stateAndModifiedRegions.getValue())
+            {
+                switch(regionAndModification.getRight())
+                {
+                    case CREATE:
+                        stateAndModifiedRegions.getKey().getRegion().add(regionAndModification.getLeft());
+                        break;
+                    case DELETE:
+                        try
+                        {
+                            ModelElementsManager.getInstance().removeElement(regionAndModification.getLeft());
+                        } catch (ReadOnlyElementException exception)
+                        {
+                            this.logService.Append("Error while trying to delete Region [%s], the region is readonly.", regionAndModification.getLeft().getName());
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            
+            if(StreamExtensions.OfType(mainRegion.getOwnedElement().stream(), State.class)
+                    .noneMatch(x -> AreTheseEquals(x.getID(), stateAndModifiedRegions.getKey().getID())))
+            {
+                mainRegion.getOwnedElement().add(stateAndModifiedRegions.getKey());
+            }
+            
+            for (Dependency dependency : StreamExtensions.OfType(stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget(), Dependency.class))
+            {
+                dependency.setOwner(model);
+                model.get_relationshipOfRelatedElement().add(dependency);
+                dependency.getSupplier().clear();
+                dependency.getSupplier().add(stateAndModifiedRegions.getKey());
+            }
+        }
+    }
+
+    /**
+     * Prepares {@linkplain Abstraction} relationships to be transfered to MagicDraw
+     */
+    private void PrepareDirectedRelationShip()
+    {
+        List<Abstraction> transferableRelationships = this.mappedBinaryRelationshipsToDirectedRelationships.stream()
+                .filter(x -> this.selectedHubMapResultForTransfer.stream().anyMatch(m -> x.getTarget().stream().anyMatch(t -> AreTheseEquals(m.getID(), t.getID())))
+                        && this.selectedHubMapResultForTransfer.stream().anyMatch(m -> x.getSource().stream().anyMatch(t -> AreTheseEquals(m.getID(), t.getID()))))
+                .collect(Collectors.toList());
+        
+        this.logService.Append("Processing %s Relationships", transferableRelationships.size());
+        
+        for (Abstraction relationship : transferableRelationships)
+        {
+            if(this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().stream()
+                    .noneMatch(x -> AreTheseEquals(x.getID(), relationship)))
+            {
+                this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().add(relationship);
+                relationship.setOwner(this.sessionService.GetProject().getPrimaryModel());
+                this.exchangeHistory.Append(relationship, ChangeKind.CREATE);
             }
         }
     }
@@ -595,30 +841,7 @@ public final class DstController implements IDstController
         {
             Class original = this.transactionService.GetClone(element).GetOriginal();
             
-            for (Property property : element.getOwnedAttribute().stream().collect(Collectors.toList()))
-            {
-                try
-                {
-                    Optional<Property> optionalOriginalProperty = original.getOwnedAttribute().stream()
-                            .filter(x -> AreTheseEquals(x.getID(), property.getID()))
-                            .findFirst();
-                    
-                    if(optionalOriginalProperty.isPresent())
-                    {
-                        ModelElementsManager.getInstance().removeElement(optionalOriginalProperty.get());
-                    }
-                    
-                    original.getOwnedAttribute().add(property);    
-                }
-                catch(Exception exception)
-                {
-                    this.logger.catching(Level.INFO, exception);
-                    this.logger.error(String.format("Removing/Adding the property %s from %s threw an error", property.getName(), element.getName()));
-                }
-                
-                this.exchangeHistory.Append(property, ChangeKind.UPDATE);
-            }
-            
+            this.UpdateElementParameters(element, original);
             this.exchangeHistory.Append(element, ChangeKind.UPDATE);
         }
         else
@@ -626,13 +849,135 @@ public final class DstController implements IDstController
             this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(element);
             this.exchangeHistory.Append(element, ChangeKind.CREATE);
         }
+        
+        this.PrepareInterfaces(element);
+        this.UpdateElementPortsRelationships(element);
     }
 
+    /**
+     * Updates the ports relationships for the provided {@linkplain Class}
+     * 
+     * @param element the {@linkplain Class} element
+     */
+    private void UpdateElementPortsRelationships(Class element)
+    {
+        for (Usage usageRelationship : element.getOwnedPort().stream()
+                .flatMap(x -> x.get_relationshipOfRelatedElement().stream())
+                .filter(x -> x instanceof Usage)
+                .map(x -> (Usage)x)
+                .filter(x -> x.getSource().stream().anyMatch(r -> AreTheseEquals(x.getID(), x.getOwner().getID())))
+                .collect(Collectors.toList()))
+        {
+            Element portDefinition = usageRelationship.getOwner();
+            portDefinition.get_relationshipOfRelatedElement().remove(usageRelationship);
+            this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().add(usageRelationship);
+        }
+    }
+
+    /**
+     * Updates the provided original {@linkplain Class} attributes with the cloned one
+     * 
+     * @param clone the cloned {@linkplain Class}
+     * @param original the original {@linkplain Class}
+     */
+    private void UpdateElementParameters(Class clone, Class original)
+    {
+        for (Property property : clone.getOwnedAttribute().stream().collect(Collectors.toList()))
+        {
+            try
+            {
+                Optional<Property> optionalOriginalProperty = original.getOwnedAttribute().stream()
+                        .filter(x -> AreTheseEquals(x.getID(), property.getID()))
+                        .findFirst();
+                
+                if(optionalOriginalProperty.isPresent())
+                {
+                    ModelElementsManager.getInstance().removeElement(optionalOriginalProperty.get());
+                }
+                
+                original.getOwnedAttribute().add(property);    
+            }
+            catch(Exception exception)
+            {
+                this.logger.catching(Level.INFO, exception);
+                this.logger.error(String.format("Removing/Adding the property %s from %s threw an error", property.getName(), clone.getName()));
+            }
+            
+            this.exchangeHistory.Append(property, ChangeKind.UPDATE);
+        }
+    }
+
+    /**
+     * Prepares all the {@linkplain Interface}s that the provided {@linkplain Class} ports use
+     * 
+     * @param element the {@linkplain Class}
+     */
+    private void PrepareInterfaces(Class element)
+    {
+        for (Port port : element.getOwnedPort().stream().filter(x -> x.getType() != null).collect(Collectors.toList()))
+        {
+            Collection<com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship> relationships = port.getType().get_relationshipOfRelatedElement();
+            
+            List<Usage> usagesRelationships = Utils.StreamExtensions.OfType(relationships.stream(), Usage.class).collect(Collectors.toList());
+            
+            for (Interface interfaceToAdd : Utils.StreamExtensions.OfType(usagesRelationships.stream()
+                    .flatMap(x -> x.getTarget().stream()), Interface.class)
+                    .filter(x -> this.transactionService.IsNew(x))
+                    .collect(Collectors.toList()))
+            {
+                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+                {
+                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(interfaceToAdd);
+                    this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
+                }
+            }
+            
+            for (Usage usage : usagesRelationships)
+            {
+                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), usage.getID())))
+                {
+                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(usage);
+                }                
+            }
+            
+            for (Interface interfaceToAdd : Utils.StreamExtensions.OfType(relationships.stream(), InterfaceRealization.class)
+                    .map(x -> x.getContract())
+                    .filter(x -> this.transactionService.IsNew(x))
+                    .collect(Collectors.toList()))
+            {
+                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+                {
+                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(interfaceToAdd);
+                    this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
+                }                
+            }
+        }
+        
+        this.PrepareInterfacesForChildren(element);
+    }
+
+    /**
+     * Prepares all the {@linkplain Interface}s that the provided {@linkplain Class} children ports use
+     * 
+     * @param element the {@linkplain Class}
+     */
+    private void PrepareInterfacesForChildren(Class element)
+    {
+        for (Class childComponent : element.eContents().stream()
+                .filter(x -> x instanceof Class)
+                .map(x -> (Class)x)
+                .collect(Collectors.toList()))
+        {
+            this.PrepareInterfaces(childComponent);
+        }
+    }
+    
     /**
      *  Updates the provided requirement owning {@linkplain Package}s
      * 
      * @param requirement the {@linkplain Class} requirement
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void UpdateRequirementPackage(Class requirement)
     {        
         Package container = (Package)requirement.eContainer();
@@ -652,8 +997,6 @@ public final class DstController implements IDstController
             return;
         }        
 
-        this.logger.debug(String.format("DEBUG UPDATE REQUIREMENT PACKAGE container to update = %s, %s", container.getName(), container.getHumanType()));
-                
         if(containerIsCloned.booleanValue())
         {
             this.UpdateRequirementPackage(containerToUpdate);
@@ -677,6 +1020,7 @@ public final class DstController implements IDstController
      * 
      * @param containerToUpdate the {@linkplain Package}
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void UpdateRequirementPackage(Package containerToUpdate)
     {
         ClonedReferenceElement<Package> requirementPkgCloneReference = this.transactionService.GetClone(containerToUpdate);
@@ -713,6 +1057,7 @@ public final class DstController implements IDstController
     {
         try
         {
+            this.isHubSessionRefreshSilent = true;
             Pair<Iteration, ThingTransaction> iterationTransaction = this.hubController.GetIterationTransaction();
             Iteration iterationClone = iterationTransaction.getLeft();
             ThingTransaction transaction = iterationTransaction.getRight();
@@ -732,6 +1077,7 @@ public final class DstController implements IDstController
             this.mappingConfigurationService.RefreshExternalIdentifierMap();
             boolean result = this.hubController.Refresh();
             this.UpdateParameterValueSets();
+            this.isHubSessionRefreshSilent = false;
             return result && this.hubController.Refresh();
         }
         catch (Exception exception)
@@ -743,6 +1089,7 @@ public final class DstController implements IDstController
         finally
         {
             this.selectedDstMapResultForTransfer.clear();
+            this.isHubSessionRefreshSilent = false;
         }
     }
     
@@ -773,7 +1120,7 @@ public final class DstController implements IDstController
             {
                 Parameter newParameterCloned = refNewParameter.Get().clone(false);
     
-                for (int index = 0; index < parameter.getValueSet().size(); index++)
+                for (int index = 0; index < newParameterCloned.getValueSet().size(); index++)
                 {
                     ParameterValueSet clone = newParameterCloned.getValueSet().get(index).clone(false);
                     this.UpdateValueSet(clone, parameter.getValueSet().get(index));
@@ -811,6 +1158,7 @@ public final class DstController implements IDstController
      */
     private void PrepareThingsForTransfer(Iteration iterationClone, ThingTransaction transaction) throws TransactionException
     {
+        this.AddOrRemoveBinaryRelationshipForTransfer();
         ArrayList<Thing> thingsToTransfer = new ArrayList<>(this.selectedDstMapResultForTransfer);
         
         Predicate<? super MappedElementRowViewModel<? extends Thing, ? extends Class>> selectedMappedElement = 
@@ -821,7 +1169,8 @@ public final class DstController implements IDstController
                 .flatMap(x -> x.GetRelationships().stream())
                 .collect(Collectors.toList());
         
-        this.logService.Append("Processing %s relationship(s)", relationships.size());
+        this.logService.Append("Processing %s relationship(s)", relationships.size() + 
+                this.selectedDstMapResultForTransfer.stream().filter(x -> x instanceof BinaryRelationship).count());
         
         thingsToTransfer.addAll(relationships);
                 
@@ -834,6 +1183,9 @@ public final class DstController implements IDstController
                     break;
                 case RequirementsSpecification:
                     this.PrepareRequirementForTransfer(iterationClone, transaction, (RequirementsSpecification)thing);
+                    break;
+                case Requirement:
+                    this.PrepareRequirementForTransfer(iterationClone, transaction, thing.getContainerOfType(RequirementsSpecification.class));
                     break;
                 case BinaryRelationship:
                     this.AddOrUpdateIterationAndTransaction((BinaryRelationship)thing, iterationClone.getRelationship(), transaction);
@@ -876,8 +1228,37 @@ public final class DstController implements IDstController
 
         for(Parameter parameter : elementDefinition.getParameter())
         {            
-            transaction.createOrUpdate(parameter);
+            transaction.createOrUpdate(parameter);            
+            this.PrepareStates(iterationClone, transaction, parameter);
         }
+    }
+
+    /**
+     * Prepares the {@linkplain ActualFiniteState} from the provided parameter state dependency
+     * 
+     * @param iterationClone the {@linkplain Iteration} clone
+     * @param transaction the {@linkplain ThingTransaction}
+     * @param parameter the {@linkplain Parameter}
+     * @throws TransactionException 
+     */
+    private void PrepareStates(Iteration iterationClone, ThingTransaction transaction, Parameter parameter) throws TransactionException
+    {
+        if(parameter.getStateDependence() == null)
+        {
+            return;
+        }
+        
+        for (PossibleFiniteStateList possibleFiniteStateList : parameter.getStateDependence().getPossibleFiniteStateList())
+        {
+            this.AddOrUpdateIterationAndTransaction(possibleFiniteStateList, iterationClone.getPossibleFiniteStateList(), transaction);
+            
+            for (PossibleFiniteState possibleFiniteState : possibleFiniteStateList.getPossibleState())
+            {
+                transaction.createOrUpdate(possibleFiniteState);
+            }
+        }
+        
+        this.AddOrUpdateIterationAndTransaction(parameter.getStateDependence(), iterationClone.getActualFiniteStateList(), transaction);
     }
 
     /**
@@ -1004,6 +1385,7 @@ public final class DstController implements IDstController
      * @param classKind the {@linkplain ClassKind} of the {@linkplain Thing}s to add or remove depending on which impact view it has been called from
      * @param shouldRemove a value indicating whether the things are to be removed
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void AddOrRemoveAllFromSelectedDstMapResultForTransfer(ClassKind classKind, boolean shouldRemove)
     {
         Predicate<? super Thing> predicateClassKind = x -> x.getClassKind() == classKind;
@@ -1048,6 +1430,7 @@ public final class DstController implements IDstController
      * @return a value indicating whether the {@linkplain Element} has been found
      */
     @Override
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends NamedElement> boolean TryGetElementByName(DefinedThing thing, Ref<TElement> refElement)
     {
         return this.TryGetElementBy(x -> x instanceof NamedElement
@@ -1063,6 +1446,8 @@ public final class DstController implements IDstController
      * @param refElement the {@linkplain Ref} of {@linkplain #TElement}
      * @return a value indicating whether the {@linkplain Element} has been found
      */
+    @Override
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends NamedElement> boolean TryGetElementById(String elementId, Ref<TElement> refElement)
     {
         return this.TryGetElementBy(x -> AreTheseEquals(elementId, x.getID()), refElement);
@@ -1078,6 +1463,7 @@ public final class DstController implements IDstController
      */
     @Override
     @SuppressWarnings("unchecked")
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends NamedElement> boolean TryGetElementBy(Predicate<TElement> predicate, Ref<TElement> refElement)
     {
         Optional<TElement> element = this.sessionService.GetProject().getAllElements().stream()
@@ -1102,6 +1488,7 @@ public final class DstController implements IDstController
      * @return a {@linkplain boolean}
      */
     @Override
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public boolean TryGetUnit(MeasurementUnit unit, Ref<InstanceSpecification> refUnit)
     {
         for (InstanceSpecification dataType :  this.sessionService.GetUnits())
@@ -1151,6 +1538,7 @@ public final class DstController implements IDstController
      * @param scale the {@linkplain MeasurementScale} of reference
      * @return a {@linkplain boolean}
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private boolean VerifyNames(ParameterType thing, MeasurementScale scale, DataType dataType)
     {        
         if(thing instanceof QuantityKind && scale != null && StringUtils.isNotBlank(scale.getName()) && dataType.getName().contains("["))
@@ -1173,6 +1561,7 @@ public final class DstController implements IDstController
      * @param dataTypeName the {@linkplain String} {@linkplain DataType} name
      * @return a {@linkplain boolean}
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private <TThing extends NamedThing & ShortNamedThing> boolean VerifyNames(TThing thing, String dataTypeName)
     {
         return AreTheseEquals(dataTypeName, thing.getName(), true) 
@@ -1188,6 +1577,7 @@ public final class DstController implements IDstController
      * @param dataType the {@linkplain DataType}
      * @return a {@linkplain boolean}
      */
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private boolean VerifyQuantityKindNameAndUnit(QuantityKind quantityKind, MeasurementScale scale, DataType dataType)
     {
         try

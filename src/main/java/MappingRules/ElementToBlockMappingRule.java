@@ -27,17 +27,21 @@ import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ClassUtils.Interfaces;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.emf.ecore.xml.type.internal.DataValue;
 import org.javafmi.modeldescription.v2.Unit;
 
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Enumeration;
@@ -53,12 +57,12 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import App.AppContainer;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import MappingRules.Interfaces.IStateMappingRule;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
@@ -69,14 +73,16 @@ import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.DefinedThing;
+import cdp4common.engineeringmodeldata.ActualFiniteState;
+import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementBase;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ElementUsage;
 import cdp4common.engineeringmodeldata.InterfaceEndKind;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterOrOverrideBase;
+import cdp4common.engineeringmodeldata.Relationship;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
-import cdp4common.engineeringmodeldata.ValueSet;
 import cdp4common.sitedirectorydata.BooleanParameterType;
 import cdp4common.sitedirectorydata.EnumerationParameterType;
 import cdp4common.sitedirectorydata.EnumerationValueDefinition;
@@ -86,7 +92,6 @@ import cdp4common.sitedirectorydata.ParameterType;
 import cdp4common.sitedirectorydata.PrefixedUnit;
 import cdp4common.sitedirectorydata.QuantityKind;
 import cdp4common.sitedirectorydata.TextParameterType;
-import net.bytebuddy.asm.Advice.This;
 
 /**
  * The {@linkplain ElementToClassMappingRule} is the mapping rule implementation for transforming Capella {@linkplain Class} to {@linkplain ElementDefinition}
@@ -97,6 +102,11 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * The {@linkplain IMagicDrawSessionService}
      */
     private final IMagicDrawSessionService sessionService;
+    
+    /**
+     * The {@linkplain IStateMappingRule}
+     */
+    private final IStateMappingRule stateMappingRule;
 
     /**
      * The {@linkplain HubElementCollection} of {@linkplain MappedElementDefinitionRowViewModel}
@@ -112,6 +122,16 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * The {@linkplain Collection} of {@linkplain Unit} that were created during this mapping
      */
     private Collection<InstanceSpecification> temporaryUnits = new ArrayList<>();
+    
+    /**
+     * The {@linkplain HashMap} of {@linkplain Port} to connect
+     */
+    private HashMap<ElementUsage, Port> portsToConnect = new HashMap<>();
+    
+    /**
+     * The {@linkplain HashMap} of {@linkplain Interface} that were created during this mapping
+     */
+    private HashMap<UUID, Interface> temporaryInterfaces = new HashMap<>();
 
     /**
      * Initializes a new {@linkplain ElementToClassMappingRule}
@@ -120,12 +140,14 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param transactionService the {@linkplain IMagicDrawTransactionService}
      * @param sessionService the {@linkplain IMagicDrawSessionService}
+     * @param stateMappingRule the {@linkplain IStateMappingRule}
      */
     public ElementToBlockMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration,
-            IMagicDrawTransactionService transactionService, IMagicDrawSessionService sessionService)
+            IMagicDrawTransactionService transactionService, IMagicDrawSessionService sessionService, IStateMappingRule stateMappingRule)
     {
         super(hubController, mappingConfiguration, transactionService);
         this.sessionService = sessionService;
+        this.stateMappingRule = stateMappingRule;
     }
     
     /**
@@ -159,6 +181,8 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
         {
             this.temporaryUnits.clear();
             this.temporaryDataTypes.clear();
+            this.portsToConnect.clear();
+            this.temporaryInterfaces.clear();
         }
     }
     
@@ -181,6 +205,88 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             this.MapProperties(mappedElement.GetHubElement(), mappedElement.GetDstElement());
             this.MapPort(mappedElement);
         }
+
+        this.ConnectPorts();
+    }
+    
+    /**
+     * Connects the {@linkplain #portsToConnect} via {@linkplain Interfaces}
+     */
+    private void ConnectPorts()
+    {
+        for (ElementUsage portElementUsage : this.portsToConnect.keySet())
+        {            
+            Port port = this.portsToConnect.get(portElementUsage);
+            
+            for (BinaryRelationship relationship : portElementUsage.getRelationships().stream()
+                    .filter(x -> x instanceof BinaryRelationship)
+                    .map(x -> (BinaryRelationship)x)
+                    .collect(Collectors.toList()))
+            {
+                Ref<Interface> refInterface = new Ref<>(Interface.class);
+
+                if(!this.GetOrCreateInterface(relationship, refInterface))
+                {
+                    continue;
+                }
+                
+                Class portType = (Class)port.getType();
+                
+                if(AreTheseEquals(relationship.getSource().getIid(), portElementUsage.getIid()))
+                {
+                    Ref<Usage> refRelation = new Ref<>(Usage.class);
+                    
+                    if(!this.dstController.TryGetElementBy(x -> x instanceof Usage 
+                            && x.getTarget().stream().anyMatch(r -> AreTheseEquals(r.getID(), refInterface.Get().getID()))
+                            && x.getSource().stream().anyMatch(r -> AreTheseEquals(x.getID(), portType.getID())), refRelation))
+                    {
+                        Usage newUsageRelation = this.transactionService.Create(Usage.class, "");
+                        newUsageRelation.getSupplier().add(refInterface.Get());
+                        newUsageRelation.getClient().add(port.getType());
+                        portType.get_relationshipOfRelatedElement().add(newUsageRelation);
+                    }
+                }
+                else
+                {
+                    Optional<InterfaceRealization> optionalInterfaceRealisation = portType.get_relationshipOfRelatedElement().stream()
+                        .filter(x -> x instanceof InterfaceRealization)
+                        .map(x -> ((InterfaceRealization)x))
+                        .filter(x -> AreTheseEquals(x.getContract().getID(), refInterface.Get().getID())
+                                && AreTheseEquals(x.getImplementingClassifier().getID(), port.getType().getID()))
+                        .findFirst();
+                    
+                    if(!optionalInterfaceRealisation.isPresent())
+                    {
+                        InterfaceRealization interfaceRealizationRelation = this.transactionService.Create(InterfaceRealization.class, "");
+                        interfaceRealizationRelation.setContract(refInterface.Get());
+                        interfaceRealizationRelation.setImplementingClassifier(portType);
+                        portType.get_relationshipOfRelatedElement().add(interfaceRealizationRelation);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets or create an {@linkplain Interface} based on the provided {@linkplain Relationship}
+     * 
+     * @param relationship the {@linkplain Relationship}
+     * @param refInterface the {@linkplain Ref} of {@linkplain Interface}
+     * @return an assert
+     */
+    private boolean GetOrCreateInterface(BinaryRelationship relationship, Ref<Interface> refInterface)
+    {
+        refInterface.Set(this.temporaryInterfaces.get(relationship.getIid()));
+        
+        if(!refInterface.HasValue() && !this.dstController.TryGetElementBy(
+                x -> x instanceof Interface && AreTheseEquals(relationship.getName(), x.getName(), true), refInterface))
+        {
+            Interface newInterface = this.transactionService.Create(Interface.class, relationship.getName());
+            refInterface.Set(newInterface);
+            this.temporaryInterfaces.put(relationship.getIid(), newInterface);
+        }
+        
+        return refInterface.HasValue();
     }
     
     /**
@@ -262,6 +368,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
                 StereotypesHelper.addStereotype(refProperty.Get(), StereotypeUtils.GetStereotype(this.sessionService.GetProject(), Stereotypes.ValueProperty));
             }
             
+            this.stateMappingRule.MapStateDependencies(parameter, refProperty.Get(), MappingDirection.FromHubToDst);
             this.UpdateValue(parameter, refProperty, refParameterType);
         }
     }
@@ -421,7 +528,14 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      */
     private void UpdateValue(ValueSpecification valueSpecification, ParameterOrOverrideBase parameter)
     {
-        String value = ValueSetUtils.QueryParameterBaseValueSet(parameter, null, null).getActualValue().get(0);
+        ActualFiniteState state = null;
+        
+        if(parameter.getStateDependence() != null)
+        {
+            state = parameter.getStateDependence().getActualState().get(0);
+        }
+        
+        String value = ValueSetUtils.QueryParameterBaseValueSet(parameter, null, state).getActualValue().get(0);
         Optional<String> valueString = "-".equals(value) || StringUtils.isBlank(value) ? Optional.empty() : Optional.of(value);
         
         if(valueSpecification instanceof LiteralInteger && valueString.isPresent())
@@ -576,9 +690,11 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             
             if(!this.GetOrCreatePort(containedUsage, mappedElement.GetDstElement(), refPort, refDefinition))
             {
+                this.Logger.error(String.format("The rule was not able to map port [%s]", containedUsage.getUserFriendlyName()));
                 continue;
             }
-            
+
+            this.portsToConnect.put(containedUsage, refPort.Get());
             mappedElement.GetDstElement().getOwnedElement().removeIf(x -> AreTheseEquals(x.getID(), refPort.Get().getID()));
             mappedElement.GetDstElement().getOwnedElement().add(refPort.Get());
             mappedElement.GetDstElement().getOwnedElement().removeIf(x -> AreTheseEquals(x.getID(), refDefinition.Get().getID()));
@@ -601,19 +717,30 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             .filter(x -> AreTheseEquals(x.getName(), port.getName()))
             .findFirst()
             .ifPresent(x -> refPort.Set(x));
-                
-        if(!refPort.HasValue() && !this.dstController.TryGetElementByName(port, refPort))
+        
+        parent.getOwnedElement().stream()
+            .filter(x -> x instanceof Class && StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.Block))
+            .map(x -> (Class)x)
+            .filter(x -> AreTheseEquals(x.getName(), port.getName(), true))
+            .findFirst()
+            .ifPresent(x -> refDefinition.Set(x));
+        
+        if(!refPort.HasValue())
         {
             refPort.Set(this.transactionService.Create(Stereotypes.PortProperty, port.getName()));
         }
 
-        if(refPort.Get().getType() == null && !this.dstController.TryGetElementByName(port.getElementDefinition(), refDefinition))
+        if(refPort.Get().getType() == null)
         {
-            refDefinition.Set(this.transactionService.Create(Stereotypes.Block, port.getElementDefinition().getName()));
-            refPort.Get().setType(parent);
-            parent.getOwnedElement().add(refDefinition.Get());
+            if(!refDefinition.HasValue())
+            {
+                refDefinition.Set(this.transactionService.Create(Stereotypes.Block, port.getName()));
+                parent.getOwnedElement().add(refDefinition.Get());
+            }
+
+            refPort.Get().setType(refDefinition.Get());
         }
-                
+
         return refPort.HasValue() && refDefinition.HasValue();
     }
 

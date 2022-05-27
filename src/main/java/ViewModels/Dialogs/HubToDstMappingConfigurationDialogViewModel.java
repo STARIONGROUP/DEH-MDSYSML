@@ -29,14 +29,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import com.nomagic.requirements.util.RequirementUtilities;
-import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.components.mdbasiccomponents.Component;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import DstController.IDstController;
 import Enumerations.MappedElementRowStatus;
@@ -44,7 +39,6 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Utils.Ref;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
 import ViewModels.Interfaces.IElementDefinitionBrowserViewModel;
@@ -55,10 +49,9 @@ import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
-import ViewModels.Rows.MappedDstRequirementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
-import ViewModels.Rows.MappedHubRequirementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Requirement;
@@ -159,7 +152,7 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
             }
             else
             {
-                mappedElement = new MappedDstRequirementRowViewModel(rowViewModel.GetElement(), MappingDirection.FromHubToDst);
+                mappedElement = new MappedRequirementRowViewModel(rowViewModel.GetElement(), MappingDirection.FromHubToDst);
             }
 
             this.mappedElements.add(mappedElement);
@@ -233,7 +226,7 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
             if(this.TryGetRequirement((cdp4common.engineeringmodeldata.Requirement)thing, refRequirement, refShouldCreateNewTargetElement))
             {
                 mappedElementRowViewModel = 
-                        new MappedHubRequirementRowViewModel((cdp4common.engineeringmodeldata.Requirement)thing, 
+                        new MappedRequirementRowViewModel((cdp4common.engineeringmodeldata.Requirement)thing, 
                                 refRequirement.Get(), MappingDirection.FromHubToDst);
             }
         }

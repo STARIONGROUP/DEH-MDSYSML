@@ -23,6 +23,8 @@
  */
 package Services.HistoryService;
 
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
@@ -49,4 +51,12 @@ public interface IMagicDrawLocalExchangeHistoryService extends ILocalExchangeHis
     * @param originalProperty the old {@linkplain Property}
     */
    void Append(Property clonedProperty, Property originalProperty);
+
+    /**
+     * Appends a change in the log regarding the specified {@linkplain Abstraction}
+     * 
+     * @param relationship the {@linkplain Abstraction}
+     * @param changeKind the {@linkplain ChangeKind}
+     */
+    void Append(Abstraction relationship, ChangeKind changeKind);
 }

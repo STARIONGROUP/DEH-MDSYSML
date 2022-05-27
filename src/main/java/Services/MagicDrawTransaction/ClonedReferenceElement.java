@@ -48,6 +48,7 @@ import Utils.Stereotypes.Stereotypes;
  * 
  * @param <TElement> the type of the cloned {@linkplain CapellaElement}
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class ClonedReferenceElement<TElement extends Element>
 {
     /**

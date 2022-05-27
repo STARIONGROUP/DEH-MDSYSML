@@ -70,26 +70,28 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
     @Override
     public void Bind()
     {
-       this.DataContext.GetIsSessionOpen().subscribe(x -> 
-       {     
-           this.View.SetSavedMappingconfigurationCollection(this.DataContext.GetSavedMappingconfigurationCollection());
-       });
-
-       Observable.combineLatest(this.DataContext.GetHasOneMagicDrawModelOpen(), this.DataContext.GetIsSessionOpen(),
-               (hasOneMagicDrawModelOpen, isHubSessionOpen) -> hasOneMagicDrawModelOpen && isHubSessionOpen)
-           .subscribe(x -> this.View.SetLoadMappingControlsIsEnable(x));
+        this.View.SetLoadMappingControlsIsEnable(!this.DataContext.GetSavedMappingconfigurationCollection().isEmpty());
+        
+        this.DataContext.GetIsSessionOpen().subscribe(x -> 
+        {     
+            this.View.SetSavedMappingconfigurationCollection(this.DataContext.GetSavedMappingconfigurationCollection());
+        });
+        
+        Observable.combineLatest(this.DataContext.GetHasOneMagicDrawModelOpen(), this.DataContext.GetIsSessionOpen(),
+                (hasOneMagicDrawModelOpen, isHubSessionOpen) -> hasOneMagicDrawModelOpen && isHubSessionOpen)
+               .subscribe(x -> this.View.SetLoadMappingControlsIsEnable(x));
        
-       this.View.AttachOnSaveLoadMappingConfiguration(x -> this.DataContext.OnSaveLoadMappingConfiguration(x));
-       
-       this.View.AttachOnChangeDirection(this.DataContext.GetOnChangeMappingDirectionCallable());
+        this.View.AttachOnSaveLoadMappingConfiguration(x -> this.DataContext.OnSaveLoadMappingConfiguration(x));
+        
+        this.View.AttachOnChangeDirection(this.DataContext.GetOnChangeMappingDirectionCallable());
 
-       this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionImpactViewViewModel());
-       this.View.GetRequirementBrowser().SetDataContext(this.DataContext.GetRequirementDefinitionImpactViewViewModel());
-       this.magicDrawObjectBrowser.SetDataContext(this.DataContext.GetMagicDrawImpactViewViewModel());
-       this.magicDrawContextMenu.SetDataContext(this.DataContext.GetContextMenuViewModel());
-       this.magicDrawObjectBrowser.SetContextMenu(this.magicDrawContextMenu);
-       this.View.BindNumberOfSelectedThingToTransfer(this.DataContext.GetTransferControlViewModel().GetNumberOfSelectedThing());
-       this.View.SetContextMenuDataContext(this.DataContext.GetContextMenuViewModel());
-       this.View.AttachOnTransfer(this.DataContext.GetTransferControlViewModel().GetOnTransferCallable());
+        this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionImpactViewViewModel());
+        this.View.GetRequirementBrowser().SetDataContext(this.DataContext.GetRequirementDefinitionImpactViewViewModel());
+        this.magicDrawObjectBrowser.SetDataContext(this.DataContext.GetMagicDrawImpactViewViewModel());
+        this.magicDrawContextMenu.SetDataContext(this.DataContext.GetContextMenuViewModel());
+        this.magicDrawObjectBrowser.SetContextMenu(this.magicDrawContextMenu);
+        this.View.BindNumberOfSelectedThingToTransfer(this.DataContext.GetTransferControlViewModel().GetNumberOfSelectedThing());
+        this.View.SetContextMenuDataContext(this.DataContext.GetContextMenuViewModel());
+        this.View.AttachOnTransfer(this.DataContext.GetTransferControlViewModel().GetOnTransferCallable());
     }
 }

@@ -25,14 +25,19 @@ package Services.MagicDrawTransaction;
 
 import static Utils.Operators.Operators.AreTheseEquals;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
@@ -40,6 +45,11 @@ import org.eclipse.emf.ecore.EObject;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
 import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
@@ -53,13 +63,18 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.StateMachine;
 import com.nomagic.uml2.impl.ElementsFactory;
 
 import App.AppContainer;
 import Services.MagicDrawSession.IMagicDrawSessionService;
+import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
+import cdp4common.ChangeKind;
 
 /**
  * The MagicDrawTransactionService is a service that takes care of clones and transactions in MagicDraw
@@ -101,6 +116,11 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      */
     private HashMap<String, Element> newReferences = new HashMap<>();
 
+    /**
+     * The dictionary of changed {@linkplain Region} for all present {@linkplain State}
+     */
+    private HashMap<State, List<Pair<Region, ChangeKind>>> stateModifiedRegions = new HashMap<>();
+    
     /**
      * The {@linkplain ElementsFactory} that allows to create new SysML element
      */
@@ -221,7 +241,22 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         
         return this.cloneReferences.containsKey(((Element)element).getID()) 
                 && this.cloneReferences.get(((Element)element).getID()).GetClone() == element;
+    }    
+
+    /**
+     *  Verifies that the provided {@linkplain #TElement} is a new element
+     *  
+     * @param <TElement> the type of the element
+     * @param element the {@linkplain #TElement} to check
+     * @return an assert
+     */
+    @Override
+    public <TElement extends Element> boolean IsNew(TElement element)
+    {
+        return this.newReferences.containsKey(((Element)element).getID())
+                && this.newReferences.get(((Element)element).getID()) == element;
     }
+    
     /**
      * Verifies that the provided {@linkplain #TElement} is a clone or a new element
      * 
@@ -269,8 +304,25 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         }
         
         return null;
+    }    
+
+    /**
+     * Creates a new {@linkplain Abstraction} relationship based on the provided {@linkplain DirectedRelationshipType} stereotype
+     * 
+     * @param relationshipType the {@linkplain DirectedRelationshipType}
+     * @return an {@linkplain Abstraction}
+     */
+    @Override
+    public Abstraction Create(DirectedRelationshipType relationshipType)
+    {
+        Abstraction relationship = this.Create(
+                StereotypeUtils.GetStereotype(this.sessionService.GetProject(), relationshipType), 
+                () -> this.elementFactory.createAbstractionInstance());
+        
+        this.newReferences.put(relationship.getID(), relationship);
+        return relationship;
     }
-    
+        
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain #Class}
      * 
@@ -386,15 +438,16 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     @Override
     public Class Create(RequirementType requirementType)
     {        
-        return Create(StereotypeUtils.GetStereotype(this.sessionService.GetProject(), requirementType), () -> this.elementFactory.createClassInstance());
-    }
-    
+        return this.Create(StereotypeUtils.GetStereotype(this.sessionService.GetProject(), requirementType), () -> this.elementFactory.createClassInstance());
+    }   
+
     /**
      * Creates an {@linkplain #TElement} with the specified name
      * 
      * @param <TElement> the type of element to create
      * @param elementClass the {@linkplain java.lang.Class} of {@linkplain #TElement}
      * @param name the {@linkplain String} name of the new element
+     * @return a new instance of a TElement
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -414,10 +467,39 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         {
             newElement = this.elementFactory.createPortInstance();         
         }
+        else if(elementClass == Interface.class)
+        {
+            newElement = this.elementFactory.createInterfaceInstance();         
+        }
+        else if(elementClass == Usage.class)
+        {
+            newElement = this.elementFactory.createUsageInstance();         
+        }
+        else if(elementClass == InterfaceRealization.class)
+        {
+            newElement = this.elementFactory.createInterfaceRealizationInstance();         
+        }
+        else if(elementClass == Dependency.class)
+        {
+            newElement = this.elementFactory.createDependencyInstance();         
+        }
+        else if(elementClass == State.class)
+        {
+            newElement = this.elementFactory.createStateInstance();         
+        }
+        else if(elementClass == StateMachine.class)
+        {
+            newElement = this.elementFactory.createStateMachineInstance();         
+        }
+        else if(elementClass == Region.class)
+        {
+            newElement = this.elementFactory.createRegionInstance();         
+        }
         
         if(newElement != null)
         {
             newElement.setName(name);
+            this.newReferences.put(newElement.getID(), newElement);
             return (TElement)newElement;
         }
         
@@ -511,6 +593,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     {
         this.cloneReferences.clear();
         this.newReferences.clear();
+        this.stateModifiedRegions.clear();
     }
 
     /**
@@ -664,5 +747,32 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     public void SetRequirementText(Class targetRequirement, Class sourceRequirement)
     {
         this.SetRequirementText(targetRequirement, this.GetRequirementText(sourceRequirement));
+    }
+    
+    /**
+     * Gets all the modified {@linkplain Regions} associated to their {@linkplain ChangeKind}
+     * 
+     * @param state the {@linkplain State}
+     * @return a {@linkplain List} of {@linkplain Pair} of {@linkplain Region} and {@linkplain ChangeKind}
+     */
+    public List<Pair<Region, ChangeKind>> GetModifiedRegions(State state)
+    {
+        if(this.stateModifiedRegions.getOrDefault(state, null) == null)
+        {
+            this.stateModifiedRegions.put(state, new ArrayList<>());
+        }
+        
+        return this.stateModifiedRegions.get(state);
+    }
+
+    /**
+     * Gets all the collection of entries with their state the modified {@linkplain Regions} associated to their {@linkplain ChangeKind}
+     * 
+     * @return a {@linkplain List} of {@linkplain Pair} of {@linkplain Region} and {@linkplain ChangeKind}
+     */
+    @Override
+    public Set<Entry<State, List<Pair<Region, ChangeKind>>>> GetStatesModifiedRegions()
+    {        
+        return this.stateModifiedRegions.entrySet();
     }
 }

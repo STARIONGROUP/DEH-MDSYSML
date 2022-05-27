@@ -24,23 +24,41 @@
 package Services.MagicDrawTransaction;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
+import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
 
+import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.Stereotypes;
+import cdp4common.ChangeKind;
 
 /**
 * The {@linkplain IMagicDrawTransactionService} is the interface definition for {@linkplain MagicDrawTransactionService}
 */
 public interface IMagicDrawTransactionService
 {
+    /**
+     * Gets all the modified {@linkplain Regions} associated to their {@linkplain ChangeKind}
+     * 
+     * @param state the {@linkplain State}
+     * @return a {@linkplain List} of {@linkplain Pair} of {@linkplain Region} and {@linkplain ChangeKind}
+     */
+    List<Pair<Region, ChangeKind>> GetModifiedRegions(State state);
+
     /**
      * Commits the provided transaction
      * 
@@ -115,6 +133,15 @@ public interface IMagicDrawTransactionService
      * @return an assert
      */
     <TElement extends Element> boolean IsCloned(TElement element);
+
+    /**
+     *  Verifies that the provided {@linkplain #TElement} is a new element
+     *  
+     * @param <TElement> the type of the element
+     * @param element the {@linkplain #TElement} to check
+     * @return an assert
+     */
+    <TElement extends Element> boolean IsNew(TElement element);
 
     /**
      * Clones the original and returns the clone or returns the clone if it already exist
@@ -228,4 +255,19 @@ public interface IMagicDrawTransactionService
      * @param newDataType the new {@linkplain InstanceSpecification} unit
      */
     void AddReferenceDataToDataPackage(InstanceSpecification unit);
+
+    /**
+     * Creates a new {@linkplain Abstraction} relationship based on the provided {@linkplain DirectedRelationshipType} stereotype
+     * 
+     * @param relationshipType the {@linkplain DirectedRelationshipType}
+     * @return an {@linkplain Abstraction}
+     */
+    Abstraction Create(DirectedRelationshipType relationshipType);
+
+    /**
+     * Gets all the collection of entries with their state the modified {@linkplain Regions} associated to their {@linkplain ChangeKind}
+     * 
+     * @return a {@linkplain List} of {@linkplain Pair} of {@linkplain Region} and {@linkplain ChangeKind}
+     */
+    Set<Entry<State, List<Pair<Region, ChangeKind>>>> GetStatesModifiedRegions();
 }

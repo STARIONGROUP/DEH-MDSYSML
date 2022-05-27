@@ -135,7 +135,7 @@ public class HubBrowserContextMenuViewModel implements IHubBrowserContextMenuVie
     private void InitializeObservables()
     {
         this.UpdateCanMapTopElement();                
-        this.mapCommandService.CanExecuteObservable().subscribe(x -> UpdateCanMapTopElement());
+        this.mapCommandService.CanExecuteObservable().subscribe(x -> this.UpdateCanMapTopElement());
         this.hubController.GetSessionEventObservable().subscribe(x -> this.UpdateCanMapTopElement());
     }
 

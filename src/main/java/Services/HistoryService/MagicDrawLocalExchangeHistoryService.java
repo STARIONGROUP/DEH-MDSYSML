@@ -23,18 +23,20 @@
  */
 package Services.HistoryService;
 
-import org.eclipse.emf.ecore.xml.type.internal.DataValue;
+import java.util.Collection;
+import java.util.Optional;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import HubController.IHubController;
+import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.LocalExchangeHistory.LocalExchangeHistoryService;
 import Services.VersionNumber.IAdapterVersionNumberService;
+import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.StereotypeUtils;
 import cdp4common.ChangeKind;
 
@@ -54,6 +56,40 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
         super(hubController, versionService);
     }
 
+    /**
+     * Appends a change in the log regarding the specified {@linkplain DirectedRelationship}
+     * 
+     * @param relationship the {@linkplain DirectedRelationship}
+     * @param changeKind the {@linkplain ChangeKind}
+     */
+    @Override
+    public void Append(Abstraction relationship, ChangeKind changeKind)
+    {
+        DirectedRelationshipType type = DirectedRelationshipType.From(relationship.getHumanType());
+        String elementType = type != null ? type.name() : relationship.getClass().getSimpleName().replace("Impl", "");
+
+        this.Append(String.format("%s [%s -> %s] has been %sD", elementType, 
+                this.GetOneEndName(relationship.getSource()), this.GetOneEndName(relationship.getTarget()), changeKind));
+    }
+
+    /**
+     * Gets the first found element end of one relation from the provided collection of element
+     * 
+     * @param elements the relationship source of target element collection
+     * @return a {@linkplain String}
+     */
+    private String GetOneEndName(Collection<Element> elements)
+    {
+        Optional<Element> optionalElement = elements.stream().findFirst();
+        
+        if(optionalElement.isPresent())
+        {
+            return optionalElement.get() instanceof NamedElement ? ((NamedElement) optionalElement.get()).getName() : optionalElement.get().getHumanType();
+        }
+        
+        return null;
+    }
+    
     /**
      * Appends a change in the log regarding the specified {@linkplain CapellaElement}
      * 

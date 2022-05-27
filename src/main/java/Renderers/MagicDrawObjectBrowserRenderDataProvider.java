@@ -43,6 +43,7 @@ import cdp4common.commondata.ClassKind;
 /**
  * The {@linkplain MagicDrawObjectBrowserRenderDataProvider} is the override {@linkplain ObjectBrowserRenderDataProvider} for the {@linkplain MagicDrawObjectBrowser}
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawObjectBrowserRenderDataProvider extends ObjectBrowserRenderDataProvider
 {
     /**
