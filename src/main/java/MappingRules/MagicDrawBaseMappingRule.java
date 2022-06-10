@@ -30,6 +30,7 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
+import Services.Stereotype.IStereotypeService;
 import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 
@@ -47,6 +48,11 @@ public abstract class MagicDrawBaseMappingRule<TInput extends Object, TOutput> e
     protected final IHubController hubController;
 
     /**
+     * The {@linkplain IStereotypeService}
+     */
+    protected final IStereotypeService stereotypeService;
+
+    /**
      * The {@linkplain IMagicDrawMappingConfigurationService} instance
      */
     protected final IMagicDrawMappingConfigurationService mappingConfiguration;
@@ -56,11 +62,13 @@ public abstract class MagicDrawBaseMappingRule<TInput extends Object, TOutput> e
      * 
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    protected MagicDrawBaseMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
+    protected MagicDrawBaseMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IStereotypeService stereotypeService)
     {
         this.hubController = hubController;
-        this.mappingConfiguration = mappingConfiguration;        
+        this.mappingConfiguration = mappingConfiguration;
+        this.stereotypeService = stereotypeService;
     }
     
     /**

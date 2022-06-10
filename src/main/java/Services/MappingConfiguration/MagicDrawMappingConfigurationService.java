@@ -38,6 +38,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
@@ -59,15 +60,22 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
     private final IMagicDrawTransactionService transactionService;
     
     /**
+     * The {@linkplain IStereotypeService}
+     */
+    private IStereotypeService stereotypeService;
+    
+    /**
      * Initializes a new {@linkplain MagicDrawMappingConfigurationService}
      * 
      * @param HubController the {@linkplain IHubController}
      * @param transactionService the {@linkplain ICapellaTransactionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public MagicDrawMappingConfigurationService(IHubController hubController, IMagicDrawTransactionService transactionService)
+    public MagicDrawMappingConfigurationService(IHubController hubController, IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
         super(hubController, ExternalIdentifier.class);
         this.transactionService = transactionService;
+        this.stereotypeService = stereotypeService;
 
         this.HubController.GetIsSessionOpenObservable()
         .subscribe(x -> 
@@ -125,7 +133,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         MappingDirection mappingDirection = optionalCorrespondence.get().middle.MappingDirection;
         UUID internalId = optionalCorrespondence.get().right;
         
-        if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Block))
+        if(this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Block))
         {
             Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
             
@@ -141,7 +149,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
                         
             refMappedElementRowViewModel.Set(mappedElement);
         }
-        else if(StereotypeUtils.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
+        else if(this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
         {
             Ref<cdp4common.engineeringmodeldata.Requirement> refHubRequirement = new Ref<>(cdp4common.engineeringmodeldata.Requirement.class);
             

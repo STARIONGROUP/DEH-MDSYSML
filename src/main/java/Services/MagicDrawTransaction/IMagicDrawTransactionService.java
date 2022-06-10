@@ -31,6 +31,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.nomagic.magicdraw.core.Project;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
@@ -43,6 +44,7 @@ import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Stat
 
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
+import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import cdp4common.ChangeKind;
 
@@ -204,7 +206,7 @@ public interface IMagicDrawTransactionService
     /**
      * Gets the provided {@linkplain Class} requirement Id
      * 
-     * @param requirement the {@linkplain Class} requirement
+     * @param requirement the {@linkplain Element} requirement
      * @return a {@linkplain String}
      */
     String GetRequirementId(Class requirement);

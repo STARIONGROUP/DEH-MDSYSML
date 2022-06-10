@@ -41,6 +41,7 @@ import DstController.IDstController;
 import Enumerations.MappedElementRowStatus;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
@@ -57,6 +58,7 @@ import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewMod
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
+import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.NamedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -80,6 +82,11 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
     private final IMagicDrawObjectBrowserViewModel magicDrawObjectBrowser;
 
     /**
+     * The {@linkplain IStereotypeService}
+     */
+    private final IStereotypeService stereotypeService;
+
+    /**
      * Gets the DST {@linkplain IObjectBrowserBaseViewModel}
      * 
      * @return an {@linkplain IObjectBrowserBaseViewModel}
@@ -99,15 +106,18 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
      * @param requirementBrowserViewModel the {@linkplain IRequirementBrowserViewModel}
      * @param magicDrawObjectBrowserViewModel the {@linkplain IMagicDrawObjectBrowserViewModel}
      * @param mappedElementListViewViewModel the {@linkplain ICapellaMappedElementListViewViewModel}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
     public DstToHubMappingConfigurationDialogViewModel(IDstController dstController, IHubController hubController, 
             IElementDefinitionBrowserViewModel elementDefinitionBrowserViewModel, IRequirementBrowserViewModel requirementBrowserViewModel,
-            IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel, IMappedElementListViewViewModel<Class> mappedElementListViewViewModel)
+            IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel, IMappedElementListViewViewModel<Class> mappedElementListViewViewModel,
+            IStereotypeService stereotypeService)
     {
         super(dstController, hubController, elementDefinitionBrowserViewModel, requirementBrowserViewModel, mappedElementListViewViewModel);
         
         this.dstController = dstController;
         this.magicDrawObjectBrowser = magicDrawObjectBrowserViewModel;
+        this.stereotypeService = stereotypeService;
         
         this.InitializeObservables();
         this.UpdateProperties();
@@ -169,7 +179,7 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
      * @param clazz the class of the {@linkplain Thing}
      */
     @SuppressWarnings("unchecked")
-    private <TThing extends Thing & NamedThing> void SetHubElement(Thing thing, java.lang.Class<TThing> clazz)
+    private <TThing extends DefinedThing> void SetHubElement(Thing thing, java.lang.Class<TThing> clazz)
     {
         MappedElementRowViewModel<TThing, Class> mappedElementRowViewModel = (MappedElementRowViewModel<TThing, Class>)this.selectedMappedElement.Value();
         
@@ -188,7 +198,7 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
      */
     private void UpdateMappedElements(ClassRowViewModel rowViewModel)
     {
-        Optional<MappedElementRowViewModel<? extends Thing, ? extends Class>> optionalMappedElement = this.mappedElements.stream()
+        Optional<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> optionalMappedElement = this.mappedElements.stream()
             .filter(x -> AreTheseEquals(x.GetDstElement().getID(), rowViewModel.GetElement().getID()))
             .findFirst();
         
@@ -270,7 +280,7 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
         Ref<Boolean> refShouldCreateNewTargetElement = new Ref<>(Boolean.class, false);
         MappedElementRowViewModel<? extends Thing, Class> mappedElementRowViewModel = null;
         
-        if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
+        if(this.stereotypeService.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
         {
             Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
             
@@ -280,7 +290,7 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
                         new MappedElementDefinitionRowViewModel(refElementDefinition.Get(), classElement, MappingDirection.FromDstToHub);
             }
         }
-        else if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
+        else if(this.stereotypeService.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
         {
             Ref<cdp4common.engineeringmodeldata.Requirement> refRequirement = new Ref<>(cdp4common.engineeringmodeldata.Requirement.class);
             

@@ -27,6 +27,7 @@ import DstController.IDstController;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.Stereotype.IStereotypeService;
 
 /**
  * The HubToDstBaseMappingRule is the mapping rule for rules that maps from the HUB to DST
@@ -52,10 +53,12 @@ public abstract class HubToDstBaseMappingRule<TInput extends Object, TOutput> ex
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param transactionService the {@linkplain ICapellaTransactionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    protected HubToDstBaseMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawTransactionService transactionService)
+    protected HubToDstBaseMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, 
+            IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration);
+        super(hubController, mappingConfiguration, stereotypeService);
         this.transactionService = transactionService;
     }    
 }

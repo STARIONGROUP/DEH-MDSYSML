@@ -43,8 +43,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
-import com.nomagic.magicdraw.sysml.util.SysMLUtilities;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
@@ -65,6 +63,7 @@ import MappingRules.Interfaces.IStateMappingRule;
 import Reactive.ObservableCollection;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
@@ -180,17 +179,18 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      * The {@linkplain ElementDefinition} that represents the ports
      */
     private ElementDefinition portElementDefinition;
-
+    
     /**
      * Initializes a new {@linkplain BlockToElementMappingRule}
      * 
      * @param HubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
-     * @param stateMappingRule the {@linkplain IStateMappingRule} instance
+     * @param stateMappingRule the {@linkplain IStateMappingRule}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public BlockToElementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IStateMappingRule stateMappingRule)
+    public BlockToElementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IStateMappingRule stateMappingRule, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration);
+        super(hubController, mappingConfiguration, stereotypeService);
         this.stateMappingRule = stateMappingRule;
     }
     
@@ -619,7 +619,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         
         for (Property property : block.getOwnedAttribute())
         {
-            if (MDCustomizationForSysMLProfile.isPartProperty(property))
+            if (this.stereotypeService.IsPartProperty(property))
             {
                 if(parentPartProperty == null || !AreTheseEquals(parentPartProperty.getID(), property.getID()))
                 {
@@ -629,7 +629,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 continue;
             }
             
-            if (!MDCustomizationForSysMLProfile.isValueProperty(property))
+            if (!this.stereotypeService.IsValueProperty(property))
             {
                 this.Logger.error(String.format("Coulnd map property %s, since it is not a value property", property.getName()));
                 continue;
@@ -775,9 +775,6 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
 
         if(elementDefinition.getContainedElement()
                 .stream().anyMatch(x -> AreTheseEquals(x.getElementDefinition().getIid(), mappedElement.GetHubElement().getIid())))
-//            && x.getElementDefinition().getDefinition().stream()
-//            .filter(d -> AreTheseEquals(d.getLanguageCode(), MDIID))
-//            .anyMatch(d -> AreTheseEquals(d.getContent(), definitionBlock.getID())))
         {
             return;
         }
@@ -824,7 +821,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             }
         }
                 
-        String value = StereotypeUtils.GetValueFromProperty(property);
+        String value = this.stereotypeService.GetValueFromProperty(property);
         
         for (ParameterValueSet valueSet : parameter.getValueSet())
         {
@@ -1100,13 +1097,13 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      */
     private Pair<String, String> GetScaleAndUnit(Property property)
     {
-        String type = StereotypeUtils.GetTypeRepresentation(property);
+        String type = this.stereotypeService.GetTypeRepresentation(property);
 
         String[] scaleAndUnit = type.replaceAll("\\[|\\]", scaleAndUnitSeparator).split(scaleAndUnitSeparator);
         
         if(scaleAndUnit.length == 1)
         {
-            return Pair.of(scaleAndUnit[0], StereotypeUtils.GetUnitRepresention(property));
+            return Pair.of(scaleAndUnit[0], this.stereotypeService.GetUnitRepresention(property));
         }
         else if(scaleAndUnit.length == 2)
         {
@@ -1156,7 +1153,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         this.MapCategory(elementDefinition, this.isLeafCategoryNames, block.isLeaf(), false);
         this.MapCategory(elementDefinition, this.isAbstractCategoryNames, block.isAbstract(), true);
         this.MapCategory(elementDefinition, this.isActiveCategoryNames, block.isActive(), false);
-        this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, SysMLUtilities.isEncapsulated(block), true);
+        this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, this.stereotypeService.IsEncapsulated(block), true);
         
         this.Logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
     }

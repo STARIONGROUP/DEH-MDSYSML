@@ -23,58 +23,32 @@
  */
 package MappingRules;
 
+import static Utils.Operators.Operators.AreTheseEquals;
 import static Utils.Stereotypes.StereotypeUtils.GetShortName;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.emf.ecore.EObject;
-import org.javafmi.framework.FmiContainer.Var;
 
-import com.nomagic.magicdraw.autoid.NumberingInfo;
-import com.nomagic.magicdraw.autoid.custom.AbstractionNumbering;
-import com.nomagic.magicdraw.core.Application;
-import com.nomagic.magicdraw.foundation.MDExtension;
 import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
-import com.nomagic.magicdraw.sysml.util.SysMLConstants;
-import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 import com.nomagic.requirements.util.RequirementUtilities;
-import com.nomagic.requirements.util.RequirementsConstants;
-import com.nomagic.uml2.UML2Constants;
-import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Comment;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ElementValue;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralInteger;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralUnlimitedNatural;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
-import Services.MappingEngineService.MappingRule;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
-import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.RequirementType;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.ClassKind;
@@ -82,8 +56,6 @@ import cdp4common.commondata.Definition;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
-import net.bytebuddy.asm.Advice.This;
-import net.bytebuddy.dynamic.scaffold.MethodRegistry.Handler.ForAbstractMethod;
 
 /**
  * The {@linkplain BlockToElementMappingRule} is the mapping rule implementation for transforming {@linkplain MagicDrawRequirementCollection} to {@linkplain RequirementsSpecification}
@@ -111,10 +83,12 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param mappingConfiguration the {@linkplain IMagicDrawTransactionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public DstRequirementToHubRequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawTransactionService transactionService)
+    public DstRequirementToHubRequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration,
+            IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration);
+        super(hubController, mappingConfiguration, stereotypeService);
         this.transactionService = transactionService;
     }    
     
@@ -167,8 +141,9 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 }
                 else
                 {
-                    while (!(this.CanBeARequirementSpecification(parentPackage)
-                            && parentPackage != null && parentPackage instanceof Package
+                    while (parentPackage != null 
+                            && !(this.CanBeARequirementSpecification(parentPackage)
+                            && parentPackage instanceof Package
                             && this.TryGetOrCreateRequirementSpecification((Package)parentPackage, refRequirementsSpecification)))
                     {
                         parentPackage = parentPackage.getOwner();
@@ -223,7 +198,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
        refRequirement.Get().setName(dstRequirement.getName());
        refRequirement.Get().setShortName(this.transactionService.GetRequirementId(dstRequirement));
 
-       refRequirementsSpecification.Get().getRequirement().removeIf(x -> x.getIid().equals(refRequirement.Get().getIid()));
+       refRequirementsSpecification.Get().getRequirement().removeIf(x -> AreTheseEquals(x.getIid(), refRequirement.Get().getIid()));
        refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
 
        this.MapCategories(dstRequirement, refRequirement.Get());
@@ -262,7 +237,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 }
             }
                         
-            else if(element instanceof Class && element.getID().equals(requirement.getID()))
+            else if(element instanceof Class && AreTheseEquals(element.getID(), requirement.getID()))
             {
                 if(!this.TryGetOrCreateRequirement((Class)element, refRequirementsSpecification, refRequirementsGroup, refRequirement))
                 {
@@ -309,7 +284,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
             refRequirement.Set(requirement);
         }
 
-        refRequirementsSpecification.Get().getRequirement().removeIf(x -> x.getIid().equals(refRequirement.Get().getIid()));
+        refRequirementsSpecification.Get().getRequirement().removeIf(x -> AreTheseEquals(x.getIid(), refRequirement.Get().getIid()));
         refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
         
         return refRequirement.HasValue();
@@ -323,7 +298,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      */
     private void MapCategories(Class element, Requirement requirement)
     {
-        for(Stereotype stereotype : MDCustomizationForSysMLProfile.getInstance(element).getAllStereotypes())
+        for(Stereotype stereotype : this.stereotypeService.GetAllStereotype(element))
         {
             RequirementType requirementType = RequirementType.From(stereotype);
             
@@ -352,10 +327,10 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                     .map(x -> x.clone(true))
                     .orElse(this.createDefinition());
 
-            String requirementText  = RequirementUtilities.getRequirementText(element);
+            String requirementText  = this.stereotypeService.GetRequirementText(element);
             definition.setContent(StringUtils.isBlank(requirementText) ? "-" : requirementText);
             
-            refRequirement.Get().getDefinition().removeIf(x -> x.getIid().equals(definition.getIid()));
+            refRequirement.Get().getDefinition().removeIf(x -> AreTheseEquals(x.getIid(), definition.getIid()));
             
             refRequirement.Get().getDefinition().add(definition);
         }
@@ -493,6 +468,6 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      */
     public boolean CanBeARequirementSpecification(Element element)
     {
-        return !element.getOwnedElement().stream().anyMatch(x -> StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.Requirement));
+        return !element.getOwnedElement().stream().anyMatch(x -> this.stereotypeService.DoesItHaveTheStereotype(x, Stereotypes.Requirement));
     }
 }

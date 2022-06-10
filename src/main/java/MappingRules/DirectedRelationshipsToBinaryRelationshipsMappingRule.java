@@ -37,6 +37,7 @@ import DstController.IDstController;
 import HubController.IHubController;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
+import Services.Stereotype.IStereotypeService;
 import Utils.Operators.Operators;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.MagicDrawRelatedElementCollection;
@@ -67,10 +68,11 @@ public class DirectedRelationshipsToBinaryRelationshipsMappingRule extends DstTo
      * 
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public DirectedRelationshipsToBinaryRelationshipsMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
+    public DirectedRelationshipsToBinaryRelationshipsMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration);
+        super(hubController, mappingConfiguration, stereotypeService);
     }
     
     /**

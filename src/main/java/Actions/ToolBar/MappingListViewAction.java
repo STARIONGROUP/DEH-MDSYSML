@@ -1,5 +1,5 @@
 /*
- * LocalExchangeHistoryAction.java
+ * MappingListViewAction.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -23,46 +23,52 @@
  */
 package Actions.ToolBar;
 
+
 import java.awt.event.ActionEvent;
+import java.util.Collection;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jidesoft.docking.DockingManager;
 import com.nomagic.magicdraw.actions.MDAction;
+import com.nomagic.magicdraw.core.Application;
+import com.nomagic.magicdraw.ui.MainFrame;
 
 import App.AppContainer;
-import Services.NavigationService.INavigationService;
 import Utils.ImageLoader.ImageLoader;
+import ViewModels.MappingListView.Interfaces.IMappingListViewViewModel;
 import Views.MagicDrawHubBrowserPanel;
-import Views.ExchangeHistory.ExchangeHistoryDialog;
+import Views.MagicDrawMappingListViewPanel;
 
 /**
- * The {@linkplain LocalExchangeHistoryAction} is the {@link MDAction} that shows the {@linkplain ExchangeHistoryDialog}
+ * The {@linkplain MappingListViewAction} is the {@link MDAction} that shows the {@linkplain MappingListView}
  */
 @SuppressWarnings("serial")
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class LocalExchangeHistoryAction extends MDAction
-{
+public class MappingListViewAction extends MDAction
+{ 
     /**
      * The current class logger
      */
     private Logger logger = LogManager.getLogger();
     
     /**
-     * The {@linkplain INavigationService}
+     * The {@linkplain MagicDrawMappingListView}
      */
-    private final INavigationService navigationService;
-    
+    private MagicDrawMappingListViewPanel mappingListView;
+
     /**
      * Initializes a new {@link LocalExchangeHistoryAction}
      */
-    public LocalExchangeHistoryAction()
+    public MappingListViewAction()
     {
-         super("View Local Exchange History", "View Local Exchange History", null, null);
-         this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
-         this.navigationService = AppContainer.Container.getComponent(INavigationService.class);
+        super("View the Mapping List View", "View the Mapping List View", null, null);
+        this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
+        this.mappingListView = new MagicDrawMappingListViewPanel();
+        this.mappingListView.SetDataContext(AppContainer.Container.getComponent(IMappingListViewViewModel.class));
     }
-    
+
     /**
      * Commands the {@link MagicDrawHubBrowserPanel} to show or hide
      * 
@@ -73,7 +79,31 @@ public class LocalExchangeHistoryAction extends MDAction
      {            
          try
          {
-             this.navigationService.ShowDialog(new ExchangeHistoryDialog());
+             Application applicationInstance = Application.getInstance();
+             MainFrame mainFrame = applicationInstance.getMainFrame();
+             DockingManager dockingManager = mainFrame.getDockingManager();
+             Collection<String> allFrames = dockingManager.getAllFrames();
+
+             for (String string : allFrames)
+             {
+                 this.logger.debug(String.format("FRAME => [%s]", string));
+             }
+
+             boolean isPanelPresent = false;
+
+             for(String key : allFrames)
+             {
+                 if(key == this.mappingListView.GetPanelDockKey())
+                 {
+                     this.mappingListView.ShowHide(dockingManager);
+                     isPanelPresent = true;
+                 }
+             }
+
+             if(!isPanelPresent)
+             {
+                 dockingManager.addFrame(this.mappingListView);
+             }
          }
          catch (Exception exception) 
          {

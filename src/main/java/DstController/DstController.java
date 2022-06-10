@@ -77,6 +77,7 @@ import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingEngineService.IMappableThingCollection;
 import Services.MappingEngineService.IMappingEngineService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.StreamExtensions;
 import Utils.Stereotypes.HubElementCollection;
@@ -173,6 +174,11 @@ public final class DstController implements IDstController
     private final IMagicDrawTransactionService transactionService;
 
     /**
+     * The {@linkplain IStereotypeService}
+     */
+    private IStereotypeService stereotypeService;
+
+    /**
      * A value indicating whether the {@linkplain DstController} should load mapping when the HUB session is refresh or reloaded
      */
     private boolean isHubSessionRefreshSilent;
@@ -180,7 +186,7 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> hubMapResult = new ObservableCollection<>();
+    private ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> hubMapResult = new ObservableCollection<>();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
@@ -188,7 +194,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
     @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetHubMapResult()
+    public ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetHubMapResult()
     {
         return this.hubMapResult;
     }    
@@ -196,7 +202,7 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> dstMapResult = new ObservableCollection<>();
+    private ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> dstMapResult = new ObservableCollection<>();
 
     /**
      * Gets The {@linkplain ObservableCollection} of DST map result
@@ -204,7 +210,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
     @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetDstMapResult()
+    public ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetDstMapResult()
     {
         return this.dstMapResult;
     }
@@ -326,10 +332,11 @@ public final class DstController implements IDstController
      * @param sessionService the {@linkplain IMagicDrawSessionService} instance
      * @param exchangeHistory the {@linkplain IMagicDrawLocalExchangeHistoryService} instance
      * @param transactionService the {@linkplain IMagicDrawTransactionService} instance
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
     public DstController(IMappingEngineService mappingEngine, IHubController hubController, IMagicDrawUILogService logService, 
             IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawSessionService sessionService,
-            IMagicDrawLocalExchangeHistoryService exchangeHistory, IMagicDrawTransactionService transactionService)
+            IMagicDrawLocalExchangeHistoryService exchangeHistory, IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
         this.mappingEngine = mappingEngine;
         this.hubController = hubController;
@@ -338,6 +345,7 @@ public final class DstController implements IDstController
         this.sessionService = sessionService;
         this.exchangeHistory = exchangeHistory;
         this.transactionService = transactionService;
+        this.stereotypeService = stereotypeService;
         
         this.InitializeObservables();
     }
@@ -578,8 +586,8 @@ public final class DstController implements IDstController
         
         if(this.TryMap(input, output, result))
         {
-            ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>> resultAsCollection = 
-                    (ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) output.Get();
+            ArrayList<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> resultAsCollection = 
+                    (ArrayList<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>>) output.Get();
             
             if(!resultAsCollection.isEmpty())
             {
@@ -711,11 +719,11 @@ public final class DstController implements IDstController
                 reference = this.transactionService.GetClone(element).GetOriginal();
             }
         
-            if(StereotypeUtils.DoesItHaveTheStereotype(reference, Stereotypes.Block))
+            if(this.stereotypeService.DoesItHaveTheStereotype(reference, Stereotypes.Block))
             {
                 this.PrepareBlocks(element);
             }
-            else if(StereotypeUtils.DoesItHaveTheStereotype(reference, Stereotypes.Requirement))
+            else if(this.stereotypeService.DoesItHaveTheStereotype(reference, Stereotypes.Requirement))
             {
                 this.PrepareRequirement(element);
             }
@@ -1491,7 +1499,7 @@ public final class DstController implements IDstController
     @Annotations.ExludeFromCodeCoverageGeneratedReport
     public boolean TryGetUnit(MeasurementUnit unit, Ref<InstanceSpecification> refUnit)
     {
-        for (InstanceSpecification dataType :  this.sessionService.GetUnits())
+        for (InstanceSpecification dataType :  this.stereotypeService.GetUnits())
         {
             boolean doesItMatch = this.VerifyNames(unit, dataType.getName());
             
@@ -1523,7 +1531,7 @@ public final class DstController implements IDstController
             refGeneral.Set(((SpecializedQuantityKind)parameterType).getGeneral());
         }
                         
-        this.sessionService.GetDataTypes().stream()
+        this.stereotypeService.GetDataTypes().stream()
                 .filter(x -> this.VerifyNames(parameterType, scale, x) || (refGeneral.HasValue() && this.VerifyNames(refGeneral.Get(), scale, x)))
                 .findFirst()
                 .ifPresent(x -> refDataType.Set(x));
