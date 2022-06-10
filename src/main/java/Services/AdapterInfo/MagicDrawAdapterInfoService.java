@@ -69,11 +69,4 @@ public class MagicDrawAdapterInfoService extends AdapterInfoService implements I
         
         return Version.emptyVersion;
     }
-
-    @Override
-    public String GetAdapterName()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
 }
