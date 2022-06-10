@@ -44,6 +44,7 @@ import Reactive.ObservableValue;
 import Utils.Ref;
 import ViewModels.ObjectBrowser.RequirementTree.Rows.IterationRequirementRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
+import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Requirement;
@@ -56,7 +57,7 @@ class RequirementImpactViewViewModelTestFixture
     private IHubController hubController;
     private IDstController dstController;
     private RequirementImpactViewViewModel viewModel;
-    private ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> dstMapResult;
+    private ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> dstMapResult;
     private ObservableCollection<Thing> selectedDstMapResultForTransfer;
     private ObservableValue<Boolean> isSessionOpen;
     private ObservableValue<Boolean> sessionEvent;
@@ -76,7 +77,7 @@ class RequirementImpactViewViewModelTestFixture
         when(this.hubController.GetOpenIteration()).thenReturn(this.GetIteration());
         when(this.hubController.GetSessionEventObservable()).thenReturn(this.sessionEvent.Observable());
 
-        this.dstMapResult = new ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>>();
+        this.dstMapResult = new ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>>();
         when(this.dstController.GetDstMapResult()).thenReturn(this.dstMapResult);
         this.selectedDstMapResultForTransfer = new ObservableCollection<Thing>(Thing.class);
         when(this.dstController.GetSelectedDstMapResultForTransfer()).thenReturn(this.selectedDstMapResultForTransfer);

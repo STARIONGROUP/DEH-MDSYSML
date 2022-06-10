@@ -39,6 +39,7 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
@@ -74,10 +75,12 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param transactionService the {@linkplain IMagicDrawTransactionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public HubRequirementToDstRequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawTransactionService transactionService)
+    public HubRequirementToDstRequirementMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, 
+            IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration, transactionService);
+        super(hubController, mappingConfiguration, transactionService, stereotypeService);
     }
     
     /**
@@ -141,11 +144,15 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      */
     private void UpdateProperties(cdp4common.engineeringmodeldata.Requirement hubRequirement, Class dstRequirement)
     {
-        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), this.transactionService.GetRequirementText(dstRequirement)));
+        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
+                this.transactionService.GetRequirementText(dstRequirement)));
+        
         this.transactionService.SetRequirementId(dstRequirement, hubRequirement.getShortName());
         dstRequirement.setName(hubRequirement.getName());
         this.UpdateOrCreateDefinition(hubRequirement, dstRequirement);
-        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), this.transactionService.GetRequirementText(dstRequirement)));
+        
+        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
+                this.transactionService.GetRequirementText(dstRequirement)));
     }
 
     /**

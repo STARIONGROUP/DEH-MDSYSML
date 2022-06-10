@@ -52,6 +52,7 @@ import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewMod
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
+import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Requirement;
@@ -138,7 +139,7 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
      */
     private void UpdateMappedElements(ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel<? extends Class> rowViewModel)
     {
-        Optional<MappedElementRowViewModel<? extends Thing, ? extends Class>> optionalMappedElement = this.mappedElements.stream()
+        Optional<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> optionalMappedElement = this.mappedElements.stream()
             .filter(x -> AreTheseEquals(x.GetDstElement().getID(), rowViewModel.GetElement().getID()))
             .findFirst();
         

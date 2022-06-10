@@ -42,6 +42,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 
+import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
 import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
@@ -70,6 +71,7 @@ import com.nomagic.uml2.impl.ElementsFactory;
 
 import App.AppContainer;
 import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.StereotypeUtils;
@@ -105,6 +107,11 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * The {@linkplain IMagicDrawSessionService} 
      */
     private final IMagicDrawSessionService sessionService;
+    
+    /**
+     * The {@linkplain IStereotypeService}
+     */
+    private final IStereotypeService stereotypeService;
     
     /**
      * Backing field for {@linkplain #GetClones(Class)} and {@linkplain #GetClones()}
@@ -152,7 +159,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     public Collection<ClonedReferenceElement<? extends Element>> GetClones(Stereotypes stereotype)
     {
         return Collections.unmodifiableCollection(cloneReferences.values().stream()
-                .filter(x -> StereotypesHelper.hasStereotype(x.GetOriginal(), StereotypeUtils.GetStereotype(this.sessionService.GetProject() ,stereotype)))
+                .filter(x -> StereotypesHelper.hasStereotype(x.GetOriginal(), this.stereotypeService.GetStereotype(stereotype)))
                 .collect(Collectors.toList()));
     }
     
@@ -160,10 +167,12 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * Initializes a new {@linkplain CapellaTransactionService}
      * 
      * @param sessionService the {@linkplain IMagicDrawSessionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public MagicDrawTransactionService(IMagicDrawSessionService sessionService)
+    public MagicDrawTransactionService(IMagicDrawSessionService sessionService, IStereotypeService stereotypeService)
     {
         this.sessionService = sessionService;
+        this.stereotypeService = stereotypeService;
         
         this.sessionService.HasAnyOpenSessionObservable().subscribe(x -> 
                             this.elementFactory = x.booleanValue() ? this.sessionService.GetProject().getElementsFactory() : null);
@@ -218,7 +227,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
             return (TElement) this.cloneReferences.get(original.getID()).GetClone();
         }
         
-        ClonedReferenceElement<TElement> clonedReference = ClonedReferenceElement.Create(original);
+        ClonedReferenceElement<TElement> clonedReference = ClonedReferenceElement.Create(original, this.stereotypeService);
                 
         this.cloneReferences.put(original.getID(), clonedReference); 
         return clonedReference.GetClone();
@@ -316,7 +325,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     public Abstraction Create(DirectedRelationshipType relationshipType)
     {
         Abstraction relationship = this.Create(
-                StereotypeUtils.GetStereotype(this.sessionService.GetProject(), relationshipType), 
+                this.stereotypeService.GetStereotype(relationshipType), 
                 () -> this.elementFactory.createAbstractionInstance());
         
         this.newReferences.put(relationship.getID(), relationship);
@@ -398,7 +407,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
             return null;
         }
         
-        return this.Create(StereotypeUtils.GetStereotype(this.sessionService.GetProject(), stereotype), createFunction);
+        return this.Create(this.stereotypeService.GetStereotype(stereotype), createFunction);
     }
 
     /**
@@ -438,7 +447,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     @Override
     public Class Create(RequirementType requirementType)
     {        
-        return this.Create(StereotypeUtils.GetStereotype(this.sessionService.GetProject(), requirementType), () -> this.elementFactory.createClassInstance());
+        return this.Create(this.stereotypeService.GetStereotype(requirementType), () -> this.elementFactory.createClassInstance());
     }   
 
     /**

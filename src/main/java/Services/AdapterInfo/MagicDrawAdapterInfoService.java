@@ -1,5 +1,5 @@
 /*
- * MagicDrawAdapterVersionNumberService.java
+ * MagicDrawAdapterInfoService.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Services.VersionNumber;
+package Services.AdapterInfo;
 
 import java.util.Properties;
 
@@ -31,17 +31,17 @@ import org.apache.logging.log4j.Logger;
 import cdp4common.Version;
 
 /**
- * The {@linkplain MagicDrawAdapterVersionNumberService} is the MagicDraw specific implementation of the {@linkplain IAdapterVersionNumberService}
+ * The {@linkplain MagicDrawAdapterInfoService} is the MagicDraw specific implementation of the {@linkplain IAdapterInfoService}
  */
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class MagicDrawAdapterVersionNumberService extends AdapterVersionNumberService implements IAdapterVersionNumberService
+public class MagicDrawAdapterInfoService extends AdapterInfoService implements IAdapterInfoService
 {
     /**
-     * Initializes a new {@linkplain AdapterVersionNumberService}
+     * Initializes a new {@linkplain AdapterInfoService}
      */
-    public MagicDrawAdapterVersionNumberService()
+    public MagicDrawAdapterInfoService()
     {
-        super(GetMagicDrawAdapterVersion());
+        super(GetMagicDrawAdapterVersion(), "MagicDrawAdapter");
     }
 
     /**
@@ -57,7 +57,7 @@ public class MagicDrawAdapterVersionNumberService extends AdapterVersionNumberSe
         {
             Properties properties = new Properties();
             
-            properties.load(MagicDrawAdapterVersionNumberService.class
+            properties.load(MagicDrawAdapterInfoService.class
                     .getResourceAsStream("/META-INF/maven/com.rheagroup/DEHMDSYSMLPlugin/pom.properties"));
             
             return Version.parseVersion(properties.getProperty("version"));

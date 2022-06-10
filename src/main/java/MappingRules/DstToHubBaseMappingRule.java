@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import DstController.IDstController;
 import HubController.IHubController;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Thing;
@@ -53,16 +54,17 @@ import cdp4dal.operations.TransactionContextResolver;
  * @param <TOutput> the output type the rule will return
  */
 public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> extends MagicDrawBaseMappingRule<TInput, TOutput>
-{
+{    
     /**
      * Initializes a new {@linkplain DstToHubBaseMappingRule}
      * 
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    protected DstToHubBaseMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration)
+    protected DstToHubBaseMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration);
+        super(hubController, mappingConfiguration, stereotypeService);
     }
     
     /**

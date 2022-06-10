@@ -107,4 +107,11 @@ public interface IMagicDrawImpactViewPanelViewModel extends IViewModel
      * @return the {@linkplain IElementDefinitionImpactViewViewModel}
      */
     IMagicDrawImpactViewViewModel GetMagicDrawImpactViewViewModel();
+
+    /**
+     * Gets a value indicating whether the Impact view can load mapping configurations
+     * 
+     * @return a {@linkplain boolean}
+     */
+    boolean CanLoadMappingConfiguration();
 }

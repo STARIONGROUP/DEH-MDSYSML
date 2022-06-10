@@ -1,5 +1,5 @@
 /*
- * ClonedReferenceRequirement.java
+ * MappingListViewSysMLElementCellEditor.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,28 +21,29 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Services.MagicDrawTransaction;
+package ViewModels.MappingListView.Renderers;
+
+import Services.Stereotype.StereotypeService;
+import Utils.Stereotypes.Stereotypes;
+import ViewModels.MappingListView.Rows.*;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
-import Services.Stereotype.IStereotypeService;
-
-import com.nomagic.magicdraw.sysml.util.SysMLProfile;
-
 /**
- * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
+ * The {@linkplain MappingListViewSysMLElementCellEditor} is the {@linkplain DefaultTableCellEditor} for the 
+ * {@linkplain MappedElementListView} where the represented element is an {@linkplain DefinedThing}
  */
+@SuppressWarnings("serial")
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
+public class MappingListViewSysMLElementCellEditor extends MappingListViewElementBaseCellEditor<Class>
 {
     /**
-     * Initializes a new {@linkplain ClonedReferenceElement}
-     * 
-     * @param stereotypeService the {@linkplain IStereotypeService}
-     * @param original the {@linkplain Class} original reference
+     * Initializes a new {@linkplain MappingListViewSysMLElementCellEditor}
      */
-    ClonedReferenceRequirement(IStereotypeService stereotypeService, Class original)
+    public MappingListViewSysMLElementCellEditor()
     {
-        super(original, SysMLProfile.getInstance(original).getRequirement(), stereotypeService, "Id", "Text");
+        super(x -> StereotypeService.Current.DoesItHaveTheStereotype(x, Stereotypes.Block) 
+                ? new MappingListViewBlockRowViewModel(x)
+                : new MappingListViewSysMLRequirementRowViewModel(x));
     }
 }

@@ -28,8 +28,9 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
+import Services.Stereotype.StereotypeService;
+
 import Reactive.ObservableCollection;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
@@ -43,7 +44,7 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
     /**
      * The {@linkplain ObservableCollection} of {@linkplain IElementRowViewModel}
      */
-    private ObservableCollection<IElementRowViewModel<?>> containedRows = new ObservableCollection<IElementRowViewModel<?>>();
+    private ObservableCollection<IElementRowViewModel<?>> containedRows = new ObservableCollection<>();
 
     /**
      * Gets the contained row the implementing view model has
@@ -91,11 +92,11 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
         {
             Class classElement = (Class)element;
             
-            if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
+            if(StereotypeService.Current.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
             {
                 this.containedRows.add(new BlockRowViewModel(this, classElement));
             }
-            else if(StereotypeUtils.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
+            else if(StereotypeService.Current.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
             {
                 this.containedRows.add(new RequirementRowViewModel(this, classElement));
             }

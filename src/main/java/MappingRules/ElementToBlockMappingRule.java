@@ -63,9 +63,9 @@ import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import MappingRules.Interfaces.IStateMappingRule;
-import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.HubElementCollection;
@@ -98,11 +98,6 @@ import cdp4common.sitedirectorydata.TextParameterType;
  */
 public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElementCollection, ArrayList<MappedElementDefinitionRowViewModel>>
 {
-    /**
-     * The {@linkplain IMagicDrawSessionService}
-     */
-    private final IMagicDrawSessionService sessionService;
-    
     /**
      * The {@linkplain IStateMappingRule}
      */
@@ -139,14 +134,13 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param transactionService the {@linkplain IMagicDrawTransactionService}
-     * @param sessionService the {@linkplain IMagicDrawSessionService}
      * @param stateMappingRule the {@linkplain IStateMappingRule}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
     public ElementToBlockMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration,
-            IMagicDrawTransactionService transactionService, IMagicDrawSessionService sessionService, IStateMappingRule stateMappingRule)
+            IMagicDrawTransactionService transactionService, IStateMappingRule stateMappingRule, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration, transactionService);
-        this.sessionService = sessionService;
+        super(hubController, mappingConfiguration, transactionService, stereotypeService);
         this.stateMappingRule = stateMappingRule;
     }
     
@@ -365,7 +359,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             }
             if(refProperty.Get().getAppliedStereotypeInstance() == null)
             {
-                StereotypesHelper.addStereotype(refProperty.Get(), StereotypeUtils.GetStereotype(this.sessionService.GetProject(), Stereotypes.ValueProperty));
+                this.stereotypeService.ApplyStereotype(refProperty.Get(), Stereotypes.ValueProperty);
             }
             
             this.stateMappingRule.MapStateDependencies(parameter, refProperty.Get(), MappingDirection.FromHubToDst);
@@ -453,15 +447,12 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
 
                 if(scale.getUnit() instanceof PrefixedUnit)
                 {
-                    StereotypesHelper.setStereotypePropertyValue(newUnit, 
-                            StereotypeUtils.GetStereotype(this.sessionService.GetProject(), Stereotypes.Unit), "prefix", ((PrefixedUnit)scale.getUnit()).getPrefix());
+                    this.stereotypeService.SetStereotypePropertyValue(newUnit, Stereotypes.Unit, "prefix", ((PrefixedUnit)scale.getUnit()).getPrefix());
                 }
+
+                this.stereotypeService.SetStereotypePropertyValue(newUnit, Stereotypes.Unit, "symbol", scale.getUnit().getShortName());
                 
-                StereotypesHelper.setStereotypePropertyValue(newUnit, 
-                        StereotypeUtils.GetStereotype(this.sessionService.GetProject(), Stereotypes.Unit), "symbol", scale.getUnit().getShortName());
-                
-                StereotypesHelper.setStereotypePropertyValue(newDataType, 
-                        StereotypeUtils.GetStereotype(this.sessionService.GetProject(), Stereotypes.ValueType), "unit", newUnit);
+                this.stereotypeService.SetStereotypePropertyValue(newUnit, Stereotypes.ValueType, "unit", newUnit);
                 
                 newDataType.setName(String.format("%s[%s]", newDataType.getName(), scale.getUnit().getShortName()));
             }
@@ -719,7 +710,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             .ifPresent(x -> refPort.Set(x));
         
         parent.getOwnedElement().stream()
-            .filter(x -> x instanceof Class && StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.Block))
+            .filter(x -> x instanceof Class && this.stereotypeService.DoesItHaveTheStereotype(x, Stereotypes.Block))
             .map(x -> (Class)x)
             .filter(x -> AreTheseEquals(x.getName(), port.getName(), true))
             .findFirst()

@@ -31,6 +31,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
@@ -75,18 +76,4 @@ public interface IMagicDrawSessionService
      * @return a {@linkplain Collection} of {@linkplain Element}
      */
     Collection<Element> GetProjectElements();
-
-    /**
-     * Gets the DataTypes element from the {@linkplain #GetProject()}
-     * 
-     * @return a {@linkplain Collection} of {@linkplain #DataType}
-     */
-    Collection<DataType> GetDataTypes();
-
-    /**
-     * Gets the DataTypes element from the {@linkplain #GetProject()}
-     * 
-     * @return a {@linkplain Collection} of {@linkplain #DataType}
-     */
-    Collection<InstanceSpecification> GetUnits();
 }

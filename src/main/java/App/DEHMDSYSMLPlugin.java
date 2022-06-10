@@ -70,8 +70,10 @@ import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
-import Services.VersionNumber.IAdapterVersionNumberService;
-import Services.VersionNumber.MagicDrawAdapterVersionNumberService;
+import Services.Stereotype.IStereotypeService;
+import Services.Stereotype.StereotypeService;
+import Services.AdapterInfo.IAdapterInfoService;
+import Services.AdapterInfo.MagicDrawAdapterInfoService;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.ElementDefinitionImpactViewViewModel;
 import ViewModels.HubBrowserPanelViewModel;
@@ -95,6 +97,8 @@ import ViewModels.Interfaces.ITransferControlViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MappedElementListView.MappedElementListViewViewModel;
 import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
+import ViewModels.MappingListView.MagicDrawMappingListViewViewModel;
+import ViewModels.MappingListView.Interfaces.IMappingListViewViewModel;
 
 public class DEHMDSYSMLPlugin extends Plugin
 {
@@ -167,7 +171,7 @@ public class DEHMDSYSMLPlugin extends Plugin
                 
                 ActionsConfiguratorsManager.getInstance().addContainmentBrowserContextConfigurator(configuratorContext);
                 
-                Application.getInstance().getGUILog().log(String.format("[MDSYSMLPlugin] %s Initialized with success!", AppContainer.Container.getComponent(IAdapterVersionNumberService.class).GetVersion()));
+                Application.getInstance().getGUILog().log(String.format("[MDSYSMLPlugin] %s Initialized with success!", AppContainer.Container.getComponent(IAdapterInfoService.class).GetVersion()));
 			}
 	        catch (Exception exception)
 	        {
@@ -223,9 +227,10 @@ public class DEHMDSYSMLPlugin extends Plugin
 
             AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
             AppContainer.Container.addComponent(IMagicDrawUILogService.class, MagicDrawUILogService.class);
-            AppContainer.Container.addComponent(IAdapterVersionNumberService.class, MagicDrawAdapterVersionNumberService.class);
+            AppContainer.Container.addComponent(IAdapterInfoService.class, MagicDrawAdapterInfoService.class);
             AppContainer.Container.addComponent(IMagicDrawSelectionService.class, MagicDrawSelectionService.class);
             AppContainer.Container.addComponent(IMapCommandService.class, MapCommandService.class);
+            AppContainer.Container.addComponent(IStereotypeService.class, StereotypeService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawTransactionService.class, MagicDrawTransactionService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawSessionService.class, MagicDrawSessionService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawLocalExchangeHistoryService.class, MagicDrawLocalExchangeHistoryService.class);
@@ -242,6 +247,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(IMagicDrawImpactViewViewModel.class, MagicDrawImpactViewViewModel.class);
             AppContainer.Container.addConfig("TElement", Class.class);
             AppContainer.Container.as(Characteristics.USE_NAMES).addComponent(IMappedElementListViewViewModel.class, MappedElementListViewViewModel.class);
+            AppContainer.Container.addComponent(IMappingListViewViewModel.class, MagicDrawMappingListViewViewModel.class);
         }
         catch (Exception exception) 
         {

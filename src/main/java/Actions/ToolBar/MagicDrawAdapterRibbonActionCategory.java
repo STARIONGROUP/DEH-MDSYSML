@@ -44,6 +44,6 @@ public class MagicDrawAdapterRibbonActionCategory extends ActionsCategory
         super("DEH Magic Draw Adapter", "DEH Magic Draw Adapter Menu", null, null);
         this.setLargeIcon(ImageLoader.GetIcon("icon16.png"));
         this.setNested(true);
-        this.addActions(Arrays.asList(new OpenHubBrowserPanelAction(), new LocalExchangeHistoryAction()));
+        this.addActions(Arrays.asList(new OpenHubBrowserPanelAction(), new LocalExchangeHistoryAction(), new MappingListViewAction()));
     }
 }

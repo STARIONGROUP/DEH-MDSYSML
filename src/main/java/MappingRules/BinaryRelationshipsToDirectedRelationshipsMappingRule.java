@@ -41,6 +41,7 @@ import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
+import Services.Stereotype.IStereotypeService;
 import Utils.Operators.Operators;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.HubRelationshipElementsCollection;
@@ -72,11 +73,12 @@ public class BinaryRelationshipsToDirectedRelationshipsMappingRule extends HubTo
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param transactionService the {@linkplain IMagicDrawTransactionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public BinaryRelationshipsToDirectedRelationshipsMappingRule(IHubController hubController, 
-            IMagicDrawMappingConfigurationService mappingConfiguration, IMagicDrawTransactionService transactionService)
+    public BinaryRelationshipsToDirectedRelationshipsMappingRule(IHubController hubController, IMagicDrawMappingConfigurationService mappingConfiguration, 
+            IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
-        super(hubController, mappingConfiguration, transactionService);
+        super(hubController, mappingConfiguration, transactionService, stereotypeService);
     }
     
     /**

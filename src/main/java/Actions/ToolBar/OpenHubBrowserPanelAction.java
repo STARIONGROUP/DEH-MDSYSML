@@ -23,8 +23,6 @@
  */
 package Actions.ToolBar;
 
-import java.awt.Container;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.util.Collection;
 
@@ -66,6 +64,9 @@ public class OpenHubBrowserPanelAction extends MDAction
      */
     private MagicDrawImpactViewPanel impactViewPanel;
 
+    /**
+     * The {@linkplain IMagicDrawSessionService}
+     */
     private IMagicDrawSessionService sessionService;
     
     /**
