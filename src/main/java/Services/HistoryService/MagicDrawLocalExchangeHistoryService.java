@@ -35,7 +35,8 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import HubController.IHubController;
 import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.LocalExchangeHistory.LocalExchangeHistoryService;
-import Services.VersionNumber.IAdapterVersionNumberService;
+import Services.Stereotype.IStereotypeService;
+import Services.AdapterInfo.IAdapterInfoService;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.StereotypeUtils;
 import cdp4common.ChangeKind;
@@ -46,14 +47,21 @@ import cdp4common.ChangeKind;
 public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistoryService implements IMagicDrawLocalExchangeHistoryService
 {
     /**
+     * The {@linkplain IStereotypeService}
+     */
+    private final IStereotypeService stereotypeService;
+    
+    /**
      * Initializes a new {@linkplain MagicDrawLocalExchangeHistoryService}
      * 
      * @param hubController the {@linkplain IHubController}
-     * @param versionService the {@linkplain IAdapterVersionNumberService}
+     * @param adapterInfoService the {@linkplain IAdapterInfoService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public MagicDrawLocalExchangeHistoryService(IHubController hubController, IAdapterVersionNumberService versionService)
+    public MagicDrawLocalExchangeHistoryService(IHubController hubController, IAdapterInfoService adapterInfoService, IStereotypeService stereotypeService)
     {
-        super(hubController, versionService);
+        super(hubController, adapterInfoService);
+        this.stereotypeService = stereotypeService;
     }
 
     /**
@@ -117,8 +125,8 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
     @Override
     public void Append(Property clonedProperty, Property originalProperty)
     {
-        String valueToUpdateString = StereotypeUtils.GetValueRepresentation(originalProperty);
-        String newValueString = StereotypeUtils.GetValueRepresentation(clonedProperty);
+        String valueToUpdateString = this.stereotypeService.GetValueRepresentation(originalProperty);
+        String newValueString = this.stereotypeService.GetValueRepresentation(clonedProperty);
         
         String propertyName = String.format("%s.%s", 
                 originalProperty.eContainer() instanceof NamedElement 

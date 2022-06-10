@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 
-import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
-
 import DstController.DstController;
 import DstController.IDstController;
 import Enumerations.MappingDirection;
@@ -183,6 +181,17 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     public Observable<Boolean> GetIsSessionOpen()
     {
         return this.isSessionOpen;
+    }    
+
+    /**
+     * Gets a value indicating whether the Impact view can load mapping configurations
+     * 
+     * @return a {@linkplain boolean}
+     */
+    @Override
+    public boolean CanLoadMappingConfiguration()
+    {
+        return this.HubController.GetIsSessionOpen();
     }
 
     /**

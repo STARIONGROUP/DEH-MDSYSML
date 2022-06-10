@@ -72,14 +72,14 @@ public interface IDstController extends IDstControllerBase<Class>
      * 
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
-    ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetDstMapResult();
+    ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetDstMapResult();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
      * 
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
-    ObservableCollection<MappedElementRowViewModel<? extends Thing, ? extends Class>> GetHubMapResult();
+    ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetHubMapResult();
 
     /**
      * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub

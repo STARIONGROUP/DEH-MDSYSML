@@ -40,6 +40,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
+import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 
@@ -55,6 +56,11 @@ public class ClonedReferenceElement<TElement extends Element>
      * The {@linkplain Log4J} logger
      */
     protected Logger logger = LogManager.getLogger();
+    
+    /**
+     * The {@linkplain IStereotypeService}
+     */
+    protected IStereotypeService stereotypeService;
     
     /**
      *  Backing field for {@linkplain #GetClone()}
@@ -109,12 +115,14 @@ public class ClonedReferenceElement<TElement extends Element>
      * 
      * @param original the {@linkplain #TElement} original reference
      * @param stereotype the {@linkplain Stereotype} that applies to the original
+     * @param stereotypeService the {@linkplain IStereotypeService}
      * @param stereotypesParameterNames a params of String that list all the stereotype parameter names 
      */
-    ClonedReferenceElement(TElement original, Stereotype stereotype, String... stereotypesParameterNames) 
+    ClonedReferenceElement(TElement original, Stereotype stereotype, IStereotypeService stereotypeService, String... stereotypesParameterNames) 
     {
         this.original = original;
         this.stereotype = stereotype;
+        this.stereotypeService = stereotypeService;
         
         this.GetOriginalStereotypePropertyValues();
         this.SetClone();
@@ -191,18 +199,19 @@ public class ClonedReferenceElement<TElement extends Element>
      * 
      * @param <T> the type of the {@linkplain Element}
      * @param original the {@linkplain Element} original
+     * @param stereotypeService the {@linkplain IStereotypeService}
      * @return a {@linkplain ClonedReferenceElement}
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Element> ClonedReferenceElement<T> Create(T original)
+    public static <T extends Element> ClonedReferenceElement<T> Create(T original, IStereotypeService stereotypeService)
     {
-        if(StereotypeUtils.DoesItHaveTheStereotype(original, Stereotypes.Requirement))
+        if(stereotypeService.DoesItHaveTheStereotype(original, Stereotypes.Requirement))
         {
-            return (ClonedReferenceElement<T>) new ClonedReferenceRequirement((Class) original);
+            return (ClonedReferenceElement<T>) new ClonedReferenceRequirement(stereotypeService, (Class) original);
         }
-        else if(StereotypeUtils.DoesItHaveTheStereotype(original, Stereotypes.Block))
+        else if(stereotypeService.DoesItHaveTheStereotype(original, Stereotypes.Block))
         {
-            return (ClonedReferenceElement<T>) new ClonedReferenceBlock((Class) original);
+            return (ClonedReferenceElement<T>) new ClonedReferenceBlock(stereotypeService, (Class) original);
         }
         
         return new ClonedReferenceElement<>(original);

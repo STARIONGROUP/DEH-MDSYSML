@@ -33,6 +33,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
+import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.StereotypeUtils;
 
 /**
@@ -44,11 +45,12 @@ public class ClonedReferenceBlock extends ClonedReferenceElement<Class>
     /**
      * Initializes a new {@linkplain ClonedReferenceElement}
      * 
+     * @param stereotypeService the {@linkplain IStereotypeService}
      * @param original the {@linkplain Class} original reference
      */
-    ClonedReferenceBlock(Class original)
+    ClonedReferenceBlock(IStereotypeService stereotypeService, Class original)
     {
-        super(original, SysMLProfile.getInstance(original).getBlock());
+        super(original, SysMLProfile.getInstance(original).getBlock(), stereotypeService);
         this.CloneProperties();
     }
 
@@ -59,7 +61,7 @@ public class ClonedReferenceBlock extends ClonedReferenceElement<Class>
     {
         for (Property property : this.GetOriginal().getOwnedAttribute().stream().collect(Collectors.toList()))
         {
-            Stereotype stereotype = StereotypeUtils.GetPropertyStereotype(property);
+            Stereotype stereotype = this.stereotypeService.GetPropertyStereotype(property);
             Property propertyFromClone = this.GetClone().getOwnedAttribute().stream().filter(x -> AreTheseEquals(x.getID(), property.getID())).findFirst().orElse(null);
             
             if(stereotype == null || propertyFromClone == null)

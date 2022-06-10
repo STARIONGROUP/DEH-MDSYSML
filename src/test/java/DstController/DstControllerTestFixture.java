@@ -55,6 +55,7 @@ import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
@@ -105,6 +106,7 @@ class DstControllerTestFixture
     private IMagicDrawLocalExchangeHistoryService historyService;
     private IMagicDrawSessionService sessionService;
     private IMagicDrawTransactionService transactionService;
+    private IStereotypeService stereotypeService;
 
     /**
      * @throws java.lang.Exception
@@ -120,6 +122,7 @@ class DstControllerTestFixture
         this.historyService = mock(IMagicDrawLocalExchangeHistoryService.class);
         this.sessionService = mock(IMagicDrawSessionService.class);
         this.transactionService = mock(IMagicDrawTransactionService.class);
+        this.stereotypeService = mock(IStereotypeService.class);
 
         when(this.sessionService.SessionUpdated()).thenReturn(Observable.fromArray(true, false));
         
@@ -149,7 +152,7 @@ class DstControllerTestFixture
         when(this.hubController.Refresh()).thenReturn(true);
 
         this.controller = new DstController(this.mappingEngine, this.hubController, this.logService, 
-                this.mappingConfigurationService, this.sessionService, this.historyService, this.transactionService);
+                this.mappingConfigurationService, this.sessionService, this.historyService, this.transactionService, this.stereotypeService);
     }
 
     private void SetSession() throws Exception

@@ -1,5 +1,5 @@
 /*
- * ClonedReferenceRequirement.java
+ * MagicDrawMappingListView.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,28 +21,29 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Services.MagicDrawTransaction;
+package Views;
+
+import ViewModels.MappingListView.Renderers.MappingListViewSysMLElementCellEditor;
+import ViewModels.MappingListView.Renderers.MappingListViewSysMLElementCellRenderer;
+import Views.MappingList.MappingListView;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
-import Services.Stereotype.IStereotypeService;
-
-import com.nomagic.magicdraw.sysml.util.SysMLProfile;
-
 /**
- * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
+ * The {@linkplain MagicDrawMappingListView} is the {@linkplain MappingListView} implementation for the MagicDraw adapter 
  */
+@SuppressWarnings("serial")
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
+public class MagicDrawMappingListView extends MappingListView
 {
     /**
-     * Initializes a new {@linkplain ClonedReferenceElement}
-     * 
-     * @param stereotypeService the {@linkplain IStereotypeService}
-     * @param original the {@linkplain Class} original reference
+     * Initializes a new {@linkplain CapellaMappingListView}
      */
-    ClonedReferenceRequirement(IStereotypeService stereotypeService, Class original)
+    public MagicDrawMappingListView()
     {
-        super(original, SysMLProfile.getInstance(original).getRequirement(), stereotypeService, "Id", "Text");
+        super();
+        this.objectBrowserTree.setDefaultRenderer(Class.class, new MappingListViewSysMLElementCellRenderer());
+        this.objectBrowserTree.setDefaultEditor(Class.class, new MappingListViewSysMLElementCellEditor());
+        this.objectBrowserTree.setCellSelectionEnabled(false);
     }
 }

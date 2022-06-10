@@ -70,7 +70,7 @@ public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpac
     @Override
     public void Bind()
     {
-        this.View.SetLoadMappingControlsIsEnable(!this.DataContext.GetSavedMappingconfigurationCollection().isEmpty());
+        this.View.SetLoadMappingControlsIsEnable(this.DataContext.CanLoadMappingConfiguration());
         
         this.DataContext.GetIsSessionOpen().subscribe(x -> 
         {     

@@ -25,7 +25,7 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
-import Utils.Stereotypes.StereotypeUtils;
+import Services.Stereotype.StereotypeService;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 
@@ -44,7 +44,7 @@ public class ValuePropertyRowViewModel extends PropertyRowViewModel
     public ValuePropertyRowViewModel(IElementRowViewModel<?> parent, Property property)
     {
         super(parent, property);
-        this.SetName(String.format("%s = %s", this.GetName(), StereotypeUtils.GetValueRepresentation(property)));
+        this.SetName(String.format("%s = %s", this.GetName(), StereotypeService.Current.GetValueRepresentation(property)));
     }
 
     /**

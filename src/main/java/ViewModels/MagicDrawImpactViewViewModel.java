@@ -45,6 +45,7 @@ import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
@@ -78,17 +79,25 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
     private final IMagicDrawTransactionService transactionService;
 
     /**
+     * The {@linkplain IStereotypeService}
+     */
+    private final IStereotypeService stereotypeService;
+
+    /**
      * Initializes a new {@linkplain RequirementImpactViewViewModel}
      * 
      * @param dstController the {@linkplain IDstController}
      * @param sessionService the {@linkplain IMagicDrawSessionService}
      * @param transactionService the {@linkplain IMagicDrawTransactionService}
+     * @param stereotypeService the {@linkplain IStereotypeService}
      */
-    public MagicDrawImpactViewViewModel(IDstController dstController, IMagicDrawSessionService sessionService, IMagicDrawTransactionService transactionService)
+    public MagicDrawImpactViewViewModel(IDstController dstController, IMagicDrawSessionService sessionService, 
+            IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
     {
         super(sessionService);
         this.dstController = dstController;
         this.transactionService = transactionService;
+        this.stereotypeService = stereotypeService;
         this.InitializesObservables();
     }
 
@@ -454,7 +463,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
     private void AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel, boolean isSelected)
     {
         for (Property partProperty : rowViewModel.GetElement().getOwnedAttribute().stream()
-                .filter(x -> StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.PartProperty) || x.getType() instanceof Class)
+                .filter(x -> this.stereotypeService.DoesItHaveTheStereotype(x, Stereotypes.PartProperty) || x.getType() instanceof Class)
                 .collect(Collectors.toList()))
             
         {

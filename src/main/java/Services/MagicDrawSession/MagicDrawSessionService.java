@@ -24,20 +24,12 @@
 package Services.MagicDrawSession;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import com.nomagic.magicdraw.core.Project;
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
-import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
+import com.nomagic.magicdraw.core.project.ProjectEventListener;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
-import Utils.Stereotypes.StereotypeUtils;
-import Utils.Stereotypes.Stereotypes;
 import io.reactivex.Observable;
 
 /**
@@ -49,6 +41,16 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
      * The {@linkplain ProjectEventListener} to monitor project open and closed in Cameo/MagicDraw
      */
     private final IMagicDrawProjectEventListener projectEventListener;
+        
+    /**
+     * Initializes a new {@linkplain MagicDrawSessionService}
+     * 
+     * @param projectEventListener the {@linkplain IMagicDrawProjectEventListener}
+     */
+    public MagicDrawSessionService(IMagicDrawProjectEventListener projectEventListener)
+    {
+        this.projectEventListener = projectEventListener;
+    }
     
     /**
      * Gets the open Document ({@linkplain Project}) from the running instance of Cameo/MagicDraw
@@ -94,11 +96,6 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
         return this.projectEventListener.HasOneDocumentOpen().Value().booleanValue();
     }
     
-    public MagicDrawSessionService(IMagicDrawProjectEventListener projectEventListener)
-    {
-        this.projectEventListener = projectEventListener;
-    }
-
     /**
      * Gets the open project element
      * 
@@ -109,38 +106,4 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
     {
         return this.GetProject().getPrimaryModel().getPackagedElement().stream().map(Element.class::cast).collect(Collectors.toList());
     }
-    
-    /**
-     * Gets the DataTypes element from the {@linkplain #GetProject()}
-     * 
-     * @return a {@linkplain Collection} of {@linkplain #DataType}
-     */
-    @Override
-    public Collection<DataType> GetDataTypes()
-    {
-        Stereotype stereotype = StereotypeUtils.GetStereotype(this.GetProject(), Stereotypes.ValueType);
-        
-        List<Element> elements = StereotypesHelper.getExtendedElements(stereotype);
-        
-        return elements.stream()
-                .filter(x -> x instanceof DataType)
-                .map(x -> (DataType)x)
-                .collect(Collectors.toList());
-    }    
-
-    /**
-     * Gets the DataTypes element from the {@linkplain #GetProject()}
-     * 
-     * @return a {@linkplain Collection} of {@linkplain #DataType}
-     */
-    @Override
-    public Collection<InstanceSpecification> GetUnits()
-    {
-        List<Element> units = StereotypesHelper.getExtendedElements(MDCustomizationForSysMLProfile.getInstance(this.GetProject()).getUnit());
-                
-        return units.stream()
-                .filter(x -> x instanceof InstanceSpecification && StereotypeUtils.DoesItHaveTheStereotype(x, Stereotypes.Unit))
-                .map(x -> (InstanceSpecification)x)
-                .collect(Collectors.toList());
-    }    
 }

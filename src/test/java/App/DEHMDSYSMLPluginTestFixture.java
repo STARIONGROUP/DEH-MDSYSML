@@ -26,15 +26,12 @@ package App;
 
 import org.junit.jupiter.api.Test;
 
-import ViewModels.Interfaces.IHubBrowserPanelViewModel;
-
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DEHMDSYSMLPluginTestFixture 
 {
-
 	@Test
 	public void VerifyLoad()
 	{
@@ -49,6 +46,5 @@ public class DEHMDSYSMLPluginTestFixture
 	{
         DEHMDSYSMLPlugin plugin = new DEHMDSYSMLPlugin();
         assertDoesNotThrow(() -> plugin.RegisterDependencies());
-        assertNotNull(AppContainer.Container.getComponent(IHubBrowserPanelViewModel.class));
 	}
 }

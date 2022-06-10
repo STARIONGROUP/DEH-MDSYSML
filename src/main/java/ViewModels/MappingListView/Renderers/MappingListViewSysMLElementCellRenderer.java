@@ -1,5 +1,5 @@
 /*
- * ClonedReferenceRequirement.java
+ * MappingListViewSysMLElementCellRenderer.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,28 +21,28 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Services.MagicDrawTransaction;
+package ViewModels.MappingListView.Renderers;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
-import Services.Stereotype.IStereotypeService;
-
-import com.nomagic.magicdraw.sysml.util.SysMLProfile;
+import ViewModels.MappingListView.Rows.*;
+import Services.Stereotype.StereotypeService;
+import Utils.Stereotypes.Stereotypes;
 
 /**
- * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
+ * The {@linkplain MappingListViewSysMLElementCellRenderer} is the {@linkplain DefaultTableCellEditor} for the 
+ * {@linkplain MappedElementListView} where the represented element is an {@linkplain DefinedThing}
  */
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
+public class MappingListViewSysMLElementCellRenderer extends MappingListViewElementBaseCellRenderer<Class>
 {
     /**
-     * Initializes a new {@linkplain ClonedReferenceElement}
-     * 
-     * @param stereotypeService the {@linkplain IStereotypeService}
-     * @param original the {@linkplain Class} original reference
+     * Initializes a new {@linkplain MappingListViewSysMLElementCellRenderer}
      */
-    ClonedReferenceRequirement(IStereotypeService stereotypeService, Class original)
+    public MappingListViewSysMLElementCellRenderer()
     {
-        super(original, SysMLProfile.getInstance(original).getRequirement(), stereotypeService, "Id", "Text");
+        super(x -> StereotypeService.Current.DoesItHaveTheStereotype(x, Stereotypes.Block) 
+                ? new MappingListViewBlockRowViewModel(x)
+                : new MappingListViewSysMLRequirementRowViewModel(x));
     }
 }
