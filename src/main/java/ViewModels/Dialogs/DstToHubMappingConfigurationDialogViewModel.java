@@ -408,6 +408,7 @@ public class DstToHubMappingConfigurationDialogViewModel extends MappingConfigur
             RequirementsSpecification requirementSpecification = optionalRequirement.get().getContainerOfType(RequirementsSpecification.class).clone(true);            
             refRequirement.Set(requirementSpecification.getRequirement().stream()
                     .filter(x -> AreTheseEquals(x.getIid(), optionalRequirement.get().getIid()))
+                    .filter(x -> !x.isDeprecated())
                     .findFirst()
                     .get());
         }
