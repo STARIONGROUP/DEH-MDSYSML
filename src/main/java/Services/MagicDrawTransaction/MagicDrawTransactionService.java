@@ -227,12 +227,41 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
             return (TElement) this.cloneReferences.get(original.getID()).GetClone();
         }
         
-        ClonedReferenceElement<TElement> clonedReference = ClonedReferenceElement.Create(original, this.stereotypeService);
-                
+        ClonedReferenceElement<TElement> clonedReference = ClonedReferenceElement.Create(original, this.stereotypeService, this.cloneReferences);
+        
+        if(original instanceof Package)
+        {
+            this.AddToCloneReferencesClonedContainedElements(((ClonedReferencePackage)clonedReference).ContainedElements());
+        }
+    
         this.cloneReferences.put(original.getID(), clonedReference); 
         return clonedReference.GetClone();
     }
     
+    /**
+     * Adds to the {@linkplain #cloneReferences} all the element present in the provided {@linkplain Collection} of {@linkplain ClonedReferenceElement}
+     * 
+     * @param collection The {@linkplain Collection} of {@linkplain ClonedReferenceElement}
+     */
+    private void AddToCloneReferencesClonedContainedElements(Collection<ClonedReferenceElement<? extends Element>> collection)
+    {
+        for (ClonedReferenceElement<? extends Element> clonedReferenceElement : collection)
+        {
+            this.cloneReferences.put(clonedReferenceElement.GetClone().getID(), clonedReferenceElement);
+            
+            if(clonedReferenceElement instanceof ClonedReferencePackage)
+            {
+                Collection<ClonedReferenceElement<? extends Element>> containedElements = ((ClonedReferencePackage)clonedReferenceElement).ContainedElements();
+                
+                if(!containedElements.isEmpty())
+                {
+                    this.AddToCloneReferencesClonedContainedElements(containedElements);
+                }
+            }
+        }
+    }
+    
+
     /**
      * Verifies that the provided {@linkplain #TElement} is a clone
      * 
@@ -595,10 +624,10 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     }
 
     /**
-     * Reset the clones references, by means of finalizing the transaction
+     * Clears the clones references and new references
      */    
     @Override
-    public void Finalize()
+    public void Clear()
     {
         this.cloneReferences.clear();
         this.newReferences.clear();
@@ -629,7 +658,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         finally
         {
             SessionManager.getInstance().closeSession(this.sessionService.GetProject());
-            this.Finalize();
+            this.Clear();
             this.logger.info("End commiting transaction to MagicDraw");
         }
     }

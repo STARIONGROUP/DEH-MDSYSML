@@ -268,7 +268,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
         Optional<Requirement> optionalRequirement = refRequirementsSpecification.Get()
                 .getRequirement()
                 .stream()
-                .filter(x -> this.AreShortNamesEquals(x, GetShortName(element)))
+                .filter(x -> this.AreShortNamesEquals(x, GetShortName(element)) && !x.isDeprecated())
                 .findFirst();
         
         if(optionalRequirement.isPresent())
