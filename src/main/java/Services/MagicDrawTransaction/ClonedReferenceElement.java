@@ -37,11 +37,11 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Services.Stereotype.IStereotypeService;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 
 /**
@@ -193,17 +193,19 @@ public class ClonedReferenceElement<TElement extends Element>
         
         return null;
     }
-
+    
     /**
      * Initializes a new {@linkplain ClonedReferenceElement} based on the {@linkplain #T} stereotype
      * 
      * @param <T> the type of the {@linkplain Element}
      * @param original the {@linkplain Element} original
      * @param stereotypeService the {@linkplain IStereotypeService}
+     * @param existingClones the {@linkplain HashMap} of existing clones
      * @return a {@linkplain ClonedReferenceElement}
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Element> ClonedReferenceElement<T> Create(T original, IStereotypeService stereotypeService)
+    public static <T extends Element> ClonedReferenceElement<T> Create(T original, IStereotypeService stereotypeService, 
+            Map<String, ClonedReferenceElement<? extends Element>> existingClones)
     {
         if(stereotypeService.DoesItHaveTheStereotype(original, Stereotypes.Requirement))
         {
@@ -212,6 +214,10 @@ public class ClonedReferenceElement<TElement extends Element>
         else if(stereotypeService.DoesItHaveTheStereotype(original, Stereotypes.Block))
         {
             return (ClonedReferenceElement<T>) new ClonedReferenceBlock(stereotypeService, (Class) original);
+        }
+        else if(original instanceof Package)
+        {
+            return (ClonedReferenceElement<T>) new ClonedReferencePackage(stereotypeService, (Package) original, existingClones);
         }
         
         return new ClonedReferenceElement<>(original);

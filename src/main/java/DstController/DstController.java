@@ -86,7 +86,6 @@ import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRelatedElementCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
@@ -374,13 +373,22 @@ public final class DstController implements IDstController
     {
         if(!isSessionOpen)
         {
-            this.dstMapResult.clear();
-            this.hubMapResult.clear();
-            this.selectedDstMapResultForTransfer.clear();
-            this.selectedHubMapResultForTransfer.clear();
-            this.mappedDirectedRelationshipsToBinaryRelationships.clear();
-            this.mappedBinaryRelationshipsToDirectedRelationships.clear();
+            this.ResetAllRelatedMappingCollections();
         }
+    }
+
+    /**
+     * Reset all mapped things collections
+     */
+    private void ResetAllRelatedMappingCollections()
+    {
+        this.transactionService.Clear();
+        this.dstMapResult.clear();
+        this.hubMapResult.clear();
+        this.selectedDstMapResultForTransfer.clear();
+        this.selectedHubMapResultForTransfer.clear();
+        this.mappedDirectedRelationshipsToBinaryRelationships.clear();
+        this.mappedBinaryRelationshipsToDirectedRelationships.clear();
     }
 
     /**
@@ -392,7 +400,7 @@ public final class DstController implements IDstController
         {
             return;
         }
-        
+
         this.LoadMapping();
     }
     
@@ -404,6 +412,8 @@ public final class DstController implements IDstController
     @Override
     public void LoadMapping()
     {
+        this.ResetAllRelatedMappingCollections();
+        
         StopWatch timer = StopWatch.createStarted();
         
         Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.sessionService.GetProject().getAllElements()
@@ -427,12 +437,7 @@ public final class DstController implements IDstController
             .forEach(x -> SortMappedElementByType(allMappedHubElement, allMappedHubRequirements, x));
         
         boolean result = true;
-        
-        this.dstMapResult.clear();
-        this.hubMapResult.clear();
-        this.selectedDstMapResultForTransfer.clear();
-        this.selectedHubMapResultForTransfer.clear();
-        
+                
         if(!allMappedMagicDrawElement.isEmpty())
         {
             result &= this.Map(allMappedMagicDrawElement, MappingDirection.FromDstToHub);
@@ -507,7 +512,6 @@ public final class DstController implements IDstController
         return this.MapRelationships(input, mappingDirection);
     }
     
-
     /**
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
      * and assign the map result to the dstMapResult or the hubMapResult
@@ -657,6 +661,7 @@ public final class DstController implements IDstController
         this.LoadMapping();
         return result;
     }
+    
     /**
      * Transfers all the {@linkplain Class} contained in the {@linkplain huMapResult} to the DST
      * 
@@ -1047,12 +1052,18 @@ public final class DstController implements IDstController
     private <TElement extends Element> void UpdateChildrenOfType(Collection<TElement> originalCollection,
             Collection<TElement> clonedCollection)
     {
-        List<TElement> childrenPackagesToAdd = clonedCollection.stream()
-                .filter(x -> originalCollection.stream()
-                            .noneMatch(e -> AreTheseEquals(x.getID(), e.getID(), true)))
-                .collect(Collectors.toList());
-
-        originalCollection.addAll(childrenPackagesToAdd);
+        for (TElement elementToAdd : new ArrayList<>(clonedCollection))
+        {
+            if(originalCollection.stream().noneMatch(x -> AreTheseEquals(elementToAdd.getID(), x.getID())))
+            {
+                originalCollection.add(elementToAdd);
+                
+                if(elementToAdd instanceof NamedElement)
+                {
+                    this.exchangeHistory.Append((NamedElement) elementToAdd, ChangeKind.CREATE);
+                }
+            }
+        }
     }
 
     /**

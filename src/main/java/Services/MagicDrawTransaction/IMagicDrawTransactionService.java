@@ -70,9 +70,9 @@ public interface IMagicDrawTransactionService
     boolean Commit(Runnable transactionMethod);
 
     /**
-     * Reset the clones references, by means of finalizing the transaction
+     * Clears the clones references and new references
      */
-    void Finalize();
+    void Clear();
 
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain RequirementType}

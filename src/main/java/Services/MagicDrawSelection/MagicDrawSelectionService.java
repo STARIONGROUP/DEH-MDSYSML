@@ -151,6 +151,7 @@ public class MagicDrawSelectionService implements IMagicDrawSelectionService
         hubRequirements.addAll(elements.stream()
                 .filter(x -> x instanceof cdp4common.engineeringmodeldata.Requirement)
                 .map(x -> (cdp4common.engineeringmodeldata.Requirement)x)
+                .filter(x -> !x.isDeprecated())
                 .collect(Collectors.toList()));        
 
         for (RequirementsSpecification requirementsSpecification : elements.stream()
@@ -184,6 +185,7 @@ public class MagicDrawSelectionService implements IMagicDrawSelectionService
     {
         for (Requirement requirement : requirementsSpecification.getRequirement()
                 .stream()
+                .filter(x -> !x.isDeprecated())
                 .collect(Collectors.toList()))
         {
             if(filterOnGroup == null || filterOnGroup.test(requirement))
