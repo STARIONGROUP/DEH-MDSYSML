@@ -36,6 +36,7 @@ import Views.MagicDrawObjectBrowser;
  * to be defined between a selection of DST elements and the hub element
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawDstToHubMappingConfigurationDialog extends MappingConfigurationDialog<IDstToHubMappingConfigurationDialogViewModel, Element, Class, ClassRowViewModel>
 {
     /**

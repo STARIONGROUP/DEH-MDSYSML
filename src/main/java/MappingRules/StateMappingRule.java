@@ -162,8 +162,9 @@ public class StateMappingRule implements IStateMappingRule
     private void MapStateDependenciesFromDstToHub(ParameterOrOverrideBase parameter, Property property)
     {
         List<Dependency> dependencies = StreamExtensions
-                .OfType(property.get_directedRelationshipOfSource(), Dependency.class).stream()
-                .filter(x -> x.getTarget().stream().anyMatch(t -> t instanceof State)).collect(Collectors.toList());
+                .OfType(property.get_directedRelationshipOfSource().stream(), Dependency.class)
+                .filter(x -> x.getTarget().stream()
+                        .anyMatch(t -> t instanceof State)).collect(Collectors.toList());
 
         if (dependencies.isEmpty())
         {
@@ -175,10 +176,8 @@ public class StateMappingRule implements IStateMappingRule
 
         for (Dependency dependency : dependencies)
         {
-            State state = StreamExtensions.OfType(dependency.getTarget().stream(), State.class).findFirst()
-                    .orElseGet(null);
-
-            possibleFiniteStateList.add(this.GetOrCreatePossibleFiniteState(state));
+            StreamExtensions.OfType(dependency.getTarget().stream(), State.class).findFirst().ifPresent(x ->
+                possibleFiniteStateList.add(this.GetOrCreatePossibleFiniteState(x)));
         }
 
         if (possibleFiniteStateList.isEmpty())
@@ -356,7 +355,8 @@ public class StateMappingRule implements IStateMappingRule
         if (optionalPossibleFiniteStateList.isPresent())
         {
             possibleFiniteStateList = optionalPossibleFiniteStateList.get().clone(true);
-        } else
+        }
+        else
         {
             possibleFiniteStateList = this.createdPossibleFiniteStateLists.stream()
                     .filter(x -> Operators.AreTheseEquals(x.getName(), state.getName(), true)
@@ -524,11 +524,11 @@ public class StateMappingRule implements IStateMappingRule
      * Update the {@linkplain State} based on the {@linkplain PossibleFiniteState}
      * 
      * @param state the {@linkplain State} to update
-     * @param possibleFiniteState the {@linkplain PossibleFiniteState}
+     * @param possibleFiniteStateList the {@linkplain PossibleFiniteStateList}
      */
-    private void UpdateState(State state, PossibleFiniteStateList possibleFiniteState)
+    private void UpdateState(State state, PossibleFiniteStateList possibleFiniteStateList)
     {
-        List<Pair<String, String>> possibleStateNames = possibleFiniteState.getPossibleState().stream()
+        List<Pair<String, String>> possibleStateNames = possibleFiniteStateList.getPossibleState().stream()
                 .map(x -> Pair.of(x.getShortName(), x.getName())).collect(Collectors.toList());
 
         if (possibleStateNames.size() == 1)

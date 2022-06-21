@@ -1,5 +1,5 @@
 /*
- * ClonedReferenceRequirement.java
+ * ClonedReferencePackage.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,28 +21,26 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Services.MagicDrawTransaction;
+package Services.MagicDrawTransaction.Clones;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import Services.Stereotype.IStereotypeService;
 
-import com.nomagic.magicdraw.sysml.util.SysMLProfile;
-
 /**
- * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
+ * The ClonedReferencePackage is a POJO class that represents a cloned {@linkplain Package} with it's original reference
  */
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
+public class ClonedReferencePackage extends ClonedReferenceElement<Package>
 {
     /**
-     * Initializes a new {@linkplain ClonedReferenceElement}
+     * Initializes a new {@linkplain ClonedReferencePackage}
      * 
      * @param stereotypeService the {@linkplain IStereotypeService}
-     * @param original the {@linkplain Class} original reference
+     * @param original the {@linkplain Package} original reference
      */
-    ClonedReferenceRequirement(IStereotypeService stereotypeService, Class original)
+    ClonedReferencePackage(IStereotypeService stereotypeService, Package original)
     {
-        super(original, SysMLProfile.getInstance(original).getRequirement(), stereotypeService, "Id", "Text");
+        super(original, null, stereotypeService);
     }
 }

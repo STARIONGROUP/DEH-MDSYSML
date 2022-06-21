@@ -34,6 +34,7 @@ import io.reactivex.Observable;
  * The {@linkplain MagicDrawImpactViewPanel} is the {@linkplain HubBrowserPanel} for the MagicDraw / Cameo software
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawImpactViewPanel extends MagicDrawBasePanel<IMagicDrawImpactViewPanelViewModel, ImpactViewPanel>
 {
     /**

@@ -137,9 +137,10 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
      * 
      * @param rowViewModel the {@linkplain IElementRowViewModel}
      */
+    @SuppressWarnings("unchecked")
     private void UpdateMappedElements(ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel<? extends Class> rowViewModel)
     {
-        Optional<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> optionalMappedElement = this.mappedElements.stream()
+        Optional<MappedElementRowViewModel<DefinedThing, Class>> optionalMappedElement = this.mappedElements.stream()
             .filter(x -> AreTheseEquals(x.GetDstElement().getID(), rowViewModel.GetElement().getID()))
             .findFirst();
         
@@ -156,8 +157,8 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
                 mappedElement = new MappedRequirementRowViewModel(rowViewModel.GetElement(), MappingDirection.FromHubToDst);
             }
 
-            this.mappedElements.add(mappedElement);
-            this.SetSelectedMappedElement(mappedElement);
+            this.mappedElements.add((MappedElementRowViewModel<DefinedThing, Class>) mappedElement);
+            this.SetSelectedMappedElement((MappedElementRowViewModel<DefinedThing, Class>) mappedElement);
         }
         else
         {
@@ -189,7 +190,7 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
         
         for (Thing thing : selectedElements)
         {            
-            MappedElementRowViewModel<? extends Thing, ? extends Class> mappedRowViewModel = this.GetMappedElementRowViewModel(thing);
+            MappedElementRowViewModel<DefinedThing, Class> mappedRowViewModel = this.GetMappedElementRowViewModel(thing);
             
             if(mappedRowViewModel != null)
             {
@@ -204,7 +205,8 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
      * @param thing the {@linkplain Class} element
      * @return a {@linkplain MappedElementRowViewModel}
      */
-    protected MappedElementRowViewModel<? extends Thing, ? extends Class> GetMappedElementRowViewModel(Thing thing)
+    @SuppressWarnings("unchecked")
+    protected MappedElementRowViewModel<DefinedThing, Class> GetMappedElementRowViewModel(Thing thing)
     {
         Ref<Boolean> refShouldCreateNewTargetElement = new Ref<>(Boolean.class, false);
         MappedElementRowViewModel<? extends Thing, ? extends Class> mappedElementRowViewModel = null;
@@ -236,7 +238,7 @@ public class HubToDstMappingConfigurationDialogViewModel extends MappingConfigur
         {
             mappedElementRowViewModel.SetShouldCreateNewTargetElement(refShouldCreateNewTargetElement.Get());
             mappedElementRowViewModel.SetRowStatus(Boolean.TRUE.equals(refShouldCreateNewTargetElement.Get()) ? MappedElementRowStatus.NewElement : MappedElementRowStatus.ExisitingElement);
-            return mappedElementRowViewModel;
+            return (MappedElementRowViewModel<DefinedThing, Class>) mappedElementRowViewModel;
         }
         
         return null;

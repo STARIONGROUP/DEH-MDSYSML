@@ -39,6 +39,7 @@ import Views.Interfaces.IView;
  * @param <TView> the type of the view that is enclosed by the inheriting v iew
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public abstract class MagicDrawBasePanel<TViewModel extends IViewModel, TView extends JPanel> extends DockableFrame implements IView<TViewModel>
 {
     /**

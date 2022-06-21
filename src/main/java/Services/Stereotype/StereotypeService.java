@@ -238,7 +238,19 @@ public class StereotypeService implements IStereotypeService
     @Override
     public void ApplyStereotype(Element element, Stereotypes stereotype)
     {
-        StereotypesHelper.addStereotype(element, this.GetStereotype(stereotype));
+        this.ApplyStereotype(element, this.GetStereotype(stereotype));
+    }
+    
+    /**
+     * Applies the {@linkplain Stereotype} specified by the provided {@linkplain Stereotypes} to the provided {@linkplain Element} 
+     * 
+     * @param element the {@linkplain Element}
+     * @param stereotype the {@linkplain Stereotype}
+     */
+    @Override
+    public void ApplyStereotype(Element element, Stereotype stereotype)
+    {
+        StereotypesHelper.addStereotype(element, stereotype);
     }
     
     /**

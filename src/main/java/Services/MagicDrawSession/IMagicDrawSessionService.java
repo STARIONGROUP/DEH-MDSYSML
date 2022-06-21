@@ -31,6 +31,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import ViewModels.Rows.MappedElementRowViewModel;
@@ -76,4 +77,11 @@ public interface IMagicDrawSessionService
      * @return a {@linkplain Collection} of {@linkplain Element}
      */
     Collection<Element> GetProjectElements();
+
+    /**
+     * Gets the project root package
+     * 
+     * @return a {@linkplain Package}
+     */
+    Package GetModel();
 }

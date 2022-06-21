@@ -1,5 +1,5 @@
 /*
- * MagicDrawImpactViewContextMenu.java
+ * ClonedReferenceRequirement.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,20 +21,28 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Views.ContextMenu;
+package Services.MagicDrawTransaction.Clones;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+
+import Services.Stereotype.IStereotypeService;
+
+import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 
 /**
- * The {@linkplain MagicDrawImpactViewContextMenu} is the context menu for the {@linkplain MagicDrawObjectBrowser}
+ * The ClonedReferenceElement is a POJO class that represents a cloned requirement with it's original reference
  */
-@SuppressWarnings("serial")
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class MagicDrawImpactViewContextMenu extends ImpactViewContextMenu
+public class ClonedReferenceRequirement extends ClonedReferenceElement<Class>
 {
     /**
-     * Initializes a new {@linkplain MagicDrawImpactViewContextMenu}
+     * Initializes a new {@linkplain ClonedReferenceElement}
+     * 
+     * @param stereotypeService the {@linkplain IStereotypeService}
+     * @param original the {@linkplain Class} original reference
      */
-    public MagicDrawImpactViewContextMenu()
+    ClonedReferenceRequirement(IStereotypeService stereotypeService, Class original)
     {
-        super(null);
+        super(original, SysMLProfile.getInstance(original).getRequirement(), stereotypeService, "Id", "Text");
     }
 }

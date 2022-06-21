@@ -212,7 +212,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -324,7 +324,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                         .map(x -> x.clone(false))
                         .orElseGet(this.CreateBinaryRelationship(interfaceRealizationOfInterfaceBlock.getLeft(), portElementUsage.getRight(), elementUsage));
                 
-                this.Logger.debug(String.format("BinaryRelationShip %s is linking element %s and element %s", relationship.getName(), portElementUsage.getRight().getUserFriendlyName(), elementUsage.getUserFriendlyName()));
+                this.logger.debug(String.format("BinaryRelationShip %s is linking element %s and element %s", relationship.getName(), portElementUsage.getRight().getUserFriendlyName(), elementUsage.getUserFriendlyName()));
                 portElementUsage.getMiddle().GetRelationships().add(relationship);
             }
         }
@@ -631,7 +631,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             
             if (!this.stereotypeService.IsValueProperty(property))
             {
-                this.Logger.error(String.format("Coulnd map property %s, since it is not a value property", property.getName()));
+                this.logger.error(String.format("Coulnd map property %s, since it is not a value property", property.getName()));
                 continue;
             }
             
@@ -666,7 +666,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 }
                 else
                 {
-                    this.Logger.error(String.format("Coulnd create ParameterType %s", property.getName()));
+                    this.logger.error(String.format("Coulnd create ParameterType %s", property.getName()));
                     continue;
                 }
             }   
@@ -686,7 +686,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
         }
         
-        this.Logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
+        this.logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
     }
 
     /**
@@ -703,7 +703,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             Pair<String, String> scaleAndUnit = this.GetScaleAndUnit(property);
             String unitName = scaleAndUnit.getRight();
 
-            this.Logger.debug(String.format("Got scaleAnUnit [%s] [%s]", scaleAndUnit.getLeft(), scaleAndUnit.getRight()));
+            this.logger.debug(String.format("Got scaleAnUnit [%s] [%s]", scaleAndUnit.getLeft(), scaleAndUnit.getRight()));
             
             if(unitName == null)
             {
@@ -720,7 +720,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 
                 if(scale != null) 
                 {
-                    this.Logger.debug(String.format("Parameter [%s] Scale has changed for [%s]", parameter.getParameterType().getName(), scale.getName()));
+                    this.logger.debug(String.format("Parameter [%s] Scale has changed for [%s]", parameter.getParameterType().getName(), scale.getName()));
                     
                     parameter.setScale(scale);
                 }
@@ -732,7 +732,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                     {
                         MeasurementScale newScale = findScaleFunction.apply((QuantityKind)refParameterType.Get());
 
-                        this.Logger.debug(String.format("Parameter [%s] Scale has changed for [%s]", 
+                        this.logger.debug(String.format("Parameter [%s] Scale has changed for [%s]", 
                                 parameter.getParameterType().getName(), newScale.getName()));
                         
                         parameter.setScale(newScale);
@@ -752,7 +752,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
     {
         if(!(partProperty.getType() instanceof Class))
         {
-            this.Logger.error(String.format("The Part Property %s is not correctly typed", partProperty.getName()));
+            this.logger.error(String.format("The Part Property %s is not correctly typed", partProperty.getName()));
             return;
         }
         
@@ -825,7 +825,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         
         for (ParameterValueSet valueSet : parameter.getValueSet())
         {
-            this.Logger.debug(String.format("Parameter [%s] value is being updated with [%s]", parameter.getParameterType().getName(), StringUtils.isBlank(value) ? "-" : value));
+            this.logger.debug(String.format("Parameter [%s] value is being updated with [%s]", parameter.getParameterType().getName(), StringUtils.isBlank(value) ? "-" : value));
             valueSet.setManual(new ValueArray<>(Arrays.asList(StringUtils.isBlank(value) ? "-" : value), String.class));
         }
     }
@@ -927,7 +927,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 }
                 else
                 {
-                    this.Logger.error(String.format("The property %s isn't supported by the adapter because it is %s or %s", property.getName(), valueSpecification.getHumanType(), valueSpecification.getHumanName()));
+                    this.logger.error(String.format("The property %s isn't supported by the adapter because it is %s or %s", property.getName(), valueSpecification.getHumanType(), valueSpecification.getHumanName()));
                 }
                                 
                 if(parameterType != null)
@@ -951,8 +951,8 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         }
         catch(Exception exception)
         {
-            this.Logger.error(String.format("Could not create the parameter type with the name: %s, because %s", property.getName(), exception));
-            this.Logger.catching(exception);
+            this.logger.error(String.format("Could not create the parameter type with the name: %s, because %s", property.getName(), exception));
+            this.logger.catching(exception);
             return false;
         }
     }
@@ -981,7 +981,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             
             if(!this.TryCreateOrGetMeasurementScale(property.getDefaultValue(), property, refScale))
             {
-                this.Logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", property.getName()));
+                this.logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", property.getName()));
                 return false;
             }
             
@@ -1007,7 +1007,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         
         if(!this.TryCreateOrGetMeasurementScale(property.getDefaultValue(), property, refScale))
         {
-            this.Logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", property.getName()));
+            this.logger.error(String.format("Could not map the property %s because no measurement scale could be found or created", property.getName()));
             return null;
         }
 
@@ -1079,7 +1079,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         Pair<String, String> scaleAndUnit = this.GetScaleAndUnit(property);
         String scaleName = scaleAndUnit.getRight();
 
-        this.Logger.debug(String.format("Got scaleAnUnit [%s] [%s]", scaleAndUnit.getLeft(), scaleAndUnit.getRight()));
+        this.logger.debug(String.format("Got scaleAnUnit [%s] [%s]", scaleAndUnit.getLeft(), scaleAndUnit.getRight()));
         
         if(scaleAndUnit.getRight() == null)
         {
@@ -1155,7 +1155,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         this.MapCategory(elementDefinition, this.isActiveCategoryNames, block.isActive(), false);
         this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, this.stereotypeService.IsEncapsulated(block), true);
         
-        this.Logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
+        this.logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
     }
 
     /**
@@ -1193,12 +1193,12 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             }
             else
             {
-                this.Logger.debug(String.format("The Category %s could not be found or created for the element %s", categoryNames.getLeft(), elementDefinition.getName()));
+                this.logger.debug(String.format("The Category %s could not be found or created for the element %s", categoryNames.getLeft(), elementDefinition.getName()));
             }
         }
         catch(Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
         }
     }
 }

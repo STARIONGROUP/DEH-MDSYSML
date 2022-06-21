@@ -77,12 +77,12 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         this.transactionService = transactionService;
         this.stereotypeService = stereotypeService;
 
-        this.HubController.GetIsSessionOpenObservable()
+        this.hubController.GetIsSessionOpenObservable()
         .subscribe(x -> 
         {
             if(!x)
             {
-                this.Correspondences.clear();
+                this.correspondences.clear();
                 this.SetExternalIdentifierMap(new ExternalIdentifierMap());
             }
         });
@@ -121,7 +121,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
      */
     private boolean TryGetMappedElement(Class element, Ref<IMappedElementRowViewModel> refMappedElementRowViewModel)
     {
-        Optional<ImmutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.Correspondences.stream()
+        Optional<ImmutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.correspondences.stream()
                 .filter(x -> AreTheseEquals(x.middle.Identifier, element.getID()))
                 .findFirst();
         
@@ -142,11 +142,11 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
                     ? this.transactionService.Clone(element) 
                     : element, mappingDirection);
             
-            if(this.HubController.TryGetThingById(internalId, refElementDefinition))
+            if(this.hubController.TryGetThingById(internalId, refElementDefinition))
             {
                 mappedElement.SetHubElement(refElementDefinition.Get().clone(false));
             }
-                        
+
             refMappedElementRowViewModel.Set(mappedElement);
         }
         else if(this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
@@ -158,7 +158,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
                     ? this.transactionService.Clone(element) 
                     : element, mappingDirection);
 
-            if(this.HubController.TryGetThingById(internalId, refHubRequirement))
+            if(this.hubController.TryGetThingById(internalId, refHubRequirement))
             {
                 mappedElement.SetHubElement(refHubRequirement.Get().clone(true));
             }

@@ -107,7 +107,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -144,14 +144,14 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      */
     private void UpdateProperties(cdp4common.engineeringmodeldata.Requirement hubRequirement, Class dstRequirement)
     {
-        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
+        this.logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
                 this.transactionService.GetRequirementText(dstRequirement)));
         
         this.transactionService.SetRequirementId(dstRequirement, hubRequirement.getShortName());
         dstRequirement.setName(hubRequirement.getName());
         this.UpdateOrCreateDefinition(hubRequirement, dstRequirement);
         
-        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
+        this.logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
                 this.transactionService.GetRequirementText(dstRequirement)));
     }
 

@@ -110,7 +110,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -152,7 +152,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 
                 if(!refRequirementsSpecification.HasValue())
                 {
-                    this.Logger.error(
+                    this.logger.error(
                             String.format("The mapping of the current requirement %s is not possible, because no eligible parent could be found current package name %s", 
                                     mappedRequirement.GetDstElement().getName(), mappedRequirement.GetDstElement().getOwner().getHumanName()));
                     
@@ -166,7 +166,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 
                 if(!TryCreateRelevantGroupsAndTheRequirement(mappedRequirement.GetDstElement(), parentElements, refRequirementsSpecification, refRequirementsGroup, refRequirement))
                 {
-                    this.Logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
+                    this.logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
                 }
                 
                 if(refRequirement.HasValue())
@@ -178,7 +178,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
             }
             catch(Exception exception)
             {
-                this.Logger.catching(exception);
+                this.logger.catching(exception);
             }
         }
     }
@@ -229,7 +229,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
                 {                
                     if(!this.TryGetOrCreateRequirementGroup((Package)element, refRequirementsSpecification, refRequirementsGroup))
                     {
-                        this.Logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
+                        this.logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
                                 requirement.getName(), ((Package)element).getName()));
                         
                         break;
@@ -304,7 +304,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
             
             if(requirementType != null)
             {
-                this.Logger.debug(String.format("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType()));
+                this.logger.debug(String.format("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType()));
                 this.MapCategory(requirement, requirementType.name(), ClassKind.Requirement);
             }
         }

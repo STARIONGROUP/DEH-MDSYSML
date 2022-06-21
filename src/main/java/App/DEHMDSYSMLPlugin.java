@@ -62,6 +62,8 @@ import Services.MagicDrawSession.MagicDrawProjectEventListener;
 import Services.MagicDrawSession.MagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MagicDrawTransaction.MagicDrawTransactionService;
+import Services.MagicDrawTransaction.Clones.CloneReferenceService;
+import Services.MagicDrawTransaction.Clones.ICloneReferenceService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MagicDrawUILog.MagicDrawUILogService;
 import Services.Mapping.IMapCommandService;
@@ -100,6 +102,10 @@ import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewMod
 import ViewModels.MappingListView.MagicDrawMappingListViewViewModel;
 import ViewModels.MappingListView.Interfaces.IMappingListViewViewModel;
 
+/**
+ * The {@linkplain DEHMDSYSMLPlugin} is the {@linkplain Plugin} class, it is the entry point for the adapter
+ */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class DEHMDSYSMLPlugin extends Plugin
 {
     /**
@@ -147,7 +153,7 @@ public class DEHMDSYSMLPlugin extends Plugin
                 ActionsConfiguratorsManager.getInstance().addMainToolbarConfigurator(configurator);
                 
                 MapAction mapAction = AppContainer.Container.getComponent(MapAction.class);
-                
+
                 BrowserContextAMConfigurator configuratorContext = new BrowserContextAMConfigurator()
                 {
                     @Override
@@ -231,6 +237,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(IMagicDrawSelectionService.class, MagicDrawSelectionService.class);
             AppContainer.Container.addComponent(IMapCommandService.class, MapCommandService.class);
             AppContainer.Container.addComponent(IStereotypeService.class, StereotypeService.class);
+            AppContainer.Container.addComponent(ICloneReferenceService.class, CloneReferenceService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawTransactionService.class, MagicDrawTransactionService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawSessionService.class, MagicDrawSessionService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawLocalExchangeHistoryService.class, MagicDrawLocalExchangeHistoryService.class);

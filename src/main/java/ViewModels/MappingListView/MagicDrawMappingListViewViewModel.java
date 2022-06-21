@@ -93,12 +93,12 @@ public class MagicDrawMappingListViewViewModel extends MappingListViewViewModel<
      */
     private Collection<Triple<? extends Class, MappingDirection, ? extends Thing>> SortMappedElements()
     {
-        ArrayList<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> allElements = new ArrayList<>(this.dstController.GetHubMapResult());            
+        ArrayList<MappedElementRowViewModel<DefinedThing, Class>> allElements = new ArrayList<>(this.dstController.GetHubMapResult());            
         allElements.addAll(this.dstController.GetDstMapResult());
         
         ArrayList<Triple<? extends Class, MappingDirection, ? extends Thing>> result = new ArrayList<>();
         
-        for (MappedElementRowViewModel<? extends DefinedThing, ? extends Class> mappedElement : allElements)
+        for (MappedElementRowViewModel<DefinedThing, Class> mappedElement : allElements)
         {
             if(mappedElement.GetMappingDirection() == MappingDirection.FromDstToHub)
             {

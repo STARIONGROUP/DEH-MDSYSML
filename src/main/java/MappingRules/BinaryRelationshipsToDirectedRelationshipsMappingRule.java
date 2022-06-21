@@ -102,7 +102,7 @@ public class BinaryRelationshipsToDirectedRelationshipsMappingRule extends HubTo
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -153,7 +153,7 @@ public class BinaryRelationshipsToDirectedRelationshipsMappingRule extends HubTo
                 ? this.transactionService.GetClone(targetElement).GetOriginal()
                 : targetElement);
                 
-        this.Logger.debug(String.format("Relationship being mapped : [%s] => [%s]", sourceElement.getName(), targetElement.getName()));
+        this.logger.debug(String.format("Relationship being mapped : [%s] => [%s]", sourceElement.getName(), targetElement.getName()));
         
         return newTrace;
     }

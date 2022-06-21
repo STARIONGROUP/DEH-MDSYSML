@@ -191,7 +191,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     @Override
     public boolean CanLoadMappingConfiguration()
     {
-        return this.HubController.GetIsSessionOpen();
+        return this.hubController.GetIsSessionOpen();
     }
 
     /**
@@ -222,7 +222,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
         this.magicDrawImpactViewViewModel = magicDrawImpactViewViewModel;
         this.logService = logService;
         this.sessionService = sessionService;
-        this.isSessionOpen = this.HubController.GetIsSessionOpenObservable();
+        this.isSessionOpen = this.hubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;
     }
@@ -235,12 +235,12 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     @Override
     public List<String> GetSavedMappingconfigurationCollection()
     {
-        if(!this.HubController.GetIsSessionOpen())
+        if(!this.hubController.GetIsSessionOpen())
         {
             return new ArrayList<>();
         }
         
-        List<String> externalIdentifierMaps = this.HubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
+        List<String> externalIdentifierMaps = this.hubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
                 .stream()
                 .map(x -> x.getName())
                 .sorted()
@@ -278,7 +278,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
             return false;
         }
 
-        this.mappingConfigurationService.SetExternalIdentifierMap(this.HubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
+        this.mappingConfigurationService.SetExternalIdentifierMap(this.hubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
                 .stream().filter(x -> AreTheseEquals(x.getName(), configurationName))
                 .findFirst()
                 .orElse(this.CreateNewMappingConfiguration(configurationName)));

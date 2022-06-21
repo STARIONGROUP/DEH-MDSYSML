@@ -119,7 +119,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
             .subscribe(x -> this.UpdateBrowserTrees(this.sessionService.HasAnyOpenSession()), this.logger::catching);
         
         this.dstController.GetHubMapResult()
-            .IsEmpty()
+            .IsEmptyObservable()
             .subscribe(isEmpty ->
             {
                 if(isEmpty)
@@ -497,7 +497,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
         }
         else
         {
-            this.dstController.GetSelectedHubMapResultForTransfer().Remove(rowViewModel.GetElement());
+            this.dstController.GetSelectedHubMapResultForTransfer().RemoveOne(rowViewModel.GetElement());
         }
     }
 }

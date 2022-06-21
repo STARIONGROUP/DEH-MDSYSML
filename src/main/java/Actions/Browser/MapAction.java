@@ -41,6 +41,7 @@ import Views.MagicDrawHubBrowserPanel;
  * The {@link MapAction} is a {@link MDAction} that is to be added to the Cameo/Magic draw element browser context menu
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MapAction extends DefaultBrowserAction
 {
     /**
