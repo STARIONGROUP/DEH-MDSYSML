@@ -44,7 +44,7 @@ public class ValuePropertyRowViewModel extends PropertyRowViewModel
     public ValuePropertyRowViewModel(IElementRowViewModel<?> parent, Property property)
     {
         super(parent, property);
-        this.SetName(String.format("%s = %s", this.GetName(), StereotypeService.Current.GetValueRepresentation(property)));
+        this.SetName(String.format("%s = %s", this.GetName(), StereotypeService.Current().GetValueRepresentation(property)));
     }
 
     /**

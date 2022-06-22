@@ -92,7 +92,7 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
         {
             Class classElement = (Class)element;
             
-            if(StereotypeService.Current.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
+            if(StereotypeService.Current().DoesItHaveTheStereotype(classElement, Stereotypes.Block))
             {
                 this.containedRows.add(new BlockRowViewModel(this, classElement));
             }

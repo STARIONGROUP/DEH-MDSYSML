@@ -47,6 +47,7 @@ import com.nomagic.magicdraw.ui.browser.Tree;
 
 import Actions.Browser.MapAction;
 import Actions.ToolBar.MagicDrawAdapterRibbonActionCategory;
+import Annotations.ExludeFromCodeCoverageGeneratedReport;
 import DstController.DstController;
 import DstController.IDstController;
 import HubController.IHubController;
@@ -122,12 +123,13 @@ public class DEHMDSYSMLPlugin extends Plugin
     {
         this.RegisterDependencies();
 
-	    SwingUtilities.invokeLater(() -> 
+	    SwingUtilities.invokeLater(() ->            
 	    {
-	        try
+	        try                 
 	        {
 	            AMConfigurator configurator = new AMConfigurator()
                 {
+	    	    	@Annotations.ExludeFromCodeCoverageGeneratedReport
 	                public void configure(ActionsManager manager)
 	                {
 	                   NMAction found = manager.getActionFor(ActionsID.NEW_PROJECT);
@@ -154,15 +156,17 @@ public class DEHMDSYSMLPlugin extends Plugin
                 
                 MapAction mapAction = AppContainer.Container.getComponent(MapAction.class);
 
-                BrowserContextAMConfigurator configuratorContext = new BrowserContextAMConfigurator()
+                BrowserContextAMConfigurator configuratorContext = new  BrowserContextAMConfigurator()
                 {
                     @Override
+                    @ExludeFromCodeCoverageGeneratedReport
                     public int getPriority()
                     {
                         return 0;
                     }
 
                     @Override
+                    @ExludeFromCodeCoverageGeneratedReport
                     public void configure(ActionsManager manager, Tree tree)
                     {
                         ActionsCategory category = new ActionsCategory(null, "DEH-MDSYSML action category");

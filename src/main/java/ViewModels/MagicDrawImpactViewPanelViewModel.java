@@ -37,6 +37,7 @@ import HubController.IHubController;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.NavigationService.INavigationService;
 import Utils.Tasks.Task;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.Interfaces.IImpactViewContextMenuViewModel;
@@ -49,6 +50,7 @@ import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
 import static Utils.Operators.Operators.AreTheseEquals;
 
 import io.reactivex.Observable;
+import net.bytebuddy.asm.Advice.This;
 
 /**
  * The {@linkplain MagicDrawImpactViewPanelViewModel} is the DST adapter implementation of the 
@@ -151,6 +153,11 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     private IRequirementImpactViewViewModel requirementDefinitionImpactViewViewModel;
 
     /**
+     * The {@linkplain INavigationService}
+     */
+	private INavigationService navigationService;
+
+    /**
      * Gets the {@linkplain IRequirementImpactViewViewModel} requirementDefinitionImpactViewViewModel
      * 
      * @return the {@linkplain IRequirementImpactViewViewModel}
@@ -212,7 +219,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
             IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel,
             ITransferControlViewModel transferControlViewModel, IImpactViewContextMenuViewModel contextMenuViewModel,
             IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel,
-            IMagicDrawUILogService logService, IMagicDrawSessionService sessionService)
+            IMagicDrawUILogService logService, IMagicDrawSessionService sessionService, INavigationService navigationService)
     {
         super(hubController);
         this.dstController = dstController;
@@ -225,6 +232,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
         this.isSessionOpen = this.hubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;
+        this.navigationService = navigationService;
     }
 
     /**
@@ -299,7 +307,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     private ExternalIdentifierMap CreateNewMappingConfiguration(String configurationName)
     {
         return this.mappingConfigurationService
-                .CreateExternalIdentifierMap(configurationName, this.sessionService.GetProject().getName()
+                .CreateExternalIdentifierMap(configurationName, this.sessionService.GetProjectName()
                         , this.CheckForExistingTemporaryMapping());
     }
 
@@ -312,7 +320,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     {
         return this.mappingConfigurationService.IsTheCurrentIdentifierMapTemporary() 
                 && !this.mappingConfigurationService.GetExternalIdentifierMap().getCorrespondence().isEmpty()
-                && JOptionPane.showConfirmDialog(null, "You have some mapping defined already, do you want to keep it?", "", JOptionPane.YES_NO_OPTION) 
+                && this.navigationService.ShowConfirmDialog("You have some mapping defined already, do you want to keep it?", "", JOptionPane.YES_NO_OPTION) 
                     == JOptionPane.YES_OPTION;
     }
 }

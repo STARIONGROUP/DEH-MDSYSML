@@ -96,6 +96,14 @@ public interface IStereotypeService
      * @return a {@linkplain boolean}
      */
     boolean IsPartProperty(Property property);
+    
+    /**
+     * Gets a value indicating whether the provided {@linkplain Property} is a reference property
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain boolean}
+     */
+	boolean IsReferenceProperty(Property property);
 
     /**
      * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain Stereotype} {@linkplain String} name

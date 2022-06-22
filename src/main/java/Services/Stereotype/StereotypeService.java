@@ -65,21 +65,42 @@ import Utils.Stereotypes.Stereotypes;
 @Annotations.ExludeFromCodeCoverageGeneratedReport
 public class StereotypeService implements IStereotypeService
 {
-    /**
-     * Singleton implementation of this service.
-     * 
-     * MagicDraw API exposes static helpers for Stereotype which are used in different places such as RowViewModels, which should not depend on services.
-     * This convenient property, is short for resolving the service in the {@linkplain AppContainer}
-     */
-    public static final IStereotypeService Current;
-    
-    /**
-     * Sets the final {@linkplain #Current} property
-     */
-    static
-    {
-        Current = new StereotypeService(AppContainer.Container.getComponent(IMagicDrawSessionService.class));
-    }
+	/**
+	* Singleton implementation of this service.
+	*
+	* MagicDraw API exposes static helpers for Stereotype which are used in different places such as RowViewModels, which should not depend on services.
+	* This convenient property, is short for resolving the service in the {@linkplain AppContainer}
+	*/
+	private static IStereotypeService current;
+
+	/**
+	* Sets the final {@linkplain #Current} property
+	*/
+	static
+	{
+		current = new StereotypeService(AppContainer.Container.getComponent(IMagicDrawSessionService.class));
+	}
+
+	/**
+	* Gets the {@linkplain current}
+	*
+	* @return instance the {@linkplain IStereotypeService}
+	*/
+	public static IStereotypeService Current()
+	{
+		return StereotypeService.current;
+	}
+
+	/**
+	* Sets the {@linkplain current}.
+	* Use this setter only for test purpose.
+	*
+	* @param instance the {@linkplain IStereotypeService}
+	*/
+	public static void SetCurrent(IStereotypeService instance)
+	{
+		StereotypeService.current = instance;
+	}
     
     /**
      * The current class logger
@@ -289,6 +310,17 @@ public class StereotypeService implements IStereotypeService
         return MDCustomizationForSysMLProfile.isValueProperty(property);
     }
     
+    /**
+     * Gets a value indicating whether the provided {@linkplain Property} is a reference property
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain boolean}
+     */
+	@Override
+	public boolean IsReferenceProperty(Property property)
+	{
+		return MDCustomizationForSysMLProfile.isReferenceProperty(property);
+	}
     
     /**
      * Gets value representation string out of the specified {@linkplain LiteralNumericValue}

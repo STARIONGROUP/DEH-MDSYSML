@@ -41,8 +41,8 @@ public class MappingListViewSysMLRequirementRowViewModel extends MappingListView
      */
     public MappingListViewSysMLRequirementRowViewModel(Class requirement)
     {
-        super(requirement, requirement.getID(), String.format("%s-%s", StereotypeService.Current.GetRequirementId(requirement), 
-                requirement.getName()), StereotypeService.Current.GetRequirementText(requirement), ClassKind.Requirement);
+        super(requirement, requirement.getID(), String.format("%s-%s", StereotypeService.Current().GetRequirementId(requirement), 
+                requirement.getName()), StereotypeService.Current().GetRequirementText(requirement), ClassKind.Requirement);
     }
     
     /**

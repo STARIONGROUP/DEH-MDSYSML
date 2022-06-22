@@ -41,7 +41,7 @@ public class MappingListViewSysMLElementCellRenderer extends MappingListViewElem
      */
     public MappingListViewSysMLElementCellRenderer()
     {
-        super(x -> StereotypeService.Current.DoesItHaveTheStereotype(x, Stereotypes.Block) 
+        super(x -> StereotypeService.Current().DoesItHaveTheStereotype(x, Stereotypes.Block) 
                 ? new MappingListViewBlockRowViewModel(x)
                 : new MappingListViewSysMLRequirementRowViewModel(x));
     }

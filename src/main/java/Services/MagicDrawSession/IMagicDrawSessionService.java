@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski
  *
  * This file is part of DEH-MDSYSML
  *
@@ -26,62 +26,66 @@ package Services.MagicDrawSession;
 import java.util.Collection;
 
 import com.nomagic.magicdraw.core.Project;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
-import ViewModels.Rows.MappedElementRowViewModel;
-import cdp4common.commondata.Thing;
 import io.reactivex.Observable;
 
 /**
- * The {@linkplain IMagicDrawSessionService} is the main interface definition for {@linkplain MagicDrawSessionService}
+ * The {@linkplain IMagicDrawSessionService} is the main interface definition
+ * for {@linkplain MagicDrawSessionService}
  */
 public interface IMagicDrawSessionService
 {
-    /**
-    * Gets an {@linkplain Observable} of value indicating whether there is any session open
-    * 
-    * @return an {@linkplain Observable} of {@linkplain Boolean}
-    */
-   Observable<Boolean> HasAnyOpenSessionObservable();
+	/**
+	 * Gets an {@linkplain Observable} of value indicating whether there is any
+	 * session open
+	 * 
+	 * @return an {@linkplain Observable} of {@linkplain Boolean}
+	 */
+	Observable<Boolean> HasAnyOpenSessionObservable();
 
-   /**
-    * Gets the value emitted by {@linkplain HasAnyOpenSessionObservable} indicating whether there is any session open
-    * 
-    * @return a {@linkplain Boolean} value
-    */
-   boolean HasAnyOpenSession();
+	/**
+	 * Gets the value emitted by {@linkplain HasAnyOpenSessionObservable} indicating
+	 * whether there is any session open
+	 * 
+	 * @return a {@linkplain Boolean} value
+	 */
+	boolean HasAnyOpenSession();
 
-   /**
-    * Gets the {@linkplain Observable} of {@linkplain Boolean} that indicates when the emitted Project gets saved
-    * 
-    * @return an {@linkplain Observable} of {@linkplain Boolean}
-    */
-   Observable<Boolean> SessionUpdated();
+	/**
+	 * Gets the {@linkplain Observable} of {@linkplain Boolean} that indicates when
+	 * the emitted Project gets saved
+	 * 
+	 * @return an {@linkplain Observable} of {@linkplain Boolean}
+	 */
+	Observable<Boolean> SessionUpdated();
 
-   /**
-    * Gets the {@linkplain Project} from the {@linkplain Session}
-    * 
-    * @return a {@linkplain Project}
-    */
-   Project GetProject();
+	/**
+	 * Gets the {@linkplain Project} from the {@linkplain Session}
+	 * 
+	 * @return a {@linkplain Project}
+	 */
+	Project GetProject();
 
-    /**
-     * Gets the open project element
-     * 
-     * @return a {@linkplain Collection} of {@linkplain Element}
-     */
-    Collection<Element> GetProjectElements();
+	/**
+	 * Gets the {@linkplain Project} name from the {@linkplain Session}
+	 * 
+	 * @return a name of the {@linkplain Project}
+	 */
+	String GetProjectName();
 
-    /**
-     * Gets the project root package
-     * 
-     * @return a {@linkplain Package}
-     */
-    Package GetModel();
+	/**
+	 * Gets the open project element
+	 * 
+	 * @return a {@linkplain Collection} of {@linkplain Element}
+	 */
+	Collection<Element> GetProjectElements();
+
+	/**
+	 * Gets the project root package
+	 * 
+	 * @return a {@linkplain Package}
+	 */
+	Package GetModel();
 }

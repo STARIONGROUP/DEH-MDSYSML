@@ -120,4 +120,15 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
     {
         return this.GetProject().getPrimaryModel();
     }
+
+    /**
+     * Gets the {@linkplain Project} name from the {@linkplain Session}
+     * 
+     * @return a name of the {@linkplain Project}
+     */
+	@Override
+	public String GetProjectName()
+	{
+		return this.GetProject().getName();
+	}
 }
