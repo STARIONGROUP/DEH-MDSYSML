@@ -701,6 +701,7 @@ public final class DstController implements IDstController
         catch (Exception exception)
         {
             this.logService.Append(exception.toString(), exception);
+            this.logger.catching(exception);
             return false;
         }
         finally
@@ -743,6 +744,8 @@ public final class DstController implements IDstController
      */
     private void PrepareStates()
     {
+        this.logger.debug(String.format("Modified regions size: %s", this.transactionService.GetStatesModifiedRegions().size()));
+
         if(this.transactionService.GetStatesModifiedRegions().isEmpty())
         {
             return;
@@ -766,6 +769,8 @@ public final class DstController implements IDstController
         
         for (Entry<State, List<Pair<Region, ChangeKind>>> stateAndModifiedRegions : this.transactionService.GetStatesModifiedRegions())
         {
+            this.logger.debug(String.format("%s regions: %s", stateAndModifiedRegions.getKey().getName(), stateAndModifiedRegions.getValue().size()));
+            
             for (Pair<Region, ChangeKind> regionAndModification : stateAndModifiedRegions.getValue())
             {
                 switch(regionAndModification.getRight())
@@ -786,6 +791,8 @@ public final class DstController implements IDstController
             {
                 mainRegion.getOwnedElement().add(stateAndModifiedRegions.getKey());
             }
+            
+            this.logger.debug(String.format("Dependencies: %s", stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget().size()));
             
             for (Dependency dependency : StreamExtensions.OfType(stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget(), Dependency.class))
             {
@@ -811,11 +818,11 @@ public final class DstController implements IDstController
         
         for (Abstraction relationship : transferableRelationships)
         {
-            if(this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().stream()
+            if(this.sessionService.GetModel().get_relationshipOfRelatedElement().stream()
                     .noneMatch(x -> AreTheseEquals(x.getID(), relationship)))
             {
-                this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().add(relationship);
-                relationship.setOwner(this.sessionService.GetProject().getPrimaryModel());
+                this.sessionService.GetModel().get_relationshipOfRelatedElement().add(relationship);
+                relationship.setOwner(this.sessionService.GetModel());
                 this.exchangeHistory.Append(relationship, ChangeKind.CREATE);
             }
         }
@@ -858,7 +865,7 @@ public final class DstController implements IDstController
         }
         else
         {
-            this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(element);
+            this.sessionService.GetModel().getOwnedElement().add(element);
             this.exchangeHistory.Append(element, ChangeKind.CREATE);
         }
         
@@ -882,7 +889,7 @@ public final class DstController implements IDstController
         {
             Element portDefinition = usageRelationship.getOwner();
             portDefinition.get_relationshipOfRelatedElement().remove(usageRelationship);
-            this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().add(usageRelationship);
+            this.sessionService.GetModel().get_relationshipOfRelatedElement().add(usageRelationship);
         }
     }
 
@@ -904,7 +911,7 @@ public final class DstController implements IDstController
                 
                 if(optionalOriginalProperty.isPresent())
                 {
-                    ModelElementsManager.getInstance().removeElement(optionalOriginalProperty.get());
+                    this.transactionService.Delete(optionalOriginalProperty.get());
                 }
                 
                 original.getOwnedAttribute().add(property);    
@@ -937,18 +944,18 @@ public final class DstController implements IDstController
                     .filter(x -> this.transactionService.IsNew(x))
                     .collect(Collectors.toList()))
             {
-                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
                 {
-                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(interfaceToAdd);
+                    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
                     this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
                 }
             }
             
             for (Usage usage : usagesRelationships)
             {
-                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), usage.getID())))
+                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), usage.getID())))
                 {
-                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(usage);
+                    this.sessionService.GetModel().getOwnedElement().add(usage);
                 }                
             }
             
@@ -957,9 +964,9 @@ public final class DstController implements IDstController
                     .filter(x -> this.transactionService.IsNew(x))
                     .collect(Collectors.toList()))
             {
-                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
                 {
-                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(interfaceToAdd);
+                    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
                     this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
                 }                
             }
@@ -1015,12 +1022,12 @@ public final class DstController implements IDstController
         }
         else
         {
-            if(!this.sessionService.GetProject().getPrimaryModel().getOwnedElement().removeIf(x -> AreTheseEquals(((MDObject) x).getID(), containerToUpdate.getID())))
+            if(!this.sessionService.GetModel().getOwnedElement().removeIf(x -> AreTheseEquals(((MDObject) x).getID(), containerToUpdate.getID())))
             {
                 this.exchangeHistory.Append(containerToUpdate, ChangeKind.CREATE);
             }
             
-            this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(containerToUpdate);
+            this.sessionService.GetModel().getOwnedElement().add(containerToUpdate);
 
             this.exchangeHistory.Append(requirement, ChangeKind.CREATE);
         }
@@ -1196,9 +1203,6 @@ public final class DstController implements IDstController
             {
                 case ElementDefinition:
                     this.PrepareElementDefinitionForTransfer(iterationClone, transaction, (ElementDefinition)thing);
-                    break;
-                case RequirementsSpecification:
-                    this.PrepareRequirementForTransfer(iterationClone, transaction, (RequirementsSpecification)thing);
                     break;
                 case Requirement:
                     this.PrepareRequirementForTransfer(iterationClone, transaction, thing.getContainerOfType(RequirementsSpecification.class));

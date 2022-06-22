@@ -33,7 +33,6 @@ import cdp4common.Version;
 /**
  * The {@linkplain MagicDrawAdapterInfoService} is the MagicDraw specific implementation of the {@linkplain IAdapterInfoService}
  */
-@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawAdapterInfoService extends AdapterInfoService implements IAdapterInfoService
 {
     /**

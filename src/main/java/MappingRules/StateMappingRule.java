@@ -463,8 +463,11 @@ public class StateMappingRule implements IStateMappingRule
 
         List<State> existingDependentStates = StreamExtensions
                 .OfType(property.get_directedRelationshipOfSource().stream(), Dependency.class)
-                .map(x -> StreamExtensions.OfType(x.getTarget().stream(), State.class).findFirst().orElse(null))
-                .filter(x -> x != null).collect(Collectors.toList());
+                .map(x -> StreamExtensions.OfType(x.getTarget().stream(), State.class)
+                        .findFirst()
+                        .orElse(null))
+                .filter(x -> x != null)
+                .collect(Collectors.toList());
 
         for (PossibleFiniteStateList possibleFiniteState : parameter.getStateDependence().getPossibleFiniteStateList())
         {
@@ -492,6 +495,8 @@ public class StateMappingRule implements IStateMappingRule
         Optional<State> optionalState = existingDependentStates.stream()
                 .filter(x -> namePredicate.test(x))
                 .findFirst();
+
+        this.logger.debug(String.format("GetOrCreateStateAndDependency: is present on line 499? %s [%s]", optionalState.isPresent(), possibleFiniteState.getName()));
         
         if(!optionalState.isPresent())
         {        

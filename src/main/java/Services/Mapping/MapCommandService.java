@@ -156,7 +156,7 @@ public class MapCommandService implements IMapCommandService
         Observable.combineLatest(this.sessionService.HasAnyOpenSessionObservable().startWith(this.sessionService.HasAnyOpenSession()), 
                     this.hubController.GetIsSessionOpenObservable().startWith(this.hubController.GetIsSessionOpen()),
                 (hasAnyOpenSession, isHubSessionOpen) -> hasAnyOpenSession && isHubSessionOpen)
-        .subscribe(x -> this.canExecute.Value(x));
+        .subscribe(x -> this.canExecute.Value(x), x -> this.logger.catching(x));
     }
     
     /**
@@ -197,9 +197,6 @@ public class MapCommandService implements IMapCommandService
         
             case FromDstToHub:
                 this.MapFromDstToHub();
-                break;
-
-            default:
                 break;
         }
     }

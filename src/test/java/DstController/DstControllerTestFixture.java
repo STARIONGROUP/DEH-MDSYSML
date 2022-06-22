@@ -39,27 +39,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.emf.common.util.BasicEList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.cache.Cache;
+import com.google.common.collect.ImmutableList;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
+import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.StateMachine;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 
 import Enumerations.MappingDirection;
 import HubController.HubController;
 import HubController.IHubController;
+import MappingRules.BlockToElementMappingRule;
 import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
@@ -72,6 +80,7 @@ import Utils.Stereotypes.HubElementCollection;
 import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawBlockCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
+import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
@@ -80,13 +89,18 @@ import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.ActualFiniteState;
+import cdp4common.engineeringmodeldata.ActualFiniteStateList;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.ElementUsage;
 import cdp4common.engineeringmodeldata.EngineeringModel;
 import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterSwitchKind;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
+import cdp4common.engineeringmodeldata.PossibleFiniteState;
+import cdp4common.engineeringmodeldata.PossibleFiniteStateList;
 import cdp4common.engineeringmodeldata.Requirement;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
@@ -137,6 +151,7 @@ class DstControllerTestFixture
     private Class dstRequirement0;
     private Class dstRequirement1;
     private Class dstRequirement2;
+    private Class block0Cloned;
 
     /**
      * @throws java.lang.Exception
@@ -295,13 +310,17 @@ class DstControllerTestFixture
         this.controller.AddOrRemoveAllFromSelectedThingsToTransfer(ClassKind.Requirement, false);
         when(this.hubController.TrySupplyAndCreateLogEntry(any())).thenReturn(true);
         
-        when(this.hubController.GetIterationTransaction()).thenReturn(Pair.of(new Iteration(), mock(ThingTransaction.class)));
+        ThingTransaction transaction = mock(ThingTransaction.class);
+        
+        when(transaction.getAddedThing()).thenReturn(ImmutableList.of());
+        
+        when(this.hubController.GetIterationTransaction()).thenReturn(Pair.of(new Iteration(), transaction));
         
         assertTrue(this.controller.TransferToHub());
         
         when(this.hubController.TrySupplyAndCreateLogEntry(any())).thenThrow(new NullPointerException());
         assertFalse(this.controller.TransferToHub());
-        assertEquals(0, this.controller.GetDstMapResult().size());
+        assertEquals(5, this.controller.GetDstMapResult().size());
     }
 
     @Test
@@ -337,20 +356,38 @@ class DstControllerTestFixture
     
     @SuppressWarnings("unchecked")
     @Test
-    void VerifyTransferToDst()
+    void VerifylTransferToDst()
     {
         this.SetupDstElements();
         
         MappedElementRowViewModel<? extends DefinedThing, Class> mappedElement0 = new MappedElementDefinitionRowViewModel(this.block0, MappingDirection.FromHubToDst);
-        MappedElementRowViewModel<? extends DefinedThing, Class> mappedElement1 = new MappedRequirementRowViewModel(this.dstRequirement0, MappingDirection.FromHubToDst);
+        MappedElementRowViewModel<? extends DefinedThing, Class> mappedElement1 = new MappedElementDefinitionRowViewModel(this.block1, MappingDirection.FromHubToDst);
+        MappedElementRowViewModel<? extends DefinedThing, Class> mappedElement2 = new MappedRequirementRowViewModel(this.dstRequirement0, MappingDirection.FromHubToDst);
+        MappedElementRowViewModel<? extends DefinedThing, Class> mappedElement3 = new MappedRequirementRowViewModel(this.dstRequirement1, MappingDirection.FromHubToDst);
+        MappedElementRowViewModel<? extends DefinedThing, Class> mappedElement4 = new MappedRequirementRowViewModel(this.dstRequirement2, MappingDirection.FromHubToDst);
         
         this.controller.GetHubMapResult().add((MappedElementRowViewModel<DefinedThing, Class>) mappedElement0);
         this.controller.GetHubMapResult().add((MappedElementRowViewModel<DefinedThing, Class>) mappedElement1);
+        this.controller.GetHubMapResult().add((MappedElementRowViewModel<DefinedThing, Class>) mappedElement2);
+        this.controller.GetHubMapResult().add((MappedElementRowViewModel<DefinedThing, Class>) mappedElement3);
+        this.controller.GetHubMapResult().add((MappedElementRowViewModel<DefinedThing, Class>) mappedElement4);
+        
         this.controller.AddOrRemoveAllFromSelectedThingsToTransfer(null, false);
         
-        when(this.sessionService.GetModel()).thenReturn(mock(Package.class));
+        when(this.transactionService.IsNew(any())).thenReturn(true);
+        
+        Package model = mock(Package.class);
+        when(model.get_directedRelationshipOfTarget()).thenReturn(new ArrayList<>());
+        when(model.getOwnedElement()).thenReturn(new ArrayList<>());
+        when(this.sessionService.GetModel()).thenReturn(model);
         HashMap<State, List<Pair<Region, ChangeKind>>> stateAndModifiedRegions = new HashMap<State, List<Pair<Region, ChangeKind>>>();
-        stateAndModifiedRegions.put(mock(State.class), Arrays.asList(Pair.of(mock(Region.class), ChangeKind.CREATE), Pair.of(mock(Region.class), ChangeKind.CREATE)));
+        State state = mock(State.class);
+        Dependency dependency0 = mock(Dependency.class);
+        when(dependency0.getSupplier()).thenReturn(new ArrayList<>());
+        Dependency dependency1 = mock(Dependency.class);
+        when(dependency1.getSupplier()).thenReturn(new ArrayList<>());
+        when(state.get_directedRelationshipOfTarget()).thenReturn(Arrays.asList(dependency0, dependency1));
+        stateAndModifiedRegions.put(state, Arrays.asList(Pair.of(mock(Region.class), ChangeKind.CREATE), Pair.of(mock(Region.class), ChangeKind.DELETE)));
         when(this.transactionService.GetStatesModifiedRegions()).thenReturn(stateAndModifiedRegions.entrySet());
         when(this.hubController.Refresh()).thenReturn(true);
         
@@ -373,13 +410,39 @@ class DstControllerTestFixture
                 
         when( this.transactionService.Create(StateMachine.class, "Model")).thenReturn(stateMachine);        
         when(this.mappingConfigurationService.IsTheCurrentIdentifierMapTemporary()).thenReturn(true);
-
+        
+        when(this.stereotypeService.DoesItHaveTheStereotype(any(), eq(Stereotypes.Requirement))).thenAnswer(x -> 
+        {
+            Class element = x.getArgument(0, Class.class);            
+            return element == this.dstRequirement0 || element == this.dstRequirement1 || element == this.dstRequirement2;
+        });
+        
+        when(this.stereotypeService.DoesItHaveTheStereotype(any(), eq(Stereotypes.Block))).thenAnswer(x -> 
+        {
+            Class element = x.getArgument(0, Class.class);            
+            return element == this.block0 || element == this.block0Cloned || element == this.block1;
+        });
+                
         assertTrue(this.controller.TransferToDst());
         
-        when(this.transactionService.Commit(any())).thenThrow(new NullPointerException());
+        when(this.transactionService.IsCloned(any())).thenReturn(true);
         
+        when(this.transactionService.GetClone(any())).thenAnswer(x -> 
+        {
+            NamedElement element = x.getArgument(0, NamedElement.class);
+            
+            if(element.getName().equals(block0.getName()))
+            {
+                return this.block0Cloned;
+            }
+                    
+            return element;
+        });
+        
+        assertTrue(this.controller.TransferToDst());
+                
+        when(this.transactionService.Commit(any())).thenThrow(new NullPointerException());        
         assertFalse(this.controller.TransferToDst());
-
     }
 
     @Test
@@ -655,6 +718,46 @@ class DstControllerTestFixture
         this.parameter1.getValueSet().add(valueSet.clone(true));
         this.parameter1.setIid(UUID.randomUUID());
         
+        
+        PossibleFiniteState possibleFiniteState0 = new PossibleFiniteState();
+        PossibleFiniteState possibleFiniteState1 = new PossibleFiniteState();
+        PossibleFiniteState possibleFiniteState2 = new PossibleFiniteState();
+        PossibleFiniteState possibleFiniteState3 = new PossibleFiniteState();
+        PossibleFiniteState possibleFiniteState4 = new PossibleFiniteState();
+        
+        PossibleFiniteStateList possibleFiniteStateList0 = new PossibleFiniteStateList();
+        possibleFiniteStateList0.getPossibleState().add(possibleFiniteState0);
+        possibleFiniteStateList0.getPossibleState().add(possibleFiniteState1);
+        possibleFiniteStateList0.getPossibleState().add(possibleFiniteState2);
+
+        PossibleFiniteStateList possibleFiniteStateList1 = new PossibleFiniteStateList();
+        possibleFiniteStateList0.getPossibleState().add(possibleFiniteState3);
+        possibleFiniteStateList0.getPossibleState().add(possibleFiniteState4);
+        
+        ActualFiniteStateList stateList = new ActualFiniteStateList();
+        stateList.getPossibleFiniteStateList().addAll(Arrays.asList(possibleFiniteStateList0, possibleFiniteStateList1));
+        
+        ActualFiniteState actualState0 = new ActualFiniteState();
+        actualState0.getPossibleState().addAll(Arrays.asList(possibleFiniteState3, possibleFiniteState0));
+        ActualFiniteState actualState1 = new ActualFiniteState();
+        actualState0.getPossibleState().addAll(Arrays.asList(possibleFiniteState3, possibleFiniteState1));
+        ActualFiniteState actualState2 = new ActualFiniteState();
+        actualState0.getPossibleState().addAll(Arrays.asList(possibleFiniteState3, possibleFiniteState2));
+        ActualFiniteState actualState3 = new ActualFiniteState();
+        actualState0.getPossibleState().addAll(Arrays.asList(possibleFiniteState4, possibleFiniteState0));
+        ActualFiniteState actualState4 = new ActualFiniteState();
+        actualState0.getPossibleState().addAll(Arrays.asList(possibleFiniteState4, possibleFiniteState1));
+        ActualFiniteState actualState5 = new ActualFiniteState();
+        actualState0.getPossibleState().addAll(Arrays.asList(possibleFiniteState4, possibleFiniteState2));
+        
+        stateList.getActualState().add(actualState0);
+        stateList.getActualState().add(actualState1);
+        stateList.getActualState().add(actualState2);
+        stateList.getActualState().add(actualState3);
+        stateList.getActualState().add(actualState4);
+        stateList.getActualState().add(actualState5);
+        this.parameter1.setStateDependence(stateList);
+                
         Category elementCategory = new Category();
         elementCategory.setName("elementCategory");
         elementCategory.setShortName("ec");
@@ -683,13 +786,20 @@ class DstControllerTestFixture
         this.elementDefinition0.getParameter().add(parameter0);
         this.elementDefinition0.setOwner(this.domain);
         this.elementDefinition0.getCategory().add(elementCategory);
+        Definition definition = new Definition();
+        definition.setLanguageCode(BlockToElementMappingRule.MDIID);
+        this.elementDefinition0.getDefinition().add(definition);
 
+        ElementUsage elementUsage = new ElementUsage();
+        elementUsage.setElementDefinition(this.elementDefinition0);
+        
         this.elementDefinition1 = new ElementDefinition();
         this.elementDefinition1.setIid(UUID.randomUUID());
-        this.elementDefinition0.setName("elementDefinition1");
-        this.elementDefinition0.setShortName("ed");
-        this.elementDefinition0.getParameter().add(parameter1);
-        this.elementDefinition0.setOwner(this.domain);
+        this.elementDefinition1.setName("elementDefinition1");
+        this.elementDefinition1.setShortName("ed");
+        this.elementDefinition1.getParameter().add(parameter1);
+        this.elementDefinition1.setOwner(this.domain);
+        this.elementDefinition1.getContainedElement().add(elementUsage);
 
         this.iteration.getElement().add(elementDefinition0);
         this.iteration.getElement().add(elementDefinition1);
@@ -697,13 +807,48 @@ class DstControllerTestFixture
     
     private void SetupDstElements()
     {
+        Usage relationship0 = mock(Usage.class);
+        InterfaceRealization relationship1 = mock(InterfaceRealization.class);
+        Interface interface0 = mock(Interface.class);
+        when(relationship1.getContract()).thenReturn(interface0);
+        when(relationship0.getTarget()).thenReturn(Arrays.asList(interface0));
+        
+        Class portProvidingBlock = mock(Class.class);
+        when(portProvidingBlock.get_relationshipOfRelatedElement()).thenReturn(Arrays.asList(relationship0));
+        Class portRealizationBlock = mock(Class.class);
+        when(portRealizationBlock.get_relationshipOfRelatedElement()).thenReturn(Arrays.asList(relationship1));
+        
+        Port port0 = mock(Port.class);
+        when(port0.getType()).thenReturn(portRealizationBlock);
+        
+        Port port1 = mock(Port.class);
+        when(port1.getType()).thenReturn(portProvidingBlock);
+        
+        Property property0 = mock(Property.class);
+        String id = UUID.randomUUID().toString();
+        when(property0.getID()).thenReturn(id);
+        Property property1 = mock(Property.class);
+        when(property1.getID()).thenReturn(id);
+        
         this.block0 = mock(Class.class);
         when(this.block0.getName()).thenReturn("block0");
         when(this.block0.getID()).thenReturn(UUID.randomUUID().toString());
+        when(this.block0.getOwnedPort()).thenReturn(Arrays.asList(port0));
+        when(this.block0.eContents()).thenReturn(new BasicEList<>());
+        when(this.block0.getOwnedAttribute()).thenReturn(Arrays.asList(property0));
+
+        this.block0Cloned = mock(Class.class);
+        when(this.block0Cloned.getName()).thenReturn("block0");
+        when(this.block0Cloned.getID()).thenReturn(UUID.randomUUID().toString());
+        when(this.block0Cloned.getOwnedPort()).thenReturn(Arrays.asList(port0));
+        when(this.block0Cloned.eContents()).thenReturn(new BasicEList<>());
+        when(this.block0.getOwnedAttribute()).thenReturn(Arrays.asList(property1));
         
         this.block1 = mock(Class.class);
         when(this.block1.getName()).thenReturn("block1");
         when(this.block1.getID()).thenReturn(UUID.randomUUID().toString());
+        when(this.block1.getOwnedPort()).thenReturn(Arrays.asList(port1));
+        when(this.block1.eContents()).thenReturn(new BasicEList<>());
         
         this.dstRequirement0 = mock(Class.class);
         when(this.dstRequirement0.getName()).thenReturn("dstRequirement0");

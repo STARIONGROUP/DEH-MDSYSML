@@ -109,7 +109,6 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
         return this.GetProject().getPrimaryModel().getPackagedElement().stream().map(Element.class::cast).collect(Collectors.toList());
     }
     
-
     /**
      * Gets the project root package
      * 
