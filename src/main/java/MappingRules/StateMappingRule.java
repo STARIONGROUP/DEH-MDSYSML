@@ -471,22 +471,42 @@ public class StateMappingRule implements IStateMappingRule
 
         for (PossibleFiniteStateList possibleFiniteState : parameter.getStateDependence().getPossibleFiniteStateList())
         {
-            State state = this.GetOrCreateStateAndDependency(property, existingDependentStates, possibleFiniteState);
-
+            State state = this.GetOrCreateState(existingDependentStates, possibleFiniteState);
+            this.CreateDependency(state, property);
             this.UpdateState(state, possibleFiniteState);
-            this.logger.debug(String.format("State [%s] was created or updated", state.getName()));
         }
+    }
+
+    /**
+     * Create a {@linkplain Dependency} if it does not already exist between the provided {@linkplain State} and {@linkplain Property}
+     * 
+     * @param state the {@linkplain State}
+     * @param property the {@linkplain Property}
+     */
+    private void CreateDependency(State state, Property property)
+    {
+        if(StreamExtensions.OfType(state.get_relationshipOfRelatedElement().stream(), Dependency.class)
+            .anyMatch(x -> x.getClient().stream().anyMatch(s -> Operators.AreTheseEquals(property.getID(), s.getID()))))
+        {
+            return;
+        }
+        
+        Dependency dependency = this.transactionService.Create(Dependency.class, "");
+        
+        dependency.getSupplier().add(state);
+        dependency.getClient().add(property);
+        
+        state.get_relationshipOfRelatedElement().add(dependency);
     }
 
     /**
      * Gets or creates a {@linkplain State} that corresponds to the provided {@linkplain possibleFiniteState}
      * 
-     * @param property the {@linkplain Property}
      * @param existingDependentStates the {@linkplain List} of existing {@linkplain State}
      * @param possibleFiniteState the {@linkplain PossibleFiniteState}
      * @return a {@linkplain State}
      */
-    private State GetOrCreateStateAndDependency(Property property, List<State> existingDependentStates,
+    private State GetOrCreateState(List<State> existingDependentStates,
             PossibleFiniteStateList possibleFiniteState)
     {
         Predicate<NamedElement> namePredicate = x -> Operators.AreTheseEquals(x.getName(), possibleFiniteState.getName(), true)
@@ -496,11 +516,9 @@ public class StateMappingRule implements IStateMappingRule
                 .filter(x -> namePredicate.test(x))
                 .findFirst();
 
-        this.logger.debug(String.format("GetOrCreateStateAndDependency: is present on line 499? %s [%s]", optionalState.isPresent(), possibleFiniteState.getName()));
-        
         if(!optionalState.isPresent())
         {        
-            State state = StreamExtensions.OfType(this.sessionService.GetProjectElements().stream(), StateMachine.class)
+            return StreamExtensions.OfType(this.sessionService.GetProjectElements().stream(), StateMachine.class)
                             .flatMap(x -> x.getRegion().stream())
                             .flatMap(x -> StreamExtensions.OfType(x.getOwnedElement().stream(), State.class))
                             .filter(x -> namePredicate.test(x))
@@ -510,16 +528,10 @@ public class StateMappingRule implements IStateMappingRule
                                     .findFirst()
                                     .orElseGet(() ->
                                     {
-                                        State newState = this.transactionService.Create(State.class, possibleFiniteState.getName());
+                                        State newState = this.transactionService.Create(State.class, possibleFiniteState.getName());                                        
                                         this.createdStates.add(newState);
                                         return newState;
                                     }));
-            
-            Dependency dependency = this.transactionService.Create(Dependency.class, "");
-            dependency.getSupplier().add(state);
-            dependency.getClient().add(property);
-            state.get_relationshipOfRelatedElement().add(dependency);
-            return state;
         }
         
         return optionalState.get();

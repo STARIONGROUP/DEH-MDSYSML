@@ -744,8 +744,6 @@ public final class DstController implements IDstController
      */
     private void PrepareStates()
     {
-        this.logger.debug(String.format("Modified regions size: %s", this.transactionService.GetStatesModifiedRegions().size()));
-
         if(this.transactionService.GetStatesModifiedRegions().isEmpty())
         {
             return;
@@ -769,8 +767,6 @@ public final class DstController implements IDstController
         
         for (Entry<State, List<Pair<Region, ChangeKind>>> stateAndModifiedRegions : this.transactionService.GetStatesModifiedRegions())
         {
-            this.logger.debug(String.format("%s regions: %s", stateAndModifiedRegions.getKey().getName(), stateAndModifiedRegions.getValue().size()));
-            
             for (Pair<Region, ChangeKind> regionAndModification : stateAndModifiedRegions.getValue())
             {
                 switch(regionAndModification.getRight())
@@ -792,15 +788,16 @@ public final class DstController implements IDstController
                 mainRegion.getOwnedElement().add(stateAndModifiedRegions.getKey());
             }
             
-            this.logger.debug(String.format("Dependencies: %s", stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget().size()));
-            
             for (Dependency dependency : StreamExtensions.OfType(stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget(), Dependency.class))
             {
-                dependency.setOwner(model);
-                model.get_relationshipOfRelatedElement().add(dependency);
-                dependency.getSupplier().clear();
-                dependency.getSupplier().add(stateAndModifiedRegions.getKey());
-            }
+                NamedElement client = new ArrayList<NamedElement>(dependency.getClient()).get(0);
+                
+                if(this.transactionService.IsCloned(client))
+                {
+                    dependency.getClient().clear();
+                    dependency.getClient().add(this.transactionService.GetClone(client).GetOriginal());
+                }
+            }            
         }
     }
 
