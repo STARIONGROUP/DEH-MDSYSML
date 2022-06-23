@@ -23,13 +23,12 @@
 */
 package ViewModels;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,6 +98,34 @@ class MagicDrawObjectBrowserViewModelTest
 		ArrayList<Element> containedElements = new ArrayList<>();
 		when(mainPackage.getOwnedElement()).thenReturn(containedElements);
 
+		Class typeBlock = mock(Class.class);
+		when(typeBlock.getName()).thenReturn("TypeBlock");
+		ArrayList<Property> typeBlockProperties = new ArrayList<>();
+		when(typeBlock.getOwnedAttribute()).thenReturn(typeBlockProperties);
+		
+		Property refProperty = mock(Property.class);
+		when(this.stereotypeService.IsReferenceProperty(refProperty)).thenReturn(true);
+		typeBlockProperties.add(refProperty);
+		
+		Property valProperty = mock(Property.class);
+		when(this.stereotypeService.IsValueProperty(valProperty)).thenReturn(true);
+		typeBlockProperties.add(valProperty);
+		
+		Property partPropertySameId = mock(Property.class);
+		when(partPropertySameId.getID()).thenReturn(UUID.randomUUID().toString());
+		when(this.stereotypeService.IsPartProperty(partPropertySameId)).thenReturn(true);
+		typeBlockProperties.add(partPropertySameId);
+		
+		Property partPropertyOtherId = mock(Property.class);
+		String id = UUID.randomUUID().toString();
+		when(partPropertyOtherId.getID()).thenReturn(id);
+		when(this.stereotypeService.IsPartProperty(partPropertyOtherId)).thenReturn(true);
+		typeBlockProperties.add(partPropertyOtherId);
+		
+		Property valTypeProperty = mock(Property.class);
+		when(this.stereotypeService.IsPartProperty(valTypeProperty)).thenReturn(false);
+		typeBlockProperties.add(valTypeProperty);
+
 		Class block = mock(Class.class);
 		when(block.getName()).thenReturn("block");
 		when(this.stereotypeService.DoesItHaveTheStereotype(block, Stereotypes.Block)).thenReturn(true);
@@ -115,8 +142,10 @@ class MagicDrawObjectBrowserViewModelTest
 
 		Property partProperty = mock(Property.class);
 		when(this.stereotypeService.IsPartProperty(partProperty)).thenReturn(true);
+		when(partProperty.getType()).thenReturn(typeBlock);
+		when(partProperty.getID()).thenReturn(id);
 		properties.add(partProperty);
-
+		
 		Property valueProperty = mock(Property.class);
 		when(this.stereotypeService.IsValueProperty(valuePropertyDataType)).thenReturn(true, false);
 		properties.add(valueProperty);
@@ -164,5 +193,12 @@ class MagicDrawObjectBrowserViewModelTest
 
 		assertEquals(7, blockRow.GetContainedRows().size());
 		assertEquals(Stereotypes.PortProperty, blockRow.GetContainedRows().get(6).GetClassKind());
+		assertFalse(blockRow.GetIsExpanded());
+		assertFalse(blockRow.GetIsHighlighted());
+		assertNotNull(blockRow.GetParent());
+		blockRow.SetIsExpanded(true);
+		assertTrue(blockRow.GetIsExpanded());
+		blockRow.UpdateElement(typeBlock, false);
+		blockRow.UpdateElement(typeBlock, true);
 	}
 }
