@@ -71,6 +71,7 @@ import MappingRules.BlockToElementMappingRule;
 import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.MagicDrawTransaction.Clones.ClonedReferenceElement;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
@@ -384,8 +385,10 @@ class DstControllerTestFixture
         State state = mock(State.class);
         Dependency dependency0 = mock(Dependency.class);
         when(dependency0.getSupplier()).thenReturn(new ArrayList<>());
+        when(dependency0.getClient()).thenReturn(new ArrayList<>(Arrays.asList(mock(Property.class))));
         Dependency dependency1 = mock(Dependency.class);
         when(dependency1.getSupplier()).thenReturn(new ArrayList<>());
+        when(dependency1.getClient()).thenReturn(new ArrayList<>(Arrays.asList(mock(Property.class))));
         when(state.get_directedRelationshipOfTarget()).thenReturn(Arrays.asList(dependency0, dependency1));
         stateAndModifiedRegions.put(state, Arrays.asList(Pair.of(mock(Region.class), ChangeKind.CREATE), Pair.of(mock(Region.class), ChangeKind.DELETE)));
         when(this.transactionService.GetStatesModifiedRegions()).thenReturn(stateAndModifiedRegions.entrySet());
@@ -422,7 +425,7 @@ class DstControllerTestFixture
             Class element = x.getArgument(0, Class.class);            
             return element == this.block0 || element == this.block0Cloned || element == this.block1;
         });
-                
+        
         assertTrue(this.controller.TransferToDst());
         
         when(this.transactionService.IsCloned(any())).thenReturn(true);
@@ -430,13 +433,20 @@ class DstControllerTestFixture
         when(this.transactionService.GetClone(any())).thenAnswer(x -> 
         {
             NamedElement element = x.getArgument(0, NamedElement.class);
+            ClonedReferenceElement<NamedElement> cloneReference = mock(ClonedReferenceElement.class);
             
-            if(element.getName().equals(block0.getName()))
+            if(Utils.Operators.Operators.AreTheseEquals(block0.getName(), element.getName()))
             {
-                return this.block0Cloned;
+                when(cloneReference.GetOriginal()).thenReturn(this.block0);
+                when(cloneReference.GetClone()).thenReturn(this.block0Cloned);
             }
-                    
-            return element;
+            else
+            {
+                when(cloneReference.GetOriginal()).thenReturn(element);
+                when(cloneReference.GetClone()).thenReturn(element);
+            }
+            
+            return cloneReference;
         });
         
         assertTrue(this.controller.TransferToDst());
