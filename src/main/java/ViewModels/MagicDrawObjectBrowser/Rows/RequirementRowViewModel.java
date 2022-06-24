@@ -58,5 +58,7 @@ public class RequirementRowViewModel extends ClassRowViewModel
     @Override
     public void ComputeContainedRows()
     {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
     }
 }

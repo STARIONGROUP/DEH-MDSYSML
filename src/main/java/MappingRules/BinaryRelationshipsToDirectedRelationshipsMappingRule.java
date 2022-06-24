@@ -61,11 +61,6 @@ public class BinaryRelationshipsToDirectedRelationshipsMappingRule extends HubTo
      * The result of this mapping rule
      */
     private ArrayList<Abstraction> result = new ArrayList<>();
-
-    /**
-     * The {@linkplain IDstController}
-     */
-    IDstController dstController;
     
     /**
      * Initializes a new {@linkplain ComponentToElementMappingRule}
@@ -188,14 +183,12 @@ public class BinaryRelationshipsToDirectedRelationshipsMappingRule extends HubTo
     private boolean DoesThisRelationshipAlreadyExist(
             Entry<BinaryRelationship, Pair<MappedElementRowViewModel<? extends Thing, ? extends Class>, MappedElementRowViewModel<? extends Thing, ? extends Class>>> relationshipAndPairs)
     {
-        boolean result = relationshipAndPairs.getValue().getLeft().GetDstElement().get_directedRelationshipOfSource().stream()
+        return relationshipAndPairs.getValue().getLeft().GetDstElement().get_directedRelationshipOfSource().stream()
                     .anyMatch(x -> x.getTarget().stream().anyMatch(r -> Operators.AreTheseEquals(r.getID(), relationshipAndPairs.getValue().getRight().GetDstElement().getID())))
                 || this.dstController.GetMappedBinaryRelationshipsToDirectedRelationships().stream().anyMatch(x -> 
                         !x.getTarget().isEmpty() && !x.getSource().isEmpty() 
                         && x.getSource().stream().anyMatch(r -> Operators.AreTheseEquals(r.getID(), relationshipAndPairs.getValue().getLeft().GetDstElement().getID()))
                         && x.getTarget().stream().anyMatch(r -> Operators.AreTheseEquals(r.getID(), relationshipAndPairs.getValue().getRight().GetDstElement().getID())));
-        
-        return result;
     }
 
     /**

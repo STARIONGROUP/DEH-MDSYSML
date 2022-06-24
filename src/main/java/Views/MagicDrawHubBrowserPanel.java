@@ -26,9 +26,6 @@ package Views;
 import Utils.ImageLoader.ImageLoader;
 import ViewModels.Interfaces.IHubBrowserPanelViewModel;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 /**
  * The {@linkplain MagicDrawHubBrowserPanel} is the {@linkplain HubBrowserPanel} for the MagicDraw / Cameo software
  */
@@ -45,8 +42,8 @@ public class MagicDrawHubBrowserPanel extends MagicDrawBasePanel<IHubBrowserPane
         setTabTitle("Hub Browser");
         setFrameIcon(ImageLoader.GetIcon("icon16.png"));
         this.setDefaultCloseAction(CLOSE_ACTION_TO_HIDE);
-        this.View = new HubBrowserPanel();
-        getRootPane().getContentPane().add(this.View);
+        this.view = new HubBrowserPanel();
+        getRootPane().getContentPane().add(this.view);
     }
 
     /**
@@ -57,11 +54,11 @@ public class MagicDrawHubBrowserPanel extends MagicDrawBasePanel<IHubBrowserPane
     @Override
     public void Bind()
     {
-        this.View.GetElementDefinitionBrowser().GetContextMenu().SetDataContext(this.DataContext.GetElementDefinitionBrowserContextMenuViewModel());
-        this.View.GetRequirementBrowser().GetContextMenu().SetDataContext(this.DataContext.GetRequirementBrowserContextMenuViewModel());
-        this.View.GetSessionControlPanel().SetDataContext(this.DataContext.GetSessionControlViewModel());
-        this.View.getHubBrowserHeader().SetDataContext(this.DataContext.GetHubBrowserHeaderViewModel());
-        this.View.GetElementDefinitionBrowser().SetDataContext(this.DataContext.GetElementDefinitionBrowserViewModel());
-        this.View.GetRequirementBrowser().SetDataContext(this.DataContext.GetRequirementBrowserViewModel());
+        this.view.GetElementDefinitionBrowser().GetContextMenu().SetDataContext(this.dataContext.GetElementDefinitionBrowserContextMenuViewModel());
+        this.view.GetRequirementBrowser().GetContextMenu().SetDataContext(this.dataContext.GetRequirementBrowserContextMenuViewModel());
+        this.view.GetSessionControlPanel().SetDataContext(this.dataContext.GetSessionControlViewModel());
+        this.view.getHubBrowserHeader().SetDataContext(this.dataContext.GetHubBrowserHeaderViewModel());
+        this.view.GetElementDefinitionBrowser().SetDataContext(this.dataContext.GetElementDefinitionBrowserViewModel());
+        this.view.GetRequirementBrowser().SetDataContext(this.dataContext.GetRequirementBrowserViewModel());
     }
 }

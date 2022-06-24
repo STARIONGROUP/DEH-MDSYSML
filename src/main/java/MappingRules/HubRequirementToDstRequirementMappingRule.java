@@ -193,7 +193,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
         }
         else
         {
-            refElement.Set(this.transactionService.Clone(refElement.Get()));
+            refElement.Set(this.transactionService.CloneElement(refElement.Get()));
         }
         
         return refElement.Get();
@@ -317,7 +317,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
             }
             else
             {
-                refElement.Set(this.transactionService.Clone(refElement.Get()));
+                refElement.Set(this.transactionService.CloneElement(refElement.Get()));
             }
         }
         

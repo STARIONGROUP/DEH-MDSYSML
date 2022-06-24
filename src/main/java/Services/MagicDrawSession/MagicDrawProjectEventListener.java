@@ -144,8 +144,7 @@ public final class MagicDrawProjectEventListener implements ProjectEventListener
     @Override
     public void projectOpenedFromGUI(Project project)
     {
-        this.openDocument.Value(project);
-        this.hasOneDocumentOpen.Value(true);
+        this.projectOpened(project);
     }
 
     /**
@@ -163,53 +162,89 @@ public final class MagicDrawProjectEventListener implements ProjectEventListener
      * Occurs when the project gets deactivated. Unused
      */
     @Override
-    public void projectDeActivated(Project project) { }
+    public void projectDeActivated(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.	
+    }
 
     /**
      * Occurs when the project gets activated. Unused
      */
     @Override
-    public void projectActivated(Project project) { }
+    public void projectActivated(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Occurs when the project gets activated from the user interface. Unused
      */
     @Override
-    public void projectActivatedFromGUI(Project project) { }
+    public void projectActivatedFromGUI(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
     
     /**
      * Occurs when the project gets pre activated. Unused
      */
     @Override
-    public void projectPreActivated(Project project) { }
+    public void projectPreActivated(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Occurs when the project gets pre closed. Unused
      */
     @Override
-    public void projectPreClosed(Project project) { }
+    public void projectPreClosed(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Occurs when the project gets pre closed final. Unused
      */
     @Override
-    public void projectPreClosedFinal(Project project) { }
+    public void projectPreClosedFinal(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Occurs when the project gets pre deactivated. Unused
      */
     @Override
-    public void projectPreDeActivated(Project project) { }
+    public void projectPreDeActivated(Project project) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Occurs when the project gets pre replaced. Unused
      */
     @Override
-    public void projectPreReplaced(Project project, Project project2) { }
+    public void projectPreReplaced(Project project, Project project2) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Occurs when the project gets pre saved. Unused
      */
     @Override
-    public void projectPreSaved(Project project, boolean isSaved) { }
+    public void projectPreSaved(Project project, boolean isSaved)
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 }

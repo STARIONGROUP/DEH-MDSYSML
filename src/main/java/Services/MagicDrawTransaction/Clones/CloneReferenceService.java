@@ -110,7 +110,7 @@ public class CloneReferenceService implements ICloneReferenceService
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <TElement extends Element> TElement Clone(TElement original)
+    public <TElement extends Element> TElement CloneElement(TElement original)
     {
         if(original == null)
         {

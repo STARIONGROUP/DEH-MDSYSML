@@ -1,5 +1,5 @@
 /*
- * MagicDrawAdapterInfoServiceTestFixture.java
+ * MagicDrawAdapterInfoServiceTest.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import Services.AdapterInfo.MagicDrawAdapterInfoService;
 
-class MagicDrawAdapterInfoServiceTestFixture
+class MagicDrawAdapterInfoServiceTest
 {
     private MagicDrawAdapterInfoService service;
 

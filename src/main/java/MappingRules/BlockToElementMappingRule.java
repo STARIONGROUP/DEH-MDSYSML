@@ -29,8 +29,7 @@ import static Utils.Stereotypes.StereotypeUtils.IsOwnedBy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,12 +46,14 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ElementValue;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralBoolean;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralInteger;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralReal;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralUnlimitedNatural;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
@@ -61,16 +62,14 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import MappingRules.Interfaces.IStateMappingRule;
 import Reactive.ObservableCollection;
-import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
-import Utils.ValueSetUtils;
 import Utils.Stereotypes.MagicDrawBlockCollection;
-import Utils.Stereotypes.StereotypeUtils;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
+import cdp4common.dto.ParameterValueSetBase;
 import cdp4common.engineeringmodeldata.ActualFiniteState;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -93,6 +92,7 @@ import cdp4common.sitedirectorydata.SimpleQuantityKind;
 import cdp4common.sitedirectorydata.SimpleUnit;
 import cdp4common.sitedirectorydata.TextParameterType;
 import cdp4common.types.ValueArray;
+import javassist.bytecode.analysis.ControlFlow.Block;
 
 /**
  * The {@linkplain BlockToElementMappingRule} is the mapping rule implementation for transforming {@linkplain Element} to {@linkplain ElementDefinition}
@@ -445,9 +445,11 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      */
     private String GetPortName(MappedElementDefinitionRowViewModel mappedElement, Port port)
     {        
-        if(port.getType() != null)
+    	Type portType = port.getType();
+    	
+        if(portType != null)
         {
-            return String.format("%s_%s", port.getName(), port.getType().getName());
+            return String.format("%s_%s", port.getName(), portType.getName());
         }
         
         long portNumber = mappedElement.GetHubElement().getContainedElement().stream().filter(x -> x.getInterfaceEnd() != InterfaceEndKind.NONE).count();
@@ -615,7 +617,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      */
     private void MapProperties(ElementDefinition elementDefinition, Class block, Property parentPartProperty)
     {
-        Hashtable<ConnectorEnd, BinaryRelationship> connectors = new Hashtable<>();
+        HashMap<ConnectorEnd, BinaryRelationship> connectors = new HashMap<>();
         
         for (Property property : block.getOwnedAttribute())
         {
@@ -635,44 +637,12 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                 continue;
             }
             
-            Predicate<Parameter> areParameterParameterTypeShortNameEqualsPredicate = 
-                    x -> this.AreShortNamesEquals(x.getParameterType(), GetShortName(property)) 
-                    || x.getParameterType().getName().compareToIgnoreCase(property.getName()) == 0;
-            
-            Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
-                    .filter(areParameterParameterTypeShortNameEqualsPredicate)
-                    .findAny();
-
             Ref<ParameterType> refParameterType = new Ref<>(ParameterType.class);
             Ref<Parameter> refParameter = new Ref<>(Parameter.class);
             
-            if(property.getAppliedStereotypeInstance() != null && property.getAppliedStereotypeInstance().getName().toLowerCase().contains("ConnectorProperty")
-                    && property.getDefaultValue() instanceof ElementValue
-                    && ((ElementValue)property.getDefaultValue()) != null)
+            if(!this.TryGetOrCreateParameter(elementDefinition, property, refParameter,refParameterType )) 
             {
-                this.connectedElements.add(Pair.of(property, elementDefinition));
-                continue;
-            }
-
-            if(!existingParameter.isPresent())
-            {
-                if(this.TryCreateParameterType(property, refParameterType))
-                {
-                    Parameter newParameter = new Parameter();
-                    newParameter.setIid(UUID.randomUUID());
-                    newParameter.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-                    newParameter.setParameterType(refParameterType.Get());
-                    refParameter.Set(newParameter);
-                }
-                else
-                {
-                    this.logger.error(String.format("Coulnd create ParameterType %s", property.getName()));
-                    continue;
-                }
-            }   
-            else
-            {
-                refParameter.Set(existingParameter.get().clone(true));
+            	continue;
             }
             
             this.stateMappingRule.MapStateDependencies(refParameter.Get(), property, MappingDirection.FromDstToHub);
@@ -683,12 +653,64 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             elementDefinition.getParameter().removeIf(x -> AreTheseEquals(x.getIid(), refParameter.Get().getIid()));
             elementDefinition.getParameter().add(refParameter.Get());
             
-            this.binaryRelationShips.addAll(Collections.list(connectors.elements()));
+            this.binaryRelationShips.addAll(connectors.values());
         }
         
         this.logger.error(String.format("ElementDefinition has %s parameters", elementDefinition.getParameter().size()));
     }
 
+    /**
+     * Tries to get or create a {@linkplain Parameter} based on the property
+     * @param elementDefinition The {@linkplain ElementDefinition} of the {@linkplain Parameter}
+     * @param property The based {@linkplain Property}
+     * @param refParameter The {@linkplain Ref<Parameter>}
+     * @param refParameterType The {@linkplain Ref<ParameterType>}
+     * @return Value indicating if the {@linkplain Parameter} has correctly been get or created
+     */
+    private boolean TryGetOrCreateParameter(ElementDefinition elementDefinition, Property property, Ref<Parameter> refParameter, Ref<ParameterType> refParameterType) 
+    {
+        Predicate<Parameter> areParameterParameterTypeShortNameEqualsPredicate = 
+                x -> this.AreShortNamesEquals(x.getParameterType(), GetShortName(property)) 
+                || x.getParameterType().getName().compareToIgnoreCase(property.getName()) == 0;
+        
+        Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
+                .filter(areParameterParameterTypeShortNameEqualsPredicate)
+                .findAny();
+
+        
+        InstanceSpecification appliedStereotype = property.getAppliedStereotypeInstance();
+        
+        if(appliedStereotype != null && appliedStereotype.getName().toLowerCase().contains("ConnectorProperty")
+                && property.getDefaultValue() instanceof ElementValue
+                && ((ElementValue)property.getDefaultValue()) != null)
+        {
+            this.connectedElements.add(Pair.of(property, elementDefinition));
+            return false;
+        }
+        if(!existingParameter.isPresent())
+        {
+            if(this.TryCreateParameterType(property, refParameterType))
+            {
+                Parameter newParameter = new Parameter();
+                newParameter.setIid(UUID.randomUUID());
+                newParameter.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+                newParameter.setParameterType(refParameterType.Get());
+                refParameter.Set(newParameter);
+            }
+            else
+            {
+                this.logger.error(String.format("Could create ParameterType %s", property.getName()));
+                return false;
+            }
+        }   
+        else
+        {
+            refParameter.Set(existingParameter.get().clone(true));
+        }
+        
+        return true;
+    }
+    
     /**
      * Sets the correct actual scale for the specified {@linkplain Parameter}
      * 
@@ -860,7 +882,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
      * @param property the current {@linkplain Property}
      * @param parameter the current {@linkplain Parameter}
      */
-    private void ProcessBindingConnectors(Hashtable<ConnectorEnd, BinaryRelationship> connectors, Property property, Parameter parameter)
+    private void ProcessBindingConnectors(HashMap<ConnectorEnd, BinaryRelationship> connectors, Property property, Parameter parameter)
     {        
         if(property.has_connectorEndOfPartWithPort())
         {
@@ -910,25 +932,7 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
                     || x.getName().compareToIgnoreCase(property.getName()) == 0 
                     || (property.getType() != null && AreTheseEquals(property.getType().getName(), x.getName(), true)), refParameterType))
             {
-                ParameterType parameterType = null;
-                ValueSpecification valueSpecification = property.getDefaultValue();
-
-                if(valueSpecification == null || valueSpecification instanceof LiteralInteger || valueSpecification instanceof LiteralUnlimitedNatural || valueSpecification instanceof LiteralReal)
-                {
-                    parameterType = this.CreateQuantityKind(property);
-                }                
-                if(parameterType == null && (valueSpecification == null || valueSpecification instanceof LiteralBoolean))
-                {
-                    parameterType = new BooleanParameterType();
-                }
-                if(parameterType == null && (valueSpecification == null || valueSpecification instanceof LiteralString))
-                {
-                    parameterType = new TextParameterType();
-                }
-                else
-                {
-                    this.logger.error(String.format("The property %s isn't supported by the adapter because it is %s or %s", property.getName(), valueSpecification.getHumanType(), valueSpecification.getHumanName()));
-                }
+                ParameterType parameterType = this.CreateParameterType(property);
                                 
                 if(parameterType != null)
                 {
@@ -956,6 +960,36 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
             return false;
         }
     }
+
+	/**
+	 * Create a {@linkplain ParameterType} based on the {@linkplain Property}
+	 * 
+	 * @param property The {@linkplain Property}
+	 * @return The created {@linkplain ParameterType}
+	 */
+	private ParameterType CreateParameterType(Property property)
+	{
+		ParameterType parameterType = null;
+		ValueSpecification valueSpecification = property.getDefaultValue();
+
+		if(valueSpecification == null || valueSpecification instanceof LiteralInteger || valueSpecification instanceof LiteralUnlimitedNatural || valueSpecification instanceof LiteralReal)
+		{
+		    parameterType = this.CreateQuantityKind(property);
+		}                
+		if(parameterType == null && (valueSpecification == null || valueSpecification instanceof LiteralBoolean))
+		{
+		    parameterType = new BooleanParameterType();
+		}
+		if(parameterType == null && valueSpecification instanceof LiteralString)
+		{
+		    parameterType = new TextParameterType();
+		}
+		else if(valueSpecification != null)
+		{
+		    this.logger.error(String.format("The property %s isn't supported by the adapter because it is %s or %s", property.getName(), valueSpecification.getHumanType(), valueSpecification.getHumanName()));
+		}
+		return parameterType;
+	}
     
     /**
      * Tries to update the provided parameter based on the specified {@linkplain Property} valu type if it is a {@linkplain QuantityKind}
@@ -1172,13 +1206,11 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         {         
             Ref<Category> refCategory = new Ref<>(Category.class);
     
-            if(!(this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(categoryNames.getLeft()), refCategory)))
-            {
-                if (shouldCreateTheCategory && !this.TryCreateCategory(categoryNames, refCategory, ClassKind.ElementDefinition, ClassKind.ElementUsage))
-                {
-                    return;
-                }
-            }
+            if (!(this.hubController.TryGetThingFromChainOfRdlBy(x -> x.getShortName().equals(categoryNames.getLeft()), refCategory)) 
+            		&& shouldCreateTheCategory && !this.TryCreateCategory(categoryNames, refCategory, ClassKind.ElementDefinition, ClassKind.ElementUsage))
+			{
+			    return;
+			}
     
             if(refCategory.HasValue())
             {

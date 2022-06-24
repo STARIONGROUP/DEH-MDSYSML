@@ -34,7 +34,6 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Services.Stereotype.IStereotypeService;
-import Utils.Stereotypes.StereotypeUtils;
 
 /**
  * The ClonedReferenceElement is a POJO class that represents a cloned Block with it's original reference

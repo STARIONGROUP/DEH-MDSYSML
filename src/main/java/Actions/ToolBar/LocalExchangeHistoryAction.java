@@ -46,12 +46,12 @@ public class LocalExchangeHistoryAction extends MDAction
     /**
      * The current class logger
      */
-    private Logger logger = LogManager.getLogger();
+    private transient Logger logger = LogManager.getLogger();
     
     /**
      * The {@linkplain INavigationService}
      */
-    private final INavigationService navigationService;
+    private final transient INavigationService navigationService;
     
     /**
      * Initializes a new {@link LocalExchangeHistoryAction}

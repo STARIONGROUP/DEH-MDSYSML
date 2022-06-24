@@ -1,3 +1,26 @@
+/*
+* HubRequirementToDstRequirementMappingRuleTest.java
+*
+* Copyright (c) 2020-2022 RHEA System S.A.
+*
+* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+*
+* This file is part of DEH-CommonJ
+*
+* The DEH-CommonJ is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 3 of the License, or (at your option) any later version.
+*
+* The DEH-CommonJ is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 package MappingRules;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -27,7 +50,6 @@ import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.HubRequirementCollection;
-import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Definition;
@@ -35,9 +57,8 @@ import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import cdp4common.sitedirectorydata.Category;
-import cdp4common.sitedirectorydata.DomainOfExpertise;
 
-class HubRequirementToDstRequirementMappingRuleTestFixture
+class HubRequirementToDstRequirementMappingRuleTest
 {
 
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
@@ -48,7 +69,6 @@ class HubRequirementToDstRequirementMappingRuleTestFixture
     private Iteration iteration;
     private RequirementsSpecification requirementsSpecification0;
     private RequirementsSpecification requirementsSpecification1;
-    private DomainOfExpertise domain;
     private RequirementsGroup requirementsGroup2;
     private RequirementsGroup requirementsGroup1;
     private RequirementsGroup requirementsGroup0;
@@ -116,7 +136,6 @@ class HubRequirementToDstRequirementMappingRuleTestFixture
     {
         this.elements = new HubRequirementCollection();
         
-        this.domain = new DomainOfExpertise(UUID.randomUUID(), null, null);
         this.iteration = new Iteration(UUID.randomUUID(), null, null);
         
         this.requirementsSpecification0 = new RequirementsSpecification();

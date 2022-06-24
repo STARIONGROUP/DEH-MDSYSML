@@ -23,12 +23,9 @@
  */
 package ViewModels.MagicDrawObjectBrowser;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.netbeans.swing.outline.RowModel;
 
 import Utils.Stereotypes.Stereotypes;
-import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
 
@@ -37,12 +34,7 @@ import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
  */
 @Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawObjectBrowserTreeRowViewModel implements RowModel
-{
-    /**
-     * The current class logger
-     */
-    private final Logger logger = LogManager.getLogger();
-    
+{   
     /**
      * Gets column count for this tree grid needed to generate all the specified columns and also to compute rows values 
      * 
@@ -71,11 +63,7 @@ public class MagicDrawObjectBrowserTreeRowViewModel implements RowModel
         
         if(rowViewModel instanceof ElementRowViewModel)
         {
-            switch (column)
-            {
-                case 0 : return ((ElementRowViewModel<?>) rowViewModel).GetClassKind();                
-                default : assert false;
-            }
+        	return column == 0 ? ((ElementRowViewModel<?>) rowViewModel).GetClassKind() : "-";
         }
         
         return "-";
@@ -90,13 +78,7 @@ public class MagicDrawObjectBrowserTreeRowViewModel implements RowModel
     @Override
     public Class<?> getColumnClass(int column)
     {
-        switch (column)
-        {
-            case 0 : return Stereotypes.class;
-            default : assert false;
-        }
-        
-        return null;
+    	return column == 0 ? Stereotypes.class : null;
     }
 
     /**
@@ -120,7 +102,11 @@ public class MagicDrawObjectBrowserTreeRowViewModel implements RowModel
      * @param column the column index
      */
     @Override
-    public void setValueFor(Object node, int column, Object value) { }
+    public void setValueFor(Object node, int column, Object value) 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 
     /**
      * Gets the column name based on its index
@@ -131,12 +117,6 @@ public class MagicDrawObjectBrowserTreeRowViewModel implements RowModel
     @Override
     public String getColumnName(int column)
     {
-        switch (column) 
-        {
-            case 0 : return "Row Type";
-            default : assert false;
-        }
-        
-        return null;
+    	return column == 0 ? "Row Type" : null;
     }
 }

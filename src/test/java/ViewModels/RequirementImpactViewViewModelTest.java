@@ -1,5 +1,5 @@
 /*
- * RequirementImpactViewViewModelTestFixture.java
+ * RequirementImpactViewViewModelTest.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *

@@ -26,25 +26,18 @@ package DstController;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-import com.nomagic.magicdraw.core.Project;
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
 import Utils.Ref;
-import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.DefinedThing;
-import cdp4common.commondata.NamedThing;
-import cdp4common.commondata.ShortNamedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.sitedirectorydata.MeasurementScale;

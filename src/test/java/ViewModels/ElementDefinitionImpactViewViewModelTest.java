@@ -99,7 +99,7 @@ class ElementDefinitionImpactViewViewModelTest
 	@Test
 	void VerifyPropertiesAndInitialization()
 	{
-		assertNotNull(this.viewModel.DstController);
+		assertNotNull(this.viewModel.dstController);
 		assertFalse(this.viewModel.isTheTreeVisible.Value());
 		assertNotNull(this.viewModel.IsTheTreeVisible());
 		when(this.hubController.GetIsSessionOpen()).thenReturn(true);

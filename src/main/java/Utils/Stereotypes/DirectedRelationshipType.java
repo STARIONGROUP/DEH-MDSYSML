@@ -24,6 +24,7 @@
 package Utils.Stereotypes;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 
 import cdp4common.commondata.NamedThing;
 
@@ -89,9 +90,11 @@ public enum DirectedRelationshipType
      */
     public static DirectedRelationshipType From(DirectedRelationship relationship)
     {
-        if(relationship.getAppliedStereotypeInstance() != null)
+    	InstanceSpecification appliedStereotype = relationship.getAppliedStereotypeInstance();
+    	
+        if(appliedStereotype != null)
         {
-            return DirectedRelationshipType.From(relationship.getAppliedStereotypeInstance().getName());
+            return DirectedRelationshipType.From(appliedStereotype.getName());
         }
         
         return null;

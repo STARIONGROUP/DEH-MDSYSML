@@ -23,22 +23,20 @@
  */
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 
-import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
+import Views.MagicDrawObjectBrowser;
 
 /**
  * The {@linkplain ElementRowViewModel} is the row view model that represents any {@linkplain Class} in the {@linkplain MagicDrawObjectBrowser}
@@ -50,7 +48,7 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
     /**
      * The current class Logger
      */
-    protected final Logger Logger = LogManager.getLogger();
+    protected final Logger logger = LogManager.getLogger();
     
     /**
      * The value indicating whether this row should be highlighted as "selected for transfer"
@@ -65,7 +63,8 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
     @Override
     public boolean SwitchIsSelectedValue()
     {
-        return this.isSelected = !this.isSelected;
+    	this.isSelected = !this.isSelected;
+        return this.isSelected;
     }
     
     /**
@@ -208,7 +207,7 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
      * @param parent the {@linkplain IElementRowViewModel} parent view model of this row view model
      * @param element the {@linkplain TElement} {@linkplain Element} which is represented
      */
-    public ElementRowViewModel(IElementRowViewModel<?> parent, TElement element)
+    protected ElementRowViewModel(IElementRowViewModel<?> parent, TElement element)
     {
         this.element = element;
         this.parent = parent;

@@ -148,7 +148,7 @@ public interface IMagicDrawTransactionService
      * @param original the original {@linkplain #TElement}
      * @return a clone of the {@linkplain #original}
      */
-    <TElement extends Element> TElement Clone(TElement original);
+    <TElement extends Element> TElement CloneElement(TElement original);
 
     /**
      * Gets the {@linkplain CapellaElement} where the element id == the provided id

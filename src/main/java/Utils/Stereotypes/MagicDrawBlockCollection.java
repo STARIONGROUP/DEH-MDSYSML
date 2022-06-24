@@ -26,8 +26,8 @@ import java.util.ArrayList;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
+import Enumerations.MappingDirection;
 import Services.MappingEngineService.IMappableThingCollection;
-import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 
 /**

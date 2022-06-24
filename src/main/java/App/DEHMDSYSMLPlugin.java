@@ -139,15 +139,17 @@ public class DEHMDSYSMLPlugin extends Plugin
 	                        // find the category of the "New Project" action.
 	                        ActionsCategory category = (ActionsCategory)manager.getActionParent(found);
 
-	                        // Get all actions from this category (menu).
-	                        List<NMAction> actionsInCategory = category.getActions();
-	                        
-	                        //Add the action after the "New Project" action.
-	                        int indexOfFound = actionsInCategory.indexOf(found);
-                            actionsInCategory.add(indexOfFound+1, new MagicDrawAdapterRibbonActionCategory());
-	             
-	                        // Set all actions.
-	                        category.setActions(actionsInCategory);
+	                        if(category != null) {
+		                        // Get all actions from this category (menu).
+		                        List<NMAction> actionsInCategory = category.getActions();
+		                        
+		                        //Add the action after the "New Project" action.
+		                        int indexOfFound = actionsInCategory.indexOf(found);
+	                            actionsInCategory.add(indexOfFound+1, new MagicDrawAdapterRibbonActionCategory());
+		             
+		                        // Set all actions.
+		                        category.setActions(actionsInCategory);
+	                        }
 	                    }
 	                }
                 };
