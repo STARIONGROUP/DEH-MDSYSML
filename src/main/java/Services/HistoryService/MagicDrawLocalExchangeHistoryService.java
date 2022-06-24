@@ -76,7 +76,7 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
         DirectedRelationshipType type = DirectedRelationshipType.From(relationship.getHumanType());
         String elementType = type != null ? type.name() : relationship.getClass().getSimpleName().replace("Impl", "");
 
-        this.Append(String.format("%s [%s -> %s] has been %sD", elementType, 
+        this.Append(elementType, String.format("%s [%s -> %s] has been %sD", elementType, 
                 this.GetOneEndName(relationship.getSource()), this.GetOneEndName(relationship.getTarget()), changeKind));
     }
 
@@ -113,7 +113,7 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
 
         String elementType = element.getClass().getSimpleName().replace("Impl", "");
 
-        this.Append(String.format("%s [%s] has been %sD", elementType, modelCode, changeKind));
+        this.Append(modelCode, String.format("%s [%s] has been %sD", elementType, modelCode, changeKind));
     }
 
     /**
@@ -133,6 +133,6 @@ public class MagicDrawLocalExchangeHistoryService extends LocalExchangeHistorySe
                     ? ((NamedElement) originalProperty.eContainer()).getName() 
                     : "", originalProperty.getName());
         
-        this.Append(String.format("Value: [%s] from Property [%s] has been updated to [%s]", valueToUpdateString, propertyName, newValueString));
+        this.Append(propertyName, String.format("Value: [%s] from Property [%s] has been updated to [%s]", valueToUpdateString, propertyName, newValueString));
     }
 }

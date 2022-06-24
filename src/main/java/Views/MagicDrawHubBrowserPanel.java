@@ -33,6 +33,7 @@ import java.awt.event.ActionListener;
  * The {@linkplain MagicDrawHubBrowserPanel} is the {@linkplain HubBrowserPanel} for the MagicDraw / Cameo software
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawHubBrowserPanel extends MagicDrawBasePanel<IHubBrowserPanelViewModel, HubBrowserPanel>
 {
     /**

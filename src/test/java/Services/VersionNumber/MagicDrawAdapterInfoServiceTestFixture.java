@@ -1,5 +1,5 @@
 /*
- * MDSYSMLPluginTest.java
+ * MagicDrawAdapterInfoServiceTestFixture.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -21,30 +21,29 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package Services.VersionNumber;
 
-package App;
+import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import Services.AdapterInfo.MagicDrawAdapterInfoService;
 
-public class DEHMDSYSMLPluginTestFixture 
+class MagicDrawAdapterInfoServiceTestFixture
 {
-	@Test
-	public void VerifyLoad()
-	{
-		DEHMDSYSMLPlugin plugin = new DEHMDSYSMLPlugin();
-		assertNotNull(plugin);
-		assertTrue(plugin.isSupported());
-        assertTrue(plugin.close());
-	}
-	
-	@Test
-	public void VerifyRegisterDependencies()
-	{
-        DEHMDSYSMLPlugin plugin = new DEHMDSYSMLPlugin();
-        assertDoesNotThrow(() -> plugin.RegisterDependencies());
-	}
+    private MagicDrawAdapterInfoService service;
+
+    @BeforeEach
+    void setUp() throws Exception
+    {
+        this.service = new MagicDrawAdapterInfoService();
+    }
+
+    @Test
+    void VerifyMagicDrawAdapterVersionNumberService()
+    {
+        assertNotNull(this.service.GetAdapterName());
+        assertNotNull(this.service.GetVersion());
+    }
 }

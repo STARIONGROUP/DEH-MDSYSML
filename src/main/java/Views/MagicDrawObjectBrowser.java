@@ -45,13 +45,9 @@ import Views.ObjectBrowser.ObjectBrowserBase;
  * The {@linkplain MagicDrawObjectBrowser}
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawObjectBrowser extends ObjectBrowserBase<IMagicDrawObjectBrowserViewModel, IImpactViewContextMenuViewModel>
 {
-    /**
-     * This view attached {@linkplain IViewModel}
-     */
-    private IMagicDrawObjectBrowserViewModel dataContext;
-
     /**
      * Initializes a new {@linkplain MagicDrawObjectBrowser}
      */

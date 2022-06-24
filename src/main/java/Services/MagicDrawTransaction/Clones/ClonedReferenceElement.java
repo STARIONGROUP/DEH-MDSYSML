@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package Services.MagicDrawTransaction;
+package Services.MagicDrawTransaction.Clones;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +42,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Services.Stereotype.IStereotypeService;
+import Services.Stereotype.StereotypeService;
 import Utils.Stereotypes.Stereotypes;
 
 /**
@@ -134,11 +135,15 @@ public class ClonedReferenceElement<TElement extends Element>
     void SetClone()
     {
         this.clone = EcoreUtil.copy(this.original);
-        this.clone.setAppliedStereotypeInstance((InstanceSpecification) new EcoreUtil.Copier().copy(this.original.getAppliedStereotypeInstance()));
         
-        if(this.stereotype != null)
+        if(this.clone != null)
         {
-            StereotypesHelper.addStereotype(this.clone, this.stereotype);
+            this.clone.setAppliedStereotypeInstance((InstanceSpecification) new EcoreUtil.Copier().copy(this.original.getAppliedStereotypeInstance()));
+        }
+        
+        if(this.stereotype != null && this.stereotypeService != null)
+        {
+            this.stereotypeService.ApplyStereotype(this.clone, this.stereotype);
         }
         
         this.CloneOriginalStereotypePropertyValues();
@@ -193,33 +198,4 @@ public class ClonedReferenceElement<TElement extends Element>
         
         return null;
     }
-    
-    /**
-     * Initializes a new {@linkplain ClonedReferenceElement} based on the {@linkplain #T} stereotype
-     * 
-     * @param <T> the type of the {@linkplain Element}
-     * @param original the {@linkplain Element} original
-     * @param stereotypeService the {@linkplain IStereotypeService}
-     * @param existingClones the {@linkplain HashMap} of existing clones
-     * @return a {@linkplain ClonedReferenceElement}
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends Element> ClonedReferenceElement<T> Create(T original, IStereotypeService stereotypeService, 
-            Map<String, ClonedReferenceElement<? extends Element>> existingClones)
-    {
-        if(stereotypeService.DoesItHaveTheStereotype(original, Stereotypes.Requirement))
-        {
-            return (ClonedReferenceElement<T>) new ClonedReferenceRequirement(stereotypeService, (Class) original);
-        }
-        else if(stereotypeService.DoesItHaveTheStereotype(original, Stereotypes.Block))
-        {
-            return (ClonedReferenceElement<T>) new ClonedReferenceBlock(stereotypeService, (Class) original);
-        }
-        else if(original instanceof Package)
-        {
-            return (ClonedReferenceElement<T>) new ClonedReferencePackage(stereotypeService, (Package) original, existingClones);
-        }
-        
-        return new ClonedReferenceElement<>(original);
-    }    
 }

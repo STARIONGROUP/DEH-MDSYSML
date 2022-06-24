@@ -84,6 +84,7 @@ public class MagicDrawSelectionService implements IMagicDrawSelectionService
      * @return a {@linkplain Collection} of {@linkplain Class}
      */
     @Override
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends Element> Collection<TElement> GetDstSelection(java.lang.Class<TElement> elementClass)
     {
         if(this.activeBrowser == null)
@@ -104,6 +105,7 @@ public class MagicDrawSelectionService implements IMagicDrawSelectionService
      * @param activeBrowserTree the {@linkplain Tree}
      */
     @Override
+    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public void SetActiveBrowser(Tree activeBrowserTree)
     {
         this.activeBrowser = activeBrowserTree;
@@ -168,7 +170,7 @@ public class MagicDrawSelectionService implements IMagicDrawSelectionService
                 .collect(Collectors.toList()))
         {            
             SortRequirements(hubRequirements, requirementsGroup.getContainerOfType(RequirementsSpecification.class), 
-                    x -> AreTheseEquals(x.getGroup().getIid(), requirementsGroup.getIid()));
+                    x -> x.getGroup() != null && AreTheseEquals(x.getGroup().getIid(), requirementsGroup.getIid()));
         }
     }
 

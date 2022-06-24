@@ -31,6 +31,7 @@ import Views.MappingList.MappingListView;
  * The {@linkplain MagicDrawHubBrowserPanel} is the {@linkplain MappingListView} for the MagicDraw / Cameo software
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawMappingListViewPanel extends MagicDrawBasePanel<IMappingListViewViewModel, MagicDrawMappingListView>
 {
     /**

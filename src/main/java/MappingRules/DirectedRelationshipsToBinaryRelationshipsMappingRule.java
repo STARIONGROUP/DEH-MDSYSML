@@ -96,7 +96,7 @@ public class DirectedRelationshipsToBinaryRelationshipsMappingRule extends DstTo
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -125,13 +125,13 @@ public class DirectedRelationshipsToBinaryRelationshipsMappingRule extends DstTo
                     continue;
                 }
                 
-                this.Logger.debug(String.format("Relationship being mapped : [%s] => [%s]", sourceElement.GetHubElement().getName(), optionalTargetElement.get().GetHubElement().getName()));
+                this.logger.debug(String.format("Relationship being mapped : [%s] => [%s]", sourceElement.GetHubElement().getName(), optionalTargetElement.get().GetHubElement().getName()));
                 
                 DirectedRelationshipType relationshipType = DirectedRelationshipType.From(relationship.getHumanType());
                 
                 if(relationshipType == null)
                 {
-                    this.Logger.info(String.format("Skipping mapping of relationship %s because its stereotype is not supported.", relationship.getHumanType()));
+                    this.logger.info(String.format("Skipping mapping of relationship %s because its stereotype is not supported.", relationship.getHumanType()));
                     continue;
                 }
                 

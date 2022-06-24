@@ -29,12 +29,14 @@ import java.util.stream.Collectors;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectEventListener;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import io.reactivex.Observable;
 
 /**
  * The {@linkplain MagicDrawSessionService} is the service providing easier access to the MagicDraw {@linkplain Sessions}s
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawSessionService implements IMagicDrawSessionService
 {
     /**
@@ -106,4 +108,26 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
     {
         return this.GetProject().getPrimaryModel().getPackagedElement().stream().map(Element.class::cast).collect(Collectors.toList());
     }
+    
+    /**
+     * Gets the project root package
+     * 
+     * @return a {@linkplain Package}
+     */
+    @Override
+    public Package GetModel()
+    {
+        return this.GetProject().getPrimaryModel();
+    }
+
+    /**
+     * Gets the {@linkplain Project} name from the {@linkplain Session}
+     * 
+     * @return a name of the {@linkplain Project}
+     */
+	@Override
+	public String GetProjectName()
+	{
+		return this.GetProject().getName();
+	}
 }

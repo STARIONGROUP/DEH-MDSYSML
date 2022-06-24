@@ -66,6 +66,14 @@ public interface IStereotypeService
     void ApplyStereotype(Element element, Stereotypes stereotype);
 
     /**
+     * Applies the {@linkplain Stereotype} specified by the provided {@linkplain Stereotypes} to the provided {@linkplain Element} 
+     * 
+     * @param element the {@linkplain Element}
+     * @param stereotype the {@linkplain Stereotype}
+     */
+    void ApplyStereotype(Element element, Stereotype stereotype);
+
+    /**
      * Gets a value indicating whether the provided {@linkplain Element} has the stereotype property isEncapsulated and returns the value
      * 
      * @param element the {@linkplain Element}
@@ -88,6 +96,14 @@ public interface IStereotypeService
      * @return a {@linkplain boolean}
      */
     boolean IsPartProperty(Property property);
+    
+    /**
+     * Gets a value indicating whether the provided {@linkplain Property} is a reference property
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain boolean}
+     */
+	boolean IsReferenceProperty(Property property);
 
     /**
      * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain Stereotype} {@linkplain String} name

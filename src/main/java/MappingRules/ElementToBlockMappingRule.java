@@ -168,7 +168,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -681,7 +681,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             
             if(!this.GetOrCreatePort(containedUsage, mappedElement.GetDstElement(), refPort, refDefinition))
             {
-                this.Logger.error(String.format("The rule was not able to map port [%s]", containedUsage.getUserFriendlyName()));
+                this.logger.error(String.format("The rule was not able to map port [%s]", containedUsage.getUserFriendlyName()));
                 continue;
             }
 

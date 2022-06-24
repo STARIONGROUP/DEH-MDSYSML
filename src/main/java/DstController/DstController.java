@@ -70,8 +70,8 @@ import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
 import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.MagicDrawSession.IMagicDrawSessionService;
-import Services.MagicDrawTransaction.ClonedReferenceElement;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.MagicDrawTransaction.Clones.ClonedReferenceElement;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingConfiguration.IMappingConfigurationService;
@@ -185,7 +185,7 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> hubMapResult = new ObservableCollection<>();
+    private ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> hubMapResult = new ObservableCollection<>();
     
     /**
      * Gets The {@linkplain ObservableCollection} of Hub map result
@@ -193,7 +193,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
     @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetHubMapResult()
+    public ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> GetHubMapResult()
     {
         return this.hubMapResult;
     }    
@@ -201,7 +201,7 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetDstMapResult}
      */
-    private ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> dstMapResult = new ObservableCollection<>();
+    private ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> dstMapResult = new ObservableCollection<>();
 
     /**
      * Gets The {@linkplain ObservableCollection} of DST map result
@@ -209,7 +209,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
      */
     @Override
-    public ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetDstMapResult()
+    public ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> GetDstMapResult()
     {
         return this.dstMapResult;
     }
@@ -416,7 +416,7 @@ public final class DstController implements IDstController
         
         StopWatch timer = StopWatch.createStarted();
         
-        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.sessionService.GetProject().getAllElements()
+        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.sessionService.GetProjectElements()
                 .stream()
                 .filter(Class.class::isInstance)
                 .map(Class.class::cast)
@@ -590,8 +590,8 @@ public final class DstController implements IDstController
         
         if(this.TryMap(input, output, result))
         {
-            ArrayList<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> resultAsCollection = 
-                    (ArrayList<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>>) output.Get();
+            ArrayList<MappedElementRowViewModel<DefinedThing, Class>> resultAsCollection = 
+                    (ArrayList<MappedElementRowViewModel<DefinedThing, Class>>) output.Get();
             
             if(!resultAsCollection.isEmpty())
             {
@@ -701,6 +701,7 @@ public final class DstController implements IDstController
         catch (Exception exception)
         {
             this.logService.Append(exception.toString(), exception);
+            this.logger.catching(exception);
             return false;
         }
         finally
@@ -715,7 +716,7 @@ public final class DstController implements IDstController
      */
     private void PrepareThingsForTransfer()
     {
-        for (Class element : selectedHubMapResultForTransfer)
+        for (Class element : this.selectedHubMapResultForTransfer)
         {
             Class reference = element;
             
@@ -743,7 +744,12 @@ public final class DstController implements IDstController
      */
     private void PrepareStates()
     {
-        Package model = this.sessionService.GetProject().getPrimaryModel();
+        if(this.transactionService.GetStatesModifiedRegions().isEmpty())
+        {
+            return;
+        }
+        
+        Package model = this.sessionService.GetModel();
         
         StateMachine stateMachineModel = StreamExtensions.OfType(model.getOwnedElement().stream(), StateMachine.class)
                 .filter(x -> AreTheseEquals(x.getName(), "Model"))
@@ -769,13 +775,7 @@ public final class DstController implements IDstController
                         stateAndModifiedRegions.getKey().getRegion().add(regionAndModification.getLeft());
                         break;
                     case DELETE:
-                        try
-                        {
-                            ModelElementsManager.getInstance().removeElement(regionAndModification.getLeft());
-                        } catch (ReadOnlyElementException exception)
-                        {
-                            this.logService.Append("Error while trying to delete Region [%s], the region is readonly.", regionAndModification.getLeft().getName());
-                        }
+                        this.transactionService.Delete(regionAndModification.getLeft());
                         break;
                     default:
                         break;
@@ -790,11 +790,14 @@ public final class DstController implements IDstController
             
             for (Dependency dependency : StreamExtensions.OfType(stateAndModifiedRegions.getKey().get_directedRelationshipOfTarget(), Dependency.class))
             {
-                dependency.setOwner(model);
-                model.get_relationshipOfRelatedElement().add(dependency);
-                dependency.getSupplier().clear();
-                dependency.getSupplier().add(stateAndModifiedRegions.getKey());
-            }
+                NamedElement client = new ArrayList<NamedElement>(dependency.getClient()).get(0);
+                
+                if(this.transactionService.IsCloned(client))
+                {
+                    dependency.getClient().clear();
+                    dependency.getClient().add(this.transactionService.GetClone(client).GetOriginal());
+                }
+            }            
         }
     }
 
@@ -812,11 +815,11 @@ public final class DstController implements IDstController
         
         for (Abstraction relationship : transferableRelationships)
         {
-            if(this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().stream()
+            if(this.sessionService.GetModel().get_relationshipOfRelatedElement().stream()
                     .noneMatch(x -> AreTheseEquals(x.getID(), relationship)))
             {
-                this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().add(relationship);
-                relationship.setOwner(this.sessionService.GetProject().getPrimaryModel());
+                this.sessionService.GetModel().get_relationshipOfRelatedElement().add(relationship);
+                relationship.setOwner(this.sessionService.GetModel());
                 this.exchangeHistory.Append(relationship, ChangeKind.CREATE);
             }
         }
@@ -859,7 +862,7 @@ public final class DstController implements IDstController
         }
         else
         {
-            this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(element);
+            this.sessionService.GetModel().getOwnedElement().add(element);
             this.exchangeHistory.Append(element, ChangeKind.CREATE);
         }
         
@@ -883,7 +886,7 @@ public final class DstController implements IDstController
         {
             Element portDefinition = usageRelationship.getOwner();
             portDefinition.get_relationshipOfRelatedElement().remove(usageRelationship);
-            this.sessionService.GetProject().getPrimaryModel().get_relationshipOfRelatedElement().add(usageRelationship);
+            this.sessionService.GetModel().get_relationshipOfRelatedElement().add(usageRelationship);
         }
     }
 
@@ -905,7 +908,7 @@ public final class DstController implements IDstController
                 
                 if(optionalOriginalProperty.isPresent())
                 {
-                    ModelElementsManager.getInstance().removeElement(optionalOriginalProperty.get());
+                    this.transactionService.Delete(optionalOriginalProperty.get());
                 }
                 
                 original.getOwnedAttribute().add(property);    
@@ -938,18 +941,18 @@ public final class DstController implements IDstController
                     .filter(x -> this.transactionService.IsNew(x))
                     .collect(Collectors.toList()))
             {
-                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
                 {
-                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(interfaceToAdd);
+                    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
                     this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
                 }
             }
             
             for (Usage usage : usagesRelationships)
             {
-                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), usage.getID())))
+                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), usage.getID())))
                 {
-                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(usage);
+                    this.sessionService.GetModel().getOwnedElement().add(usage);
                 }                
             }
             
@@ -958,9 +961,9 @@ public final class DstController implements IDstController
                     .filter(x -> this.transactionService.IsNew(x))
                     .collect(Collectors.toList()))
             {
-                if(this.sessionService.GetProject().getPrimaryModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
                 {
-                    this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(interfaceToAdd);
+                    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
                     this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
                 }                
             }
@@ -990,7 +993,6 @@ public final class DstController implements IDstController
      * 
      * @param requirement the {@linkplain Class} requirement
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void UpdateRequirementPackage(Class requirement)
     {        
         Package container = (Package)requirement.eContainer();
@@ -1017,12 +1019,12 @@ public final class DstController implements IDstController
         }
         else
         {
-            if(!this.sessionService.GetProject().getPrimaryModel().getOwnedElement().removeIf(x -> AreTheseEquals(((MDObject) x).getID(), containerToUpdate.getID())))
+            if(!this.sessionService.GetModel().getOwnedElement().removeIf(x -> AreTheseEquals(((MDObject) x).getID(), containerToUpdate.getID())))
             {
                 this.exchangeHistory.Append(containerToUpdate, ChangeKind.CREATE);
             }
             
-            this.sessionService.GetProject().getPrimaryModel().getOwnedElement().add(containerToUpdate);
+            this.sessionService.GetModel().getOwnedElement().add(containerToUpdate);
 
             this.exchangeHistory.Append(requirement, ChangeKind.CREATE);
         }
@@ -1033,7 +1035,6 @@ public final class DstController implements IDstController
      * 
      * @param containerToUpdate the {@linkplain Package}
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void UpdateRequirementPackage(Package containerToUpdate)
     {
         ClonedReferenceElement<Package> requirementPkgCloneReference = this.transactionService.GetClone(containerToUpdate);
@@ -1199,9 +1200,6 @@ public final class DstController implements IDstController
             {
                 case ElementDefinition:
                     this.PrepareElementDefinitionForTransfer(iterationClone, transaction, (ElementDefinition)thing);
-                    break;
-                case RequirementsSpecification:
-                    this.PrepareRequirementForTransfer(iterationClone, transaction, (RequirementsSpecification)thing);
                     break;
                 case Requirement:
                     this.PrepareRequirementForTransfer(iterationClone, transaction, thing.getContainerOfType(RequirementsSpecification.class));
@@ -1404,7 +1402,6 @@ public final class DstController implements IDstController
      * @param classKind the {@linkplain ClassKind} of the {@linkplain Thing}s to add or remove depending on which impact view it has been called from
      * @param shouldRemove a value indicating whether the things are to be removed
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private void AddOrRemoveAllFromSelectedDstMapResultForTransfer(ClassKind classKind, boolean shouldRemove)
     {
         Predicate<? super Thing> predicateClassKind = x -> x.getClassKind() == classKind;
@@ -1449,7 +1446,6 @@ public final class DstController implements IDstController
      * @return a value indicating whether the {@linkplain Element} has been found
      */
     @Override
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends NamedElement> boolean TryGetElementByName(DefinedThing thing, Ref<TElement> refElement)
     {
         return this.TryGetElementBy(x -> x instanceof NamedElement
@@ -1466,7 +1462,6 @@ public final class DstController implements IDstController
      * @return a value indicating whether the {@linkplain Element} has been found
      */
     @Override
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends NamedElement> boolean TryGetElementById(String elementId, Ref<TElement> refElement)
     {
         return this.TryGetElementBy(x -> AreTheseEquals(elementId, x.getID()), refElement);
@@ -1482,10 +1477,9 @@ public final class DstController implements IDstController
      */
     @Override
     @SuppressWarnings("unchecked")
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public <TElement extends NamedElement> boolean TryGetElementBy(Predicate<TElement> predicate, Ref<TElement> refElement)
     {
-        Optional<TElement> element = this.sessionService.GetProject().getAllElements().stream()
+        Optional<TElement> element = this.sessionService.GetProjectElements().stream()
                 .filter(x -> refElement.GetType().isInstance(x))
                 .map(x -> (TElement)x)
                 .filter(predicate)
@@ -1507,21 +1501,18 @@ public final class DstController implements IDstController
      * @return a {@linkplain boolean}
      */
     @Override
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     public boolean TryGetUnit(MeasurementUnit unit, Ref<InstanceSpecification> refUnit)
     {
         for (InstanceSpecification dataType :  this.stereotypeService.GetUnits())
-        {
-            boolean doesItMatch = this.VerifyNames(unit, dataType.getName());
-            
-            if(doesItMatch)
+        {            
+            if(this.VerifyNames(unit, dataType.getName()))
             {
                 refUnit.Set(dataType);
-                return true;
+                break;
             }
         }
         
-        return false;
+        return refUnit.HasValue();
     }
     
     /**
@@ -1541,7 +1532,7 @@ public final class DstController implements IDstController
         {
             refGeneral.Set(((SpecializedQuantityKind)parameterType).getGeneral());
         }
-                        
+
         this.stereotypeService.GetDataTypes().stream()
                 .filter(x -> this.VerifyNames(parameterType, scale, x) || (refGeneral.HasValue() && this.VerifyNames(refGeneral.Get(), scale, x)))
                 .findFirst()
@@ -1557,7 +1548,6 @@ public final class DstController implements IDstController
      * @param scale the {@linkplain MeasurementScale} of reference
      * @return a {@linkplain boolean}
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private boolean VerifyNames(ParameterType thing, MeasurementScale scale, DataType dataType)
     {        
         if(thing instanceof QuantityKind && scale != null && StringUtils.isNotBlank(scale.getName()) && dataType.getName().contains("["))
@@ -1580,7 +1570,6 @@ public final class DstController implements IDstController
      * @param dataTypeName the {@linkplain String} {@linkplain DataType} name
      * @return a {@linkplain boolean}
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private <TThing extends NamedThing & ShortNamedThing> boolean VerifyNames(TThing thing, String dataTypeName)
     {
         return AreTheseEquals(dataTypeName, thing.getName(), true) 
@@ -1596,7 +1585,6 @@ public final class DstController implements IDstController
      * @param dataType the {@linkplain DataType}
      * @return a {@linkplain boolean}
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     private boolean VerifyQuantityKindNameAndUnit(QuantityKind quantityKind, MeasurementScale scale, DataType dataType)
     {
         try

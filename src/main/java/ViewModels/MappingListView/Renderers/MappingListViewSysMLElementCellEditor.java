@@ -42,7 +42,7 @@ public class MappingListViewSysMLElementCellEditor extends MappingListViewElemen
      */
     public MappingListViewSysMLElementCellEditor()
     {
-        super(x -> StereotypeService.Current.DoesItHaveTheStereotype(x, Stereotypes.Block) 
+        super(x -> StereotypeService.Current().DoesItHaveTheStereotype(x, Stereotypes.Block) 
                 ? new MappingListViewBlockRowViewModel(x)
                 : new MappingListViewSysMLRequirementRowViewModel(x));
     }

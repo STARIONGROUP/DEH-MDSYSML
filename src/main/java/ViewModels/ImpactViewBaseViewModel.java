@@ -88,7 +88,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
             .subscribe(x -> this.ComputeDifferences(), e -> this.logger.catching(e));
         
         this.DstController.GetDstMapResult()
-            .IsEmpty()
+            .IsEmptyObservable()
             .subscribe(isEmpty ->
             {
                 if(isEmpty)
@@ -286,7 +286,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      * @param selectedRow the selected row view model {@linkplain IThingRowViewModel}
      */
     @Override
-    public void OnSelectionChanged(ThingRowViewModel<?> selectedRow) 
+    public void OnSelectionChanged(ThingRowViewModel<Thing> selectedRow) 
     {
         if(selectedRow != null && selectedRow.GetThing() != null)
         {
@@ -364,14 +364,14 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
             shouldSelect.Set(rowViewModel.SwitchIsSelectedValue());
         }
         
-        if(shouldSelect.Get() && this.DstController.GetSelectedDstMapResultForTransfer().stream()
+        if(shouldSelect.Get().booleanValue() && this.DstController.GetSelectedDstMapResultForTransfer().stream()
                 .noneMatch(x -> AreTheseEquals(rowViewModel.GetThing().getIid(), x.getIid())))
         {
             this.DstController.GetSelectedDstMapResultForTransfer().add(rowViewModel.GetThing());
         }
-        else if(!shouldSelect.Get())
+        else if(!shouldSelect.Get().booleanValue())
         {
-            this.DstController.GetSelectedDstMapResultForTransfer().Remove(rowViewModel.GetThing());
+            this.DstController.GetSelectedDstMapResultForTransfer().RemoveOne(rowViewModel.GetThing());
         }
     }
 }

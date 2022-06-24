@@ -36,6 +36,7 @@ import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 /**
  * The {@linkplain MagicDrawUILogService} provides easy way to report status messages to the MagicDraw UI log
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawUILogService implements IMagicDrawUILogService
 {
     /**

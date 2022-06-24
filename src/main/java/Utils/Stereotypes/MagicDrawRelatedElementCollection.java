@@ -31,9 +31,9 @@ import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
 
 /**
- * The {@linkplain CapellaTracedElementCollection} class represents a collection of{@linkplain MappedElementRowViewModel}.
+ * The {@linkplain MagicDrawRelatedElementCollection} class represents a collection of{@linkplain MappedElementRowViewModel}.
  * 
- * The {@linkplain CapellaTracedElementCollection} is usable by the {@linkplain MappingEngine} and 
+ * The {@linkplain MagicDrawRelatedElementCollection} is usable by the {@linkplain MappingEngine} and 
  * each item of the collection represents a mapping in the {@linkplain MappingDirection.FromDstToHub}
  * 
  * Wrapping CapellaTracesCollection this way solves the following problem,
