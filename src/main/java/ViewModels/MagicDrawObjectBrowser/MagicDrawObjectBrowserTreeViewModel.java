@@ -40,11 +40,6 @@ import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTr
 public class MagicDrawObjectBrowserTreeViewModel extends BrowserTreeBaseViewModel
 {
     /**
-     * The root element of the tree
-     */
-    private Object root;
-
-    /**
      * Gets the root element of the tree
      * 
      * @return an {@linkplain Object}

@@ -23,6 +23,8 @@
  */
 package ViewModels;
 
+import static Utils.Operators.Operators.AreTheseEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -45,12 +47,10 @@ import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
+import Views.MagicDrawImpactViewPanel;
 import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
-
-import static Utils.Operators.Operators.AreTheseEquals;
-
+import cdp4common.engineeringmodeldata.Iteration;
 import io.reactivex.Observable;
-import net.bytebuddy.asm.Advice.This;
 
 /**
  * The {@linkplain MagicDrawImpactViewPanelViewModel} is the DST adapter implementation of the 
@@ -243,7 +243,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     @Override
     public List<String> GetSavedMappingconfigurationCollection()
     {
-        if(!this.hubController.GetIsSessionOpen())
+        if(Boolean.FALSE.equals(this.hubController.GetIsSessionOpen()))
         {
             return new ArrayList<>();
         }

@@ -42,8 +42,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.nomagic.magicdraw.foundation.MDObject;
-import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
-import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
@@ -58,6 +56,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
@@ -98,6 +97,7 @@ import cdp4common.commondata.Definition;
 import cdp4common.commondata.NamedThing;
 import cdp4common.commondata.ShortNamedThing;
 import cdp4common.commondata.Thing;
+import cdp4common.dto.ActualFiniteState;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ElementUsage;
@@ -127,7 +127,12 @@ import io.reactivex.Observable;
  */
 public final class DstController implements IDstController
 {
-    /**
+	/**
+	 * Gets the name of the StateMachine Model
+	 */
+    private static final String STATEMACHINEMODELNAME = "Model";
+
+	/**
      * Gets this running DST adapter name
      */
     public static final String THISTOOLNAME = "DEH-MDSYSML";
@@ -503,7 +508,7 @@ public final class DstController implements IDstController
             input = new MagicDrawRelatedElementCollection();
             ((ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) input).addAll(this.dstMapResult);
         }
-        else if(mappingDirection == MappingDirection.FromHubToDst)
+        else 
         {
             input = new HubRelationshipElementsCollection();
             ((ArrayList<MappedElementRowViewModel<? extends Thing, ? extends Class>>) input).addAll(this.hubMapResult);
@@ -696,7 +701,7 @@ public final class DstController implements IDstController
             this.selectedHubMapResultForTransfer.clear();
             this.logService.Append("Reloading the mapping configuration in progress...");
             this.isHubSessionRefreshSilent = false;
-            return result & this.hubController.Refresh();
+            return result && this.hubController.Refresh();
         }
         catch (Exception exception)
         {
@@ -752,11 +757,11 @@ public final class DstController implements IDstController
         Package model = this.sessionService.GetModel();
         
         StateMachine stateMachineModel = StreamExtensions.OfType(model.getOwnedElement().stream(), StateMachine.class)
-                .filter(x -> AreTheseEquals(x.getName(), "Model"))
+                .filter(x -> AreTheseEquals(x.getName(), STATEMACHINEMODELNAME))
                 .findFirst()
                 .orElseGet(() -> 
                 {
-                     StateMachine newStateMachine = this.transactionService.Create(StateMachine.class, "Model");
+                     StateMachine newStateMachine = this.transactionService.Create(StateMachine.class, STATEMACHINEMODELNAME);
                      model.getOwnedElement().add(newStateMachine);
                      return newStateMachine;
                 });
@@ -885,8 +890,12 @@ public final class DstController implements IDstController
                 .collect(Collectors.toList()))
         {
             Element portDefinition = usageRelationship.getOwner();
-            portDefinition.get_relationshipOfRelatedElement().remove(usageRelationship);
-            this.sessionService.GetModel().get_relationshipOfRelatedElement().add(usageRelationship);
+
+            if(portDefinition != null) 
+            {
+                portDefinition.get_relationshipOfRelatedElement().remove(usageRelationship);
+                this.sessionService.GetModel().get_relationshipOfRelatedElement().add(usageRelationship);
+            }
         }
     }
 
@@ -932,7 +941,14 @@ public final class DstController implements IDstController
     {
         for (Port port : element.getOwnedPort().stream().filter(x -> x.getType() != null).collect(Collectors.toList()))
         {
-            Collection<com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship> relationships = port.getType().get_relationshipOfRelatedElement();
+        	Type portType = port.getType();
+        	
+        	if(portType == null) 
+        	{
+        		continue;
+        	}
+        	
+            Collection<com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship> relationships = portType.get_relationshipOfRelatedElement();
             
             List<Usage> usagesRelationships = Utils.StreamExtensions.OfType(relationships.stream(), Usage.class).collect(Collectors.toList());
             
@@ -941,11 +957,7 @@ public final class DstController implements IDstController
                     .filter(x -> this.transactionService.IsNew(x))
                     .collect(Collectors.toList()))
             {
-                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
-                {
-                    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
-                    this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
-                }
+                this.AddNewInterfaceToElement(interfaceToAdd);
             }
             
             for (Usage usage : usagesRelationships)
@@ -961,16 +973,26 @@ public final class DstController implements IDstController
                     .filter(x -> this.transactionService.IsNew(x))
                     .collect(Collectors.toList()))
             {
-                if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
-                {
-                    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
-                    this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
-                }                
+                this.AddNewInterfaceToElement(interfaceToAdd);                
             }
         }
         
         this.PrepareInterfacesForChildren(element);
     }
+
+	/**
+	 * Add an {@linkplain Interface} to an {@linkplain Element}
+	 * 
+	 * @param interfaceToAdd The {@linkplain Interface} to add
+	 */
+	private void AddNewInterfaceToElement(Interface interfaceToAdd)
+	{
+		if(this.sessionService.GetModel().getOwnedElement().stream().noneMatch(x -> AreTheseEquals(x.getID(), interfaceToAdd.getID())))
+		{
+		    this.sessionService.GetModel().getOwnedElement().add(interfaceToAdd);
+		    this.exchangeHistory.Append(interfaceToAdd, ChangeKind.CREATE);
+		}
+	}
 
     /**
      * Prepares all the {@linkplain Interface}s that the provided {@linkplain Class} children ports use
@@ -1000,7 +1022,7 @@ public final class DstController implements IDstController
         
         while(container != null && !(containerIsCloned = this.transactionService.IsCloned(container)) 
                 && container.eContainer() instanceof Package 
-                && !(AreTheseEquals(((Package)container.eContainer()).getName(), "Model", true)))
+                && !(AreTheseEquals(((Package)container.eContainer()).getName(), STATEMACHINEMODELNAME, true)))
         {
             container = (Package)container.eContainer();
         }

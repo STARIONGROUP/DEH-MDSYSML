@@ -34,8 +34,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
-import com.nomagic.requirements.util.RequirementUtilities;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
@@ -225,26 +223,19 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
         {
             if(element instanceof Package)
             {
-                if(element.isParentOf(requirement))
-                {                
-                    if(!this.TryGetOrCreateRequirementGroup((Package)element, refRequirementsSpecification, refRequirementsGroup))
-                    {
-                        this.logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
-                                requirement.getName(), ((Package)element).getName()));
-                        
-                        break;
-                    }
-                }
-            }
-                        
-            else if(element instanceof Class && AreTheseEquals(element.getID(), requirement.getID()))
-            {
-                if(!this.TryGetOrCreateRequirement((Class)element, refRequirementsSpecification, refRequirementsGroup, refRequirement))
-                {
-                    throw new UnsupportedOperationException(
-                            String.format("Could not create the requirement %s", requirement.getName()));
-                }
-            }
+                if (element.isParentOf(requirement) && !this.TryGetOrCreateRequirementGroup((Package)element, refRequirementsSpecification, refRequirementsGroup))
+				{
+				    this.logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
+				            requirement.getName(), ((Package)element).getName()));
+				    
+				    break;
+				}
+            } else if (element instanceof Class && AreTheseEquals(element.getID(), requirement.getID()) 
+            		&& !this.TryGetOrCreateRequirement((Class)element, refRequirementsSpecification, refRequirementsGroup, refRequirement))
+			{
+			    throw new UnsupportedOperationException(
+			            String.format("Could not create the requirement %s", requirement.getName()));
+			}
             
             if(this.TryCreateRelevantGroupsAndTheRequirement(requirement, element.getOwnedElement(), refRequirementsSpecification, refRequirementsGroup, refRequirement))
             {

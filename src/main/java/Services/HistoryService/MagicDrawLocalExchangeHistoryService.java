@@ -33,12 +33,11 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import HubController.IHubController;
+import Services.AdapterInfo.IAdapterInfoService;
 import Services.LocalExchangeHistory.ILocalExchangeHistoryService;
 import Services.LocalExchangeHistory.LocalExchangeHistoryService;
 import Services.Stereotype.IStereotypeService;
-import Services.AdapterInfo.IAdapterInfoService;
 import Utils.Stereotypes.DirectedRelationshipType;
-import Utils.Stereotypes.StereotypeUtils;
 import cdp4common.ChangeKind;
 
 /**

@@ -82,6 +82,7 @@ class DstToHubMappingConfigurationDialogViewModelTest
 	ObservableValue<ClassRowViewModel> magicDrawSelectedElement;
 	ObservableValue<ThingRowViewModel<Thing>> elementDefinitionSelectedElement;
 	ObservableValue<ThingRowViewModel<Thing>> requirementSelectedElement;
+	ObservableValue<MappedElementRowViewModel<DefinedThing, Class>> mappedSelectedElement;
 	ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> dstMapResult;
 	Iteration iteration;
 
@@ -92,6 +93,7 @@ class DstToHubMappingConfigurationDialogViewModelTest
 		this.magicDrawSelectedElement = new ObservableValue<>();
 		this.elementDefinitionSelectedElement = new ObservableValue<>();
 		this.requirementSelectedElement = new ObservableValue<>();
+		this.mappedSelectedElement = new ObservableValue<>();
 		this.dstMapResult = new ObservableCollection<>();
 
 		this.dstController = mock(IDstController.class);
@@ -119,6 +121,9 @@ class DstToHubMappingConfigurationDialogViewModelTest
 		
 		when(this.requirementBrowserViewModel.GetSelectedElement())
 				.thenReturn(this.requirementSelectedElement.Observable());
+		
+		when(this.mappedElementListViewViewModel.GetSelectedElement())
+			.thenReturn(this.mappedSelectedElement.Observable());
 
 		this.viewModel = new DstToHubMappingConfigurationDialogViewModel(this.dstController, this.hubController,
 				this.elementDefinitionBrowserViewModel, this.requirementBrowserViewModel,

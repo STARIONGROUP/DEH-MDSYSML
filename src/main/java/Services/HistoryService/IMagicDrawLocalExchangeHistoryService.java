@@ -24,7 +24,6 @@
 package Services.HistoryService;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 

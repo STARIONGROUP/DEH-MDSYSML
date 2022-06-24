@@ -75,7 +75,7 @@ public class DstToHubMappingConfigurationDialogViewModel
 	/**
 	 * The {@linkplain IDstController}
 	 */
-	private final IDstController dstController;
+	private final IDstController iDstController;
 
 	/**
 	 * The {@linkplain IMagicDrawObjectBrowserViewModel}
@@ -122,7 +122,7 @@ public class DstToHubMappingConfigurationDialogViewModel
 		super(dstController, hubController, elementDefinitionBrowserViewModel, requirementBrowserViewModel,
 				mappedElementListViewViewModel);
 
-		this.dstController = dstController;
+		this.iDstController = dstController;
 		this.magicDrawObjectBrowser = magicDrawObjectBrowserViewModel;
 		this.stereotypeService = stereotypeService;
 
@@ -136,64 +136,9 @@ public class DstToHubMappingConfigurationDialogViewModel
 	@Override
 	protected void InitializeObservables()
 	{
+		super.InitializeObservables();
+		
 		this.magicDrawObjectBrowser.GetSelectedElement().subscribe(x -> this.UpdateMappedElements(x));
-
-		this.GetElementDefinitionBrowserViewModel().GetSelectedElement()
-				.subscribe(x -> this.SetHubElement(x.GetThing()));
-
-		this.GetRequirementBrowserViewModel().GetSelectedElement().subscribe(x -> this.SetHubElement(x.GetThing()));
-
-		this.selectedMappedElement.Observable().subscribe(
-				x -> this.shouldMapToNewHubElementCheckBoxBeEnabled
-						.Value(x != null && x.GetRowStatus() != MappedElementRowStatus.ExistingMapping),
-				x -> this.logger.catching(x));
-	}
-
-	/**
-	 * Sets the Hub element on the selected element if the element is compatible
-	 * 
-	 * @param thing the {@linkplain Thing} to assign
-	 */
-	private void SetHubElement(Thing thing)
-	{
-		if (this.selectedMappedElement.Value() == null
-				|| this.selectedMappedElement.Value().GetRowStatus() == MappedElementRowStatus.ExistingMapping)
-		{
-			return;
-		}
-
-		if (thing instanceof ElementDefinition
-				&& this.selectedMappedElement.Value().GetTThingClass().isAssignableFrom(ElementDefinition.class))
-		{
-			this.SetHubElement(thing, ElementDefinition.class);
-		} else if (thing instanceof Requirement && this.selectedMappedElement.Value().GetTThingClass()
-				.isAssignableFrom(Requirement.class))
-		{
-			this.SetHubElement(thing, Requirement.class);
-		} else
-		{
-			this.logger.warn("Thing is not compatible with the current selected mapped element!");
-		}
-	}
-
-	/**
-	 * Sets the Hub element on the selected element
-	 * 
-	 * @param thing the {@linkplain Thing} to assign
-	 * @param clazz the class of the {@linkplain Thing}
-	 */
-	@SuppressWarnings("unchecked")
-	private <TThing extends DefinedThing> void SetHubElement(Thing thing, java.lang.Class<TThing> clazz)
-	{
-		MappedElementRowViewModel<TThing, Class> mappedElementRowViewModel = (MappedElementRowViewModel<TThing, Class>) this.selectedMappedElement
-				.Value();
-
-		mappedElementRowViewModel.SetHubElement((TThing) thing.clone(true));
-
-		this.shouldMapToNewHubElementCheckBoxBeEnabled.Value(false);
-		mappedElementRowViewModel.SetShouldCreateNewTargetElement(false);
-
-		this.UpdateRowStatus(this.selectedMappedElement.Value(), clazz);
 	}
 
 	/**
@@ -240,7 +185,7 @@ public class DstToHubMappingConfigurationDialogViewModel
 			return;
 		}
 
-		this.UpdateProperties(this.dstController.GetDstMapResult());
+		this.UpdateProperties(this.iDstController.GetDstMapResult());
 		this.magicDrawObjectBrowser.BuildTree(this.originalSelection);
 	}
 
@@ -347,7 +292,7 @@ public class DstToHubMappingConfigurationDialogViewModel
 			mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.NewElement);
 		} else if (mappedElementRowViewModel.GetHubElement() != null)
 		{
-			if (this.dstController.GetDstMapResult().stream().filter(x -> x.GetHubElement().getClass() == clazz)
+			if (this.iDstController.GetDstMapResult().stream().filter(x -> x.GetHubElement().getClass() == clazz)
 					.anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(),
 							mappedElementRowViewModel.GetHubElement().getIid())))
 			{
@@ -437,9 +382,10 @@ public class DstToHubMappingConfigurationDialogViewModel
 
 			RequirementsSpecification requirementSpecification = optionalRequirement.get()
 					.getContainerOfType(RequirementsSpecification.class).clone(true);
+			
 			refRequirement.Set(requirementSpecification.getRequirement().stream()
 					.filter(x -> AreTheseEquals(x.getIid(), optionalRequirement.get().getIid()))
-					.filter(x -> !x.isDeprecated()).findFirst().get());
+					.filter(x -> !x.isDeprecated()).findFirst().orElse(null));
 		} else
 		{
 			refShouldCreateNewTargetElement.Set(true);
@@ -486,13 +432,16 @@ public class DstToHubMappingConfigurationDialogViewModel
 	 */
 	private boolean TryGetPossibleRequirementsSpecificationName(Class classElement, Ref<String> possibleParentName)
 	{
-		try
+		Element owner = classElement.getOwner();
+		
+		if(owner != null) 
 		{
-			possibleParentName.Set(((NamedElement) classElement.getOwner().getOwner()).getName());
-		} catch (Exception exception)
-		{
-			this.logger.catching(exception);
-			return false;
+			owner = owner.getOwner();
+			
+			if(owner instanceof NamedElement) 
+			{
+				possibleParentName.Set(((NamedElement)owner).getName());
+			}
 		}
 
 		return possibleParentName.HasValue();

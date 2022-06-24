@@ -1,5 +1,5 @@
 /*
- * BlockToElementMappingRuleTestFixture.java
+ * BlockToElementMappingRuleTest.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -30,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -76,9 +75,8 @@ import cdp4common.sitedirectorydata.SimpleQuantityKind;
 import cdp4common.sitedirectorydata.SimpleUnit;
 import cdp4common.sitedirectorydata.SiteDirectory;
 import cdp4common.sitedirectorydata.SiteReferenceDataLibrary;
-import cdp4common.sitedirectorydata.TextParameterType;
 
-public class BlockToElementMappingRuleTestFixture
+class BlockToElementMappingRuleTest
 {
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
     private IHubController hubController;
@@ -158,7 +156,8 @@ public class BlockToElementMappingRuleTestFixture
         this.mappingRule = new BlockToElementMappingRule(this.hubController, this.mappingConfigurationService, this.stateMappingRule, this.stereotypeService);
     }
 
-    private void SetupElements()
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	private void SetupElements()
     {
         this.domain = new DomainOfExpertise(UUID.randomUUID(), null, null);
         
@@ -289,7 +288,7 @@ public class BlockToElementMappingRuleTestFixture
 
     @SuppressWarnings("unchecked")
     @Test
-    public void VerifyTransform()
+    void VerifyTransform()
     {
         assertDoesNotThrow(() -> this.mappingRule.Transform(this.elements));
         

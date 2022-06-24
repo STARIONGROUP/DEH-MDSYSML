@@ -26,23 +26,18 @@ package Services.MagicDrawTransaction;
 import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 
-import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
 import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
@@ -74,12 +69,10 @@ import com.nomagic.uml2.impl.ElementsFactory;
 import App.AppContainer;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.Clones.ClonedReferenceElement;
-import Services.MagicDrawTransaction.Clones.ClonedReferencePackage;
 import Services.MagicDrawTransaction.Clones.ICloneReferenceService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import cdp4common.ChangeKind;
 
@@ -197,9 +190,9 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * @return a clone of the {@linkplain #original}
      */    
     @Override
-    public <TElement extends Element> TElement Clone(TElement original)
+    public <TElement extends Element> TElement CloneElement(TElement original)
     {
-        return this.cloneReferenceService.Clone(original);
+        return this.cloneReferenceService.CloneElement(original);
     }
     
     /**

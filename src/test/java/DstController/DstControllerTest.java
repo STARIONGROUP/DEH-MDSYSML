@@ -23,11 +23,7 @@
  */
 package DstController;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -121,7 +117,7 @@ import cdp4dal.exceptions.TransactionException;
 import cdp4dal.operations.ThingTransaction;
 import io.reactivex.Observable;
 
-class DstControllerTestFixture
+class DstControllerTest
 {
     private IHubController hubController;
     private IMappingEngineService mappingEngine;
@@ -325,7 +321,7 @@ class DstControllerTestFixture
     }
 
     @Test
-    public void VerifyChangeMappingDirection()
+    void VerifyChangeMappingDirection()
     {
         Ref<Integer> numberOfTimeTheDirectionChanged = new Ref<Integer>(Integer.class, 0);
         Ref<MappingDirection> mappingDirection = new Ref<MappingDirection>(MappingDirection.class, MappingDirection.FromDstToHub);
@@ -592,7 +588,8 @@ class DstControllerTestFixture
         assertSame(unit0, refUnit.Get());
     }
 
-    @Test
+    @SuppressWarnings("resource")
+	@Test
     void VerifyTryGetDataType()
     {
         DataType dataType0 = mock(DataType.class);

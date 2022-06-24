@@ -153,7 +153,7 @@ class HubToDstMappingConfigurationDialogViewModelTest
 		when(this.transactionService.Create(Stereotypes.Requirement, requirement.getName())).thenReturn(null,
 				mock(Class.class));
 
-		when(this.transactionService.Clone(any(Class.class))).thenReturn(mock(Class.class));
+		when(this.transactionService.CloneElement(any(Class.class))).thenReturn(mock(Class.class));
 
 		elements.add(elementDefinition);
 		elements.add(requirement);

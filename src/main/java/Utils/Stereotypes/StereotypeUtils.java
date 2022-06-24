@@ -77,7 +77,7 @@ public final class StereotypeUtils
      */
     public static String GetShortName(String name)
     {
-        return name.replaceAll("[^a-zA-Z0-9]|\\s", "");
+        return name.replaceAll("[^a-zA-Z0-9]", "");
     }
 
     /**
@@ -88,6 +88,6 @@ public final class StereotypeUtils
      */
     public static String GetShortName(NamedElement name)
     {
-        return name.getName().replaceAll("[^a-zA-Z0-9]|\\s", "");
+        return name.getName().replaceAll("[^a-zA-Z0-9]", "");
     }
 }

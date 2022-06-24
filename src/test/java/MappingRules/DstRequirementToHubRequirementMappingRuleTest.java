@@ -1,24 +1,46 @@
+/*
+* DstRequirementToHubRequirementMappingRuleTest.java
+*
+* Copyright (c) 2020-2022 RHEA System S.A.
+*
+* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+*
+* This file is part of DEH-CommonJ
+*
+* The DEH-CommonJ is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 3 of the License, or (at your option) any later version.
+*
+* The DEH-CommonJ is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 package MappingRules;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.common.util.BasicEList;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -30,14 +52,12 @@ import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.engineeringmodeldata.Iteration;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
-import cdp4common.sitedirectorydata.DomainOfExpertise;
 
-class DstRequirementToHubRequirementMappingRuleTestFixture
+class DstRequirementToHubRequirementMappingRuleTest
 {
     private IMagicDrawMappingConfigurationService mappingConfigurationService;
     private IHubController hubController;
     private DstRequirementToHubRequirementMappingRule mappingRule;
-    private DomainOfExpertise domain;
     private Iteration iteration;
     private MagicDrawRequirementCollection elements;
     private Package sysMLRequirementPackage0;
@@ -70,7 +90,7 @@ class DstRequirementToHubRequirementMappingRuleTestFixture
     }
 
     @Test
-    public void VerifyTransform()
+    void VerifyTransform()
     {
         assertDoesNotThrow(() -> this.mappingRule.Transform(null));
         assertDoesNotThrow(() -> this.mappingRule.Transform(mock(List.class)));
@@ -83,7 +103,6 @@ class DstRequirementToHubRequirementMappingRuleTestFixture
     {
         this.elements = new MagicDrawRequirementCollection();
         
-        this.domain = new DomainOfExpertise(UUID.randomUUID(), null, null);
         this.iteration = new Iteration(UUID.randomUUID(), null, null);
         
         this.requirement0 = new cdp4common.engineeringmodeldata.Requirement();

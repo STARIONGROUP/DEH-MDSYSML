@@ -23,10 +23,6 @@
  */
 package ViewModels.MappingListView;
 
-import ViewModels.MappingListView.MappingListViewViewModel;
-import ViewModels.MappingListView.Interfaces.IMappingListViewViewModel;
-import ViewModels.Rows.MappedElementRowViewModel;
-
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -41,6 +37,9 @@ import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import ViewModels.MappingListView.Interfaces.IMappingListViewViewModel;
+import ViewModels.Rows.MappedElementRowViewModel;
+import Views.MagicDrawMappingListView;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 
@@ -78,7 +77,7 @@ public class MagicDrawMappingListViewViewModel extends MappingListViewViewModel<
     {
         this.isTheTreeVisible.Value(shouldDisplayTree);
         
-        if(shouldDisplayTree)
+        if(Boolean.TRUE.equals(shouldDisplayTree))
         {
             this.browserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
                     new MappingListViewTreeViewModel<Class>(this.SortMappedElements()), 

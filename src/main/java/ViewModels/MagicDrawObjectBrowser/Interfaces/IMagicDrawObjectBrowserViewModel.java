@@ -27,12 +27,11 @@ import java.util.Collection;
 
 import org.netbeans.swing.outline.OutlineModel;
 
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
+import ViewModels.MagicDrawObjectBrowserViewModel;
 import ViewModels.Interfaces.IObjectBrowserBaseViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
-import io.reactivex.Observable;
 
 /**
  * The {@linkplain IMagicDrawObjectBrowserViewModel} is the interface definition for the {@linkplain MagicDrawObjectBrowserViewModel}

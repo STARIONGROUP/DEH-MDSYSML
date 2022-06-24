@@ -25,9 +25,7 @@ package ViewModels.Dialogs;
 
 import static Utils.Operators.Operators.AreTheseEquals;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
@@ -58,7 +56,6 @@ import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Requirement;
 import io.reactivex.Observable;
-import io.reactivex.disposables.Disposable;
 
 /**
  * The {@linkplain HubToDstMappingConfigurationDialogViewModel} is the main view
@@ -92,12 +89,7 @@ public class HubToDstMappingConfigurationDialogViewModel
 	/**
 	 * The {@linkplain IDstController}
 	 */
-	private final IDstController dstController;
-
-	/**
-	 * The collection of {@linkplain Disposable}
-	 */
-	private List<Disposable> disposables = new ArrayList<>();
+	private final IDstController iDstController;
 
 	/**
 	 * Initializes a new {@linkplain HubToDstMappingConfigurationDialogViewModel}
@@ -126,7 +118,7 @@ public class HubToDstMappingConfigurationDialogViewModel
 				mappedElementListViewViewModel);
 
 		this.magicDrawObjectBrowser = magicDrawObjectBrowserViewModel;
-		this.dstController = dstController;
+		this.iDstController = dstController;
 		this.transactionService = transactionService;
 		this.InitializeObservables();
 	}
@@ -182,7 +174,7 @@ public class HubToDstMappingConfigurationDialogViewModel
 	@Override
 	protected void UpdateProperties()
 	{
-		this.UpdateProperties(this.dstController.GetHubMapResult());
+		this.UpdateProperties(this.iDstController.GetHubMapResult());
 		this.magicDrawObjectBrowser.BuildTree();
 	}
 
@@ -194,10 +186,6 @@ public class HubToDstMappingConfigurationDialogViewModel
 	@Override
 	protected void PreMap(Collection<Thing> selectedElements)
 	{
-		this.disposables = new ArrayList<>();
-		this.disposables.forEach(x -> x.dispose());
-		this.disposables.clear();
-
 		for (Thing thing : selectedElements)
 		{
 			MappedElementRowViewModel<DefinedThing, Class> mappedRowViewModel = this
@@ -283,9 +271,9 @@ public class HubToDstMappingConfigurationDialogViewModel
 				.noneMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), elementDefinition.getIid())
 						&& x.GetDstElement() != null))
 		{
-			if (this.dstController.TryGetElementByName(elementDefinition, refBlock))
+			if (this.iDstController.TryGetElementByName(elementDefinition, refBlock))
 			{
-				refBlock.Set(this.transactionService.Clone(refBlock.Get()));
+				refBlock.Set(this.transactionService.CloneElement(refBlock.Get()));
 			} else
 			{
 				Class block = this.transactionService.Create(Stereotypes.Block, elementDefinition.getName());
@@ -323,10 +311,10 @@ public class HubToDstMappingConfigurationDialogViewModel
 		if (this.mappedElements.stream()
 				.noneMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), requirement.getIid())))
 		{
-			if (this.dstController.TryGetElementByName(requirement, refRequirement))
+			if (this.iDstController.TryGetElementByName(requirement, refRequirement))
 			{
 				Class original = refRequirement.Get();
-				refRequirement.Set(this.transactionService.Clone(original));
+				refRequirement.Set(this.transactionService.CloneElement(original));
 			} else
 			{
 				Class newRequirement = this.transactionService.Create(Stereotypes.Requirement, requirement.getName());

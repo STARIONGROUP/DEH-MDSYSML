@@ -1,9 +1,32 @@
+/*
+* MapCommandServiceTest.java
+*
+* Copyright (c) 2020-2022 RHEA System S.A.
+*
+* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+*
+* This file is part of DEH-CommonJ
+*
+* The DEH-CommonJ is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 3 of the License, or (at your option) any later version.
+*
+* The DEH-CommonJ is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with this program; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 package Services.Mapping;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,10 +42,9 @@ import Services.NavigationService.INavigationService;
 import Utils.Ref;
 import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
 import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
-import Views.Dialogs.MagicDrawDstToHubMappingConfigurationDialog;
 import io.reactivex.Observable;
 
-class MapCommandServiceTestFixture
+class MapCommandServiceTest
 {
     private IDstController dstController;
     private INavigationService navigationService;
@@ -71,7 +93,7 @@ class MapCommandServiceTestFixture
     @Test
     void VerifyMapSelection()
     {
-        assertThrows(NullPointerException.class, () -> this.service.MapSelection(null));
+        assertDoesNotThrow(() -> this.service.MapSelection(null));
         assertDoesNotThrow(() -> this.service.MapSelection(MappingDirection.FromDstToHub));
         assertDoesNotThrow(() -> this.service.MapSelection(MappingDirection.FromHubToDst));
     }    

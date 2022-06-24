@@ -35,15 +35,11 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Services.Stereotype.IStereotypeService;
-import Services.Stereotype.StereotypeService;
-import Utils.Stereotypes.Stereotypes;
 
 /**
  * The ClonedReferenceElement is a POJO class that represents a cloned element with it's original reference

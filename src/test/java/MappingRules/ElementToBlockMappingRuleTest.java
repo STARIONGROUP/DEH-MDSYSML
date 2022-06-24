@@ -1,5 +1,5 @@
 /*
- * ElementToBlockMappingRuleTestfFixture.java
+ * ElementToBlockMappingRuleTestf.java
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
@@ -43,21 +43,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
-import com.nomagic.magicdraw.core.Project;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Enumeration;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import DstController.IDstController;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import MappingRules.Interfaces.IStateMappingRule;
-import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.Stereotype.IStereotypeService;
@@ -86,7 +82,7 @@ import cdp4common.sitedirectorydata.SimpleUnit;
 import cdp4common.sitedirectorydata.TextParameterType;
 import cdp4common.types.ValueArray;
 
-class ElementToBlockMappingRuleTestfFixture
+class ElementToBlockMappingRuleTest
 {
     private static final String literalEnumerationValue = "valueDefinition2";
     private IHubController hubController;
@@ -142,7 +138,6 @@ class ElementToBlockMappingRuleTestfFixture
     
     private Object AnswerToTransactionServiceCreate(InvocationOnMock invocationData)
     {
-        @SuppressWarnings("unchecked")
         Stereotypes type = invocationData.getArgument(0, Stereotypes.class);
         
         if(invocationData.getArguments().length == 2)
@@ -194,7 +189,7 @@ class ElementToBlockMappingRuleTestfFixture
             return true;
         });
         
-        when(this.transactionService.Clone(any())).thenAnswer(x -> x.getArgument(0));
+        when(this.transactionService.CloneElement(any())).thenAnswer(x -> x.getArgument(0));
         
         assertEquals(3, this.mappingRule.Transform(this.elements).size());
 

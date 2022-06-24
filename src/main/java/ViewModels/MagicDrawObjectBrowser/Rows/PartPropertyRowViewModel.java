@@ -83,13 +83,15 @@ public class PartPropertyRowViewModel extends PropertyRowViewModel implements IH
 	{
 		this.containedRows.clear();
 
-		if (!(this.GetElement().getType() instanceof Class))
+		Type elementType = this.GetElement().getType();
+		
+		if (!(elementType instanceof Class))
 		{
-			this.Logger.error(String.format("The Part Property %s is not correctly typed", this.GetName()));
+			this.logger.error(String.format("The Part Property %s is not correctly typed", this.GetName()));
 			return;
 		}
 
-		for (Property property : ((Class) this.GetElement().getType()).getOwnedAttribute())
+		for (Property property : ((Class) elementType).getOwnedAttribute())
 		{
 			if (StereotypeService.Current().IsReferenceProperty(property))
 			{
@@ -98,7 +100,7 @@ public class PartPropertyRowViewModel extends PropertyRowViewModel implements IH
 			{
 				this.containedRows.add(new ValuePropertyRowViewModel(this, property));
 			} else if (StereotypeService.Current().IsPartProperty(property)
-					&& property.getID() != this.GetElement().getID())
+					&& !property.getID().equals(this.GetElement().getID()))
 			{
 				this.containedRows.add(new PartPropertyRowViewModel(this, property));
 			} else

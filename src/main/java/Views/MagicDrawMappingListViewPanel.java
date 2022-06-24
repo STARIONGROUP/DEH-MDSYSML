@@ -43,8 +43,8 @@ public class MagicDrawMappingListViewPanel extends MagicDrawBasePanel<IMappingLi
         setTabTitle("Mapping List View");
         setFrameIcon(ImageLoader.GetIcon("icon16.png"));
         this.setDefaultCloseAction(CLOSE_ACTION_TO_HIDE);
-        this.View = new MagicDrawMappingListView();
-        getRootPane().getContentPane().add(this.View);
+        this.view = new MagicDrawMappingListView();
+        getRootPane().getContentPane().add(this.view);
     }
 
     /**
@@ -55,6 +55,6 @@ public class MagicDrawMappingListViewPanel extends MagicDrawBasePanel<IMappingLi
     @Override
     public void Bind()
     {
-        this.View.SetDataContext(this.DataContext);
+        this.view.SetDataContext(this.dataContext);
     }
 }

@@ -109,15 +109,13 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	{
 		this.sessionService.HasAnyOpenSessionObservable().subscribe(this::UpdateBrowserTrees);
 
-		this.sessionService.SessionUpdated().subscribe(hasBeenSaved -> {
-			this.UpdateBrowserTrees(this.sessionService.HasAnyOpenSession());
-		});
+		this.sessionService.SessionUpdated().subscribe(hasBeenSaved -> this.UpdateBrowserTrees(this.sessionService.HasAnyOpenSession()));
 
 		this.dstController.GetHubMapResult().ItemsAdded().subscribe(
 				x -> this.UpdateBrowserTrees(this.sessionService.HasAnyOpenSession()), this.logger::catching);
 
 		this.dstController.GetHubMapResult().IsEmptyObservable().subscribe(isEmpty -> {
-			if (isEmpty)
+			if (Boolean.TRUE.equals(isEmpty))
 			{
 				this.UpdateBrowserTrees(this.sessionService.HasAnyOpenSession());
 			}
@@ -266,7 +264,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 		EObject parent = element;
 		Element previousParent = (Element) parent;
 
-		while (parent != null && parent instanceof Element)
+		while (parent instanceof Element)
 		{
 			previousParent = (Element) parent;
 			parent = parent.eContainer();
@@ -348,15 +346,10 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 				break;
 			}
 
-			if (childRowViewModel instanceof IHaveContainedRows)
+			if (childRowViewModel instanceof IHaveContainedRows && this.TryGetRowViewModelBy(
+					((IHaveContainedRows<IElementRowViewModel<? extends Element>>) childRowViewModel).GetContainedRows(), predicate, refElement))
 			{
-				if (this.TryGetRowViewModelBy(
-						((IHaveContainedRows<IElementRowViewModel<? extends Element>>) childRowViewModel)
-								.GetContainedRows(),
-						predicate, refElement))
-				{
-					break;
-				}
+				break;
 			}
 		}
 
@@ -371,7 +364,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	@Override
 	protected void UpdateBrowserTrees(Boolean isConnected)
 	{
-		if (isConnected)
+		if (Boolean.TRUE.equals(isConnected))
 		{
 			MagicDrawObjectBrowserTreeViewModel treeModel = this.dstController.GetHubMapResult().isEmpty()
 					? new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProjectName(),

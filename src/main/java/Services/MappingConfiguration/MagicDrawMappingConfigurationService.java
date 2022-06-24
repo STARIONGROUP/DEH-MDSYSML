@@ -40,7 +40,6 @@ import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
@@ -80,7 +79,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         this.hubController.GetIsSessionOpenObservable()
         .subscribe(x -> 
         {
-            if(!x)
+            if(Boolean.FALSE.equals(x))
             {
                 this.correspondences.clear();
                 this.SetExternalIdentifierMap(new ExternalIdentifierMap());
@@ -139,7 +138,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             
             MappedElementDefinitionRowViewModel mappedElement = new MappedElementDefinitionRowViewModel(
                     mappingDirection == MappingDirection.FromHubToDst 
-                    ? this.transactionService.Clone(element) 
+                    ? this.transactionService.CloneElement(element) 
                     : element, mappingDirection);
             
             if(this.hubController.TryGetThingById(internalId, refElementDefinition))
@@ -155,7 +154,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             
             MappedRequirementRowViewModel mappedElement = new MappedRequirementRowViewModel(
                     mappingDirection == MappingDirection.FromHubToDst 
-                    ? this.transactionService.Clone(element) 
+                    ? this.transactionService.CloneElement(element) 
                     : element, mappingDirection);
 
             if(this.hubController.TryGetThingById(internalId, refHubRequirement))

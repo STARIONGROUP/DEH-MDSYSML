@@ -27,18 +27,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.netbeans.swing.outline.Outline;
 
 import Renderers.MagicDrawObjectBrowserRenderDataProvider;
-import ViewModels.Interfaces.IContextMenuViewModel;
 import ViewModels.Interfaces.IImpactViewContextMenuViewModel;
-import ViewModels.Interfaces.IObjectBrowserViewModel;
 import ViewModels.Interfaces.IViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
-import Views.ContextMenu.ContextMenu;
-import Views.ObjectBrowser.ObjectBrowser;
 import Views.ObjectBrowser.ObjectBrowserBase;
 
 /**
