@@ -345,7 +345,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     {
         return (TElement) this.CreateFromEnum(stereotype, name);
     }
-    
+
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain Stereotypes}
      * 
@@ -485,12 +485,12 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         
         if(magicDrawStereotype != null)
         {
-            StereotypesHelper.addStereotype(reference, magicDrawStereotype);
+            this.stereotypeService.ApplyStereotype(reference, magicDrawStereotype);
         }
         
         this.newReferences.put(reference.getID(), reference);
         return reference;
-    }    
+    }
     
     /**
      * Gets the existing or create the {@linkplain Package} that is meant to hold parameter types created from COMET

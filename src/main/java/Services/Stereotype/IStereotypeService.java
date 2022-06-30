@@ -33,6 +33,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Utils.Stereotypes.Stereotypes;
+import cdp4common.sitedirectorydata.CategorizableThing;
 
 /**
  * The {@linkplain IStereotypeService} is the interface definition for the {@linkplain StereotypeService}
@@ -64,14 +65,6 @@ public interface IStereotypeService
      * @param stereotype the {@linkplain Stereotypes}
      */
     void ApplyStereotype(Element element, Stereotypes stereotype);
-
-    /**
-     * Applies the {@linkplain Stereotype} specified by the provided {@linkplain Stereotypes} to the provided {@linkplain Element} 
-     * 
-     * @param element the {@linkplain Element}
-     * @param stereotype the {@linkplain Stereotype}
-     */
-    void ApplyStereotype(Element element, Stereotype stereotype);
 
     /**
      * Gets a value indicating whether the provided {@linkplain Element} has the stereotype property isEncapsulated and returns the value
@@ -200,4 +193,28 @@ public interface IStereotypeService
      * @return a {@linkplain String}
      */
     String GetRequirementId(Class requirement);
+
+    /**
+     * Gets the {@linkplain Stereotype} that corresponds to the specified {@linkplain String}
+     * 
+     * @param stereotypeName the {@linkplain String} stereotype name
+     * @return a {@linkplain Stereotype}
+     */
+    Stereotype GetStereotype(String stereotypeName);
+
+    /**
+     * Applies the provided {@linkplain Stereotype}  to the provided element {@linkplain Class}
+     * 
+     * @param element the {@linkplain Element}
+     * @param stereotype the {@linkplain Class}
+     */
+    void ApplyStereotype(Element element, Stereotype stereotype);
+
+    /**
+     * Applies existing {@linkplain Stereotypes} represented by means of {@linkplain Categories} to the provided element {@linkplain Class}
+     * 
+     * @param thing the {@linkplain CategorizableThing}
+     * @param element the {@linkplain Element}
+     */
+    void ApplyStereotypesFrom(CategorizableThing thing, Element element);
 }

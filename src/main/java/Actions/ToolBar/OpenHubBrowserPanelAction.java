@@ -117,11 +117,6 @@ public class OpenHubBrowserPanelAction extends MDAction
             DockingManager dockingManager = mainFrame.getDockingManager();
             Collection<String> allFrames = dockingManager.getAllFrames();
             
-            for (String string : allFrames)
-            {
-                this.logger.debug(String.format("FRAME => [%s]", string));
-            }
-            
             boolean isHubBrowserPanelPresent = false;
             boolean isImpactViewPanelPresent = false;
             

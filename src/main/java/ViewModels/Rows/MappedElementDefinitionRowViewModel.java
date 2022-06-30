@@ -23,17 +23,31 @@
  */
 package ViewModels.Rows;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+
+import Utils.Operators.Operators;
+
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Enumerations.MappingDirection;
-
+import cdp4common.engineeringmodeldata.ActualFiniteState;
 import cdp4common.engineeringmodeldata.ElementDefinition;
+import cdp4common.engineeringmodeldata.Parameter;
 
 /**
  * The {@linkplain MappedElementDefinitionRowViewModel} is the row view model that represents a mapping between an {@linkplain ElementDefinition }
  */
 public class MappedElementDefinitionRowViewModel extends MappedElementRowViewModel<ElementDefinition, Class>
 {
+    /**
+     * Backing field for {@linkplain #GetSelectedActualFiniteState()}
+     */
+    private HashMap<UUID, ActualFiniteState> selectedActualFiniteStates = new HashMap<>();
+        
     /**
      * Initializes a new {@linkplain MappedElementDefinitionRowViewModel}
      * 
@@ -78,5 +92,46 @@ public class MappedElementDefinitionRowViewModel extends MappedElementRowViewMod
     public String GetHubElementRepresentation()
     {
         return this.GetHubElementRepresentation(ElementDefinition.class);
+    }
+    
+    /**
+     * Updates the {@linkplain ActualFiniteState} selected for the state dependent {@linkplain Parameter} where the id is the one provided
+     * 
+     * @param parameterId the {@linkplain UUID} of the target {@linkplain Parameter}
+     * @param actualFiniteState the selected {@linkplain ActualFiniteState}
+     */
+    public void SetActualFiniteStateFor(UUID parameterId, ActualFiniteState actualFiniteState)
+    {
+        Parameter parameter = this.GetHubElement() != null 
+                ? this.GetHubElement().getParameter().stream().filter(x -> Operators.AreTheseEquals(x.getIid(), parameterId)).findFirst().orElse(null) 
+                : null;
+        
+        if(parameter != null && parameter.getStateDependence() != null 
+                && parameter.getStateDependence().getActualState().stream()
+                        .anyMatch(x -> Operators.AreTheseEquals(actualFiniteState.getIid(), x.getIid())))
+        {
+            this.selectedActualFiniteStates.put(parameterId, actualFiniteState);
+        }   
+    }
+    
+    /**
+     * Gets the {@linkplain ActualFiniteState} for the {@linkplain Parameter} that has the specified {@linkplain UUID}
+     * 
+     * @param parameterId the parameter id
+     * @return an {@linkplain ActualFiniteState}
+     */
+    public ActualFiniteState GetSelectedActualFiniteStateFor(UUID parameterId)
+    {
+        return this.selectedActualFiniteStates.get(parameterId);
+    }
+    
+    /**
+     * Gets all selected {@linkplain ActualFiniteStates} as a {@linkplain Collection}
+     * 
+     * @return a {@linkplain Collection} of {@linkplain Entry} of {@linkplain UUID} and {@linkplain ActualFiniteState}
+     */
+    public Collection<Entry<UUID, ActualFiniteState>> GetSelectedActualFiniteState()
+    {
+        return this.selectedActualFiniteStates.entrySet();
     }
 }

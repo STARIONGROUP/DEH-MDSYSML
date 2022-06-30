@@ -45,6 +45,7 @@ import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.Stereotypes;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.NamedThing;
@@ -133,9 +134,20 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
             
             this.UpdateProperties(mappedRequirementRowViewModel.GetHubElement(), mappedRequirementRowViewModel.GetDstElement());            
             this.UpdateOrCreateRequirementPackages(mappedRequirementRowViewModel.GetHubElement(), mappedRequirementRowViewModel.GetDstElement());
+            this.MapStereotypes(mappedRequirementRowViewModel);
         }
     }
 
+    /**
+     * Maps the {@linkplain Stereotype}s represented by means of applied {@linkplain Category}
+     * 
+     * @param mappedElement the {@linkplain mappedElement}
+     */
+    private void MapStereotypes(MappedRequirementRowViewModel mappedElement)
+    {
+        this.stereotypeService.ApplyStereotypesFrom(mappedElement.GetHubElement(), mappedElement.GetDstElement());
+    }    
+    
     /**
      * Updates the target requirement properties
      * 

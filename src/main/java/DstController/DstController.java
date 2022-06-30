@@ -58,6 +58,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.StateMachine;
@@ -843,6 +844,7 @@ public final class DstController implements IDstController
             this.transactionService.SetRequirementId(original, element);
             this.transactionService.SetRequirementText(original, element);
             original.setName(element.getName());
+            this.UpdateStereotypes(element, original);
             this.exchangeHistory.Append(element, ChangeKind.UPDATE);
         }
         else
@@ -863,6 +865,7 @@ public final class DstController implements IDstController
             Class original = this.transactionService.GetClone(element).GetOriginal();
             
             this.UpdateElementParameters(element, original);
+            this.UpdateStereotypes(element, original);
             this.exchangeHistory.Append(element, ChangeKind.UPDATE);
         }
         else
@@ -873,6 +876,22 @@ public final class DstController implements IDstController
         
         this.PrepareInterfaces(element);
         this.UpdateElementPortsRelationships(element);
+    }
+
+    /**
+     * Updates the applied stereotype from the cloned one to provided original {@linkplain Class}
+     * 
+     * @param clone the cloned {@linkplain Class}
+     * @param original the original {@linkplain Class}
+     */
+    private void UpdateStereotypes(Class clone, Class original)
+    {
+        Collection<Stereotype> allStereotypes = this.stereotypeService.GetAllStereotype(clone);
+        
+        for (Stereotype stereotype : allStereotypes)
+        {
+            this.stereotypeService.ApplyStereotype(original, stereotype);
+        }
     }
 
     /**
@@ -1267,7 +1286,7 @@ public final class DstController implements IDstController
 
         for(Parameter parameter : elementDefinition.getParameter())
         {            
-            transaction.createOrUpdate(parameter);            
+            transaction.createOrUpdate(parameter);
             this.PrepareStates(iterationClone, transaction, parameter);
         }
     }

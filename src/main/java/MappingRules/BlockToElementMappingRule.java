@@ -57,6 +57,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdinternalstructures.ConnectorEnd;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -78,6 +79,7 @@ import cdp4common.engineeringmodeldata.InterfaceEndKind;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterSwitchKind;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
+import cdp4common.engineeringmodeldata.ParameterValueSetBase;
 import cdp4common.engineeringmodeldata.Relationship;
 import cdp4common.sitedirectorydata.BooleanParameterType;
 import cdp4common.sitedirectorydata.Category;
@@ -1188,8 +1190,11 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         this.MapCategory(elementDefinition, this.isAbstractCategoryNames, block.isAbstract(), true);
         this.MapCategory(elementDefinition, this.isActiveCategoryNames, block.isActive(), false);
         this.MapCategory(elementDefinition, this.isEncapsulatedCategoryNames, this.stereotypeService.IsEncapsulated(block), true);
-        
-        this.logger.error(String.format("ElementDefinition has %s Categories", elementDefinition.getCategory().size()));
+              
+        for (Stereotype stereotype : this.stereotypeService.GetAllStereotype(block))
+        {
+            this.MapCategory(elementDefinition, stereotype.getName(), ClassKind.ElementDefinition, ClassKind.ElementUsage);
+        }
     }
 
     /**
