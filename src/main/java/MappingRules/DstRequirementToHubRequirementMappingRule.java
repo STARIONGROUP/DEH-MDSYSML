@@ -291,13 +291,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     {
         for(Stereotype stereotype : this.stereotypeService.GetAllStereotype(element))
         {
-            RequirementType requirementType = RequirementType.From(stereotype);
-            
-            if(requirementType != null)
-            {
-                this.logger.debug(String.format("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType()));
-                this.MapCategory(requirement, requirementType.name(), ClassKind.Requirement);
-            }
+            this.MapCategory(requirement, stereotype.getName(), ClassKind.Requirement);
         }
     }
 

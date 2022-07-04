@@ -95,7 +95,7 @@ public interface IMagicDrawTransactionService
      * @return an instance of a {@linkplain Class}
      */
     <TElement extends Element> TElement Create(Stereotypes stereotype, String name);
-   
+
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain Stereotypes}
      * 

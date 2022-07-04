@@ -27,13 +27,16 @@ import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
@@ -45,8 +48,10 @@ import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.ActualFiniteState;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
+import cdp4common.engineeringmodeldata.Parameter;
 
 /**
  * The {@linkplain MagicDrawMappingConfigurationService} is the implementation of {@linkplain MappingConfigurationService} for the MagicDraw adapter
@@ -145,6 +150,8 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
             {
                 mappedElement.SetHubElement(refElementDefinition.Get().clone(false));
             }
+            
+            this.LoadSelectedStateForStateDependentParameter(mappedElement);
 
             refMappedElementRowViewModel.Set(mappedElement);
         }
@@ -169,6 +176,51 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
     }
     
     /**
+     * Loads from the mapping configuration any saved mapping related to {@linkplain ActualFiniteState}
+     * 
+     * @param mappedElement the {@linkplain MappedElementDefinitionRowViewModel}
+     */
+    private void LoadSelectedStateForStateDependentParameter(MappedElementDefinitionRowViewModel mappedElement)
+    {
+        Collection<Parameter> stateDependentParameters = mappedElement.GetHubElement() != null 
+                ? mappedElement.GetHubElement().getParameter().stream().filter(x -> x.getStateDependence() != null).collect(Collectors.toList())
+                : Collections.emptyList();
+        
+        if(stateDependentParameters.isEmpty())
+        {
+            return;
+        }
+        
+        for (Parameter parameter : stateDependentParameters)
+        {
+            Optional<ImmutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.correspondences.stream()
+                    .filter(x -> AreTheseEquals(parameter.getIid().toString(), x.middle.Identifier))
+                    .findFirst();
+            
+            Ref<ActualFiniteState> optionalFiniteState = new Ref<>(ActualFiniteState.class);
+            
+            if(optionalCorrespondence.isPresent())
+            {
+                parameter.getStateDependence().getActualState()
+                        .stream()
+                        .filter(x -> AreTheseEquals(x.getIid(), optionalCorrespondence.get().getRight()))
+                        .findFirst()
+                        .ifPresent(x -> optionalFiniteState.Set(x));
+            }
+            
+            if(!optionalFiniteState.HasValue())
+            {
+                optionalFiniteState.Set(parameter.getStateDependence().getActualState().stream()
+                        .filter(x -> x.isDefault())
+                        .findFirst()
+                        .orElse(parameter.getStateDependence().getActualState().get(0)));
+            }
+            
+            mappedElement.SetActualFiniteStateFor(parameter.getIid(), optionalFiniteState.Get());
+        }
+    }
+
+    /**
      * Creates a new {@linkplain ExternalIdentifierMap} and sets the current as the new one
      * 
      * @param newName the {@linkplain String} name of the new configuration
@@ -181,5 +233,20 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
     public ExternalIdentifierMap CreateExternalIdentifierMap(String newName, String modelName, boolean addTheTemporyMapping)
     {
         return super.CreateExternalIdentifierMap(newName, modelName, DstController.DstController.THISTOOLNAME, addTheTemporyMapping);
+    }
+
+    /**
+     * Adds or updates the mapping information between 
+     * the selected {@linkplain ActualFiniteState} represented by its id, 
+     * to the corresponding {@linkplain Property} also represented by its id
+     * 
+     * @param actualFiniteStateId the {@linkplain ActualFiniteState} id
+     * @param parameterId the {@linkplain Parameter} id
+     * @param mappingDirection the {@linkplain MappingDirection}
+     */
+    public void AddOrUpdateSelectedActualFiniteStateToExternalIdentifierMap(UUID actualFiniteStateId, UUID parameterId, MappingDirection mappingDirection)
+    {
+        this.AddToExternalIdentifierMap(actualFiniteStateId, parameterId, mappingDirection, 
+                x -> x.middle.MappingDirection == mappingDirection && AreTheseEquals(x.middle.Identifier.toString(), parameterId));
     }
 }

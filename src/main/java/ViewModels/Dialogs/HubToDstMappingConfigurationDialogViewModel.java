@@ -27,6 +27,7 @@ import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.components.mdbasiccomponents.Component;
@@ -94,18 +95,13 @@ public class HubToDstMappingConfigurationDialogViewModel
 	/**
 	 * Initializes a new {@linkplain HubToDstMappingConfigurationDialogViewModel}
 	 * 
-	 * @param dstController                     the {@linkplain IDstController}
-	 * @param hubController                     the {@linkplain IHubController}
-	 * @param elementDefinitionBrowserViewModel the
-	 *                                          {@linkplain IElementDefinitionBrowserViewModel}
-	 * @param requirementBrowserViewModel       the
-	 *                                          {@linkplain IRequirementBrowserViewModel}
-	 * @param magicDrawObjectBrowserViewModel   the
-	 *                                          {@linkplain IMagicDrawObjectBrowserViewModel}
-	 * @param transactionService                the
-	 *                                          {@linkplain IMagicDrawTransactionService}
-	 * @param mappedElementListViewViewModel    the
-	 *                                          {@linkplain ICapellaMappedElementListViewViewModel}
+	 * @param dstController the {@linkplain IDstController}
+	 * @param hubController the {@linkplain IHubController}
+	 * @param elementDefinitionBrowserViewModel the {@linkplain IElementDefinitionBrowserViewModel}
+	 * @param requirementBrowserViewModel the {@linkplain IRequirementBrowserViewModel}
+	 * @param magicDrawObjectBrowserViewModel   the {@linkplain IMagicDrawObjectBrowserViewModel}
+	 * @param transactionService the {@linkplain IMagicDrawTransactionService}
+	 * @param mappedElementListViewViewModel the {@linkplain ICapellaMappedElementListViewViewModel}
 	 */
 	public HubToDstMappingConfigurationDialogViewModel(IDstController dstController, IHubController hubController,
 			IElementDefinitionBrowserViewModel elementDefinitionBrowserViewModel,
@@ -130,7 +126,6 @@ public class HubToDstMappingConfigurationDialogViewModel
 	protected void InitializeObservables()
 	{
 		super.InitializeObservables();
-
 		this.magicDrawObjectBrowser.GetSelectedElement().subscribe(x -> this.UpdateMappedElements(x));
 	}
 
@@ -188,15 +183,38 @@ public class HubToDstMappingConfigurationDialogViewModel
 	{
 		for (Thing thing : selectedElements)
 		{
-			MappedElementRowViewModel<DefinedThing, Class> mappedRowViewModel = this
-					.GetMappedElementRowViewModel(thing);
-
-			if (mappedRowViewModel != null)
-			{
-				this.mappedElements.add(mappedRowViewModel);
-			}
+			this.PreMap(selectedElements, thing);
 		}
 	}
+
+    /**
+     * Pre-map the provided {@linkplain Thing} and its children 
+     *  
+     * @param selectedElement the collection of {@linkplain #TElement}
+     * @param thing the {@linkplain Thing} to premap
+     */
+    private void PreMap(Collection<Thing> selectedElements, Thing thing)
+    {
+        MappedElementRowViewModel<DefinedThing, Class> mappedRowViewModel = this
+        		.GetMappedElementRowViewModel(thing);
+        
+        if (mappedRowViewModel != null)
+        {
+        	this.mappedElements.add(mappedRowViewModel);
+        }
+
+        if(thing instanceof ElementDefinition)
+        {
+            for(ElementDefinition elementDefinition : ((ElementDefinition)thing).getContainedElement().stream()
+                    .filter(x -> !selectedElements.contains(x.getElementDefinition())
+                            && x.getElementDefinition().getParameter().stream().anyMatch(p -> p.getStateDependence() != null))
+                    .map(x -> x.getElementDefinition())
+                    .collect(Collectors.toList()))
+            {
+                this.PreMap(selectedElements, elementDefinition);
+            }
+        }
+    }
 
 	/**
 	 * Get a {@linkplain MappedElementRowViewModel} that represents a pre-mapped

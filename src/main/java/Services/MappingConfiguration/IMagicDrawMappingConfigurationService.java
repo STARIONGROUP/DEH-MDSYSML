@@ -24,10 +24,13 @@
 package Services.MappingConfiguration;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
+import Enumerations.MappingDirection;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
+import cdp4common.engineeringmodeldata.Parameter;
 
 /**
  * The {@linkplain IMagicDrawMappingConfigurationService} is the main interface definition for the {@linkplain MagicDrawMappingConfigurationService}
@@ -41,4 +44,13 @@ public interface IMagicDrawMappingConfigurationService extends IMappingConfigura
      * @return a {@linkplain Collection} of {@linkplain IMappedElementRowViewModel}
      */
     Collection<IMappedElementRowViewModel> LoadMapping(Collection<Class> elements);
+
+    /**
+     * Adds or updates the mapping information between the selected {@linkplain ActualFiniteState} represented by its id, to the corresponding {@linkplain Property} also represented by its id
+     * 
+     * @param actualFiniteStateId the {@linkplain ActualFiniteState} id
+     * @param parameterId the {@linkplain Parameter} id
+     * @param mappingDirection the {@linkplain MappingDirection}
+     */
+    void AddOrUpdateSelectedActualFiniteStateToExternalIdentifierMap(UUID actualFiniteStateId, UUID parameterId, MappingDirection mappingDirection);
 }
