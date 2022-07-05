@@ -385,7 +385,7 @@ public class MapCommandService implements IMapCommandService
         MagicDrawBlockCollection mappedComponents = new MagicDrawBlockCollection();
         MagicDrawRequirementCollection mappedDstRequirements = new MagicDrawRequirementCollection();
         
-        mappedDstRequirements.addAll(mappableElements.stream()
+        mappedDstRequirements.getRight().addAll(mappableElements.stream()
                 .filter(x -> x.GetTThingClass().isAssignableFrom(cdp4common.engineeringmodeldata.Requirement.class))
                 .map(x -> (MappedRequirementRowViewModel)x)
                 .collect(Collectors.toList()));
@@ -395,9 +395,9 @@ public class MapCommandService implements IMapCommandService
                 .map(x -> (MappedElementDefinitionRowViewModel)x)
                 .collect(Collectors.toList()));
         
-        if(!mappedDstRequirements.isEmpty())
+        if(!mappedDstRequirements.getRight().isEmpty())
         {
-            this.logService.Append("Mapping of %s Requirements in progress...", mappedDstRequirements.size());
+            this.logService.Append("Mapping of %s Requirements in progress...", mappedDstRequirements.getRight().size());
             result &= this.dstController.Map(mappedDstRequirements, MappingDirection.FromDstToHub);
         }
         

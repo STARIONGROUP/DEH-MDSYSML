@@ -106,7 +106,7 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
     @Override
     public Collection<Element> GetProjectElements()
     {
-        return this.GetProject().getPrimaryModel().getPackagedElement().stream().map(Element.class::cast).collect(Collectors.toList());
+        return this.GetProject().getAllElements().stream().filter(x -> x instanceof Element).map(Element.class::cast).collect(Collectors.toList());
     }
     
     /**

@@ -37,6 +37,8 @@ import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
 import Utils.Ref;
+import Utils.Stereotypes.MagicDrawRequirementCollection;
+import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
@@ -186,4 +188,14 @@ public interface IDstController extends IDstControllerBase<Class>
      * @return a {@linkplain ObservableCollection} of mapped {@linkplain DirectedRelationship}s
      */
     ObservableCollection<Abstraction> GetMappedBinaryRelationshipsToDirectedRelationships();
+
+
+    /**
+     * Pre-maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
+     * and return the map result
+     * 
+     * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
+     * @return a {@linkplain Collection} of {@linkplain MappedElementRowViewModel}
+     */
+    Collection<MappedElementRowViewModel<DefinedThing, Class>> PreMap(IMappableThingCollection input);
 }

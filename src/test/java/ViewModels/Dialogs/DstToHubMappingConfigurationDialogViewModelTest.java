@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -26,8 +26,10 @@ package ViewModels.Dialogs;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +63,7 @@ import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowV
 import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
+import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -192,9 +195,10 @@ class DstToHubMappingConfigurationDialogViewModelTest
 		selectedElements.add(mock(DataType.class));
 
 		this.SetupElements(containedElements, selectedPackage);
-
+		
+		when(this.dstController.PreMap(any())).thenReturn(Arrays.asList());
 		assertDoesNotThrow(() -> this.viewModel.PreMap(selectedElements));
-		assertEquals(5, this.viewModel.mappedElements.size());
+		assertEquals(2, this.viewModel.mappedElements.size());
 	}
 
 	private void SetupElements(ArrayList<Element> containedElements, Package selectedPackage)

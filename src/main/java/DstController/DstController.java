@@ -27,9 +27,11 @@ import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -427,7 +429,7 @@ public final class DstController implements IDstController
                 .filter(Class.class::isInstance)
                 .map(Class.class::cast)
                 .collect(Collectors.toList()));
-        
+                
         MagicDrawBlockCollection allMappedMagicDrawElement = new MagicDrawBlockCollection();
         MagicDrawRequirementCollection allMappedMagicDrawRequirements = new MagicDrawRequirementCollection();
         
@@ -436,7 +438,7 @@ public final class DstController implements IDstController
         
         things.stream()
             .filter(x -> x.GetMappingDirection() == MappingDirection.FromDstToHub)
-            .forEach(x -> SortMappedElementByType(allMappedMagicDrawElement, allMappedMagicDrawRequirements, x));
+            .forEach(x -> SortMappedElementByType(allMappedMagicDrawElement, allMappedMagicDrawRequirements.getRight(), x));
         
         things.stream()
             .filter(x -> x.GetMappingDirection() == MappingDirection.FromHubToDst)
@@ -578,7 +580,28 @@ public final class DstController implements IDstController
         
         return output.HasValue();
     }
-    
+    /**
+     * Pre-maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
+     * and return the map result
+     * 
+     * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
+     * @return a {@linkplain Collection} of {@linkplain MappedElementRowViewModel}
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<MappedElementRowViewModel<DefinedThing, Class>> PreMap(IMappableThingCollection input)
+    {
+        Ref<ArrayList<?>> output = new Ref<>(null);
+        Ref<Boolean> result = new Ref<>(Boolean.class, false);
+        
+        if(this.TryMap(input, output, result))
+        {
+            return (ArrayList<MappedElementRowViewModel<DefinedThing, Class>>) output.Get();
+        }
+        
+        return Collections.emptyList();
+    }
+
     /**
      * Maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
      * and assign the map result to the dstMapResult or the hubMapResult
@@ -1230,6 +1253,11 @@ public final class DstController implements IDstController
                 .flatMap(x -> x.GetRelationships().stream())
                 .collect(Collectors.toList());
         
+        thingsToTransfer.addAll(StreamExtensions.OfType(this.selectedDstMapResultForTransfer.stream(), Requirement.class)
+                .map(x -> x.getContainerOfType(RequirementsSpecification.class))
+                .distinct()
+                .collect(Collectors.toList()));
+        
         this.logService.Append("Processing %s relationship(s)", relationships.size() + 
                 this.selectedDstMapResultForTransfer.stream().filter(x -> x instanceof BinaryRelationship).count());
         
@@ -1242,8 +1270,8 @@ public final class DstController implements IDstController
                 case ElementDefinition:
                     this.PrepareElementDefinitionForTransfer(iterationClone, transaction, (ElementDefinition)thing);
                     break;
-                case Requirement:
-                    this.PrepareRequirementForTransfer(iterationClone, transaction, thing.getContainerOfType(RequirementsSpecification.class));
+                case RequirementsSpecification:
+                    this.PrepareRequirementForTransfer(iterationClone, transaction, (RequirementsSpecification)thing);
                     break;
                 case BinaryRelationship:
                     this.AddOrUpdateIterationAndTransaction((BinaryRelationship)thing, iterationClone.getRelationship(), transaction);
@@ -1348,41 +1376,50 @@ public final class DstController implements IDstController
      */
     private void PrepareRequirementForTransfer(Iteration iterationClone, ThingTransaction transaction, 
             RequirementsSpecification requirementsSpecification) throws TransactionException
-    {        
+    {
         this.AddOrUpdateIterationAndTransaction(requirementsSpecification, iterationClone.getRequirementsSpecification(), transaction);
         
-        ContainerList<RequirementsGroup> groups = requirementsSpecification.getGroup();
+        List<Requirement> selectedRequirements = requirementsSpecification.getRequirement().stream()
+                .filter(x -> this.selectedDstMapResultForTransfer.stream().anyMatch(t -> AreTheseEquals(t.getIid(), x.getIid())))
+                .collect(Collectors.toList());
         
-        this.RegisterRequirementsGroups(transaction, groups);
-        
-        for(Requirement requirement : requirementsSpecification.getRequirement())
+        for(Requirement requirement : selectedRequirements)
         {
             transaction.createOrUpdate(requirement);
-            
+
+            this.RegisterRequirementsGroups(transaction, requirementsSpecification, requirement.getGroup());
+                        
             for (Definition definition : requirement.getDefinition())
             {
                 transaction.createOrUpdate(definition);
             }
         }
     }
-
+    
     /**
      * Registers the {@linkplain RequirementsGroup} to be created or updated
      * 
-     * @param transaction
-     * @param groups
+     * @param transaction the {@linkplain ThingTransaction}
+     * @param requirementsSpecification the {@linkplain RequirementsSpecification}
+     * @param requirementsGroup the direct {@linkplain RequirementsGroup}
      * @throws TransactionException
      */
-    private void RegisterRequirementsGroups(ThingTransaction transaction, ContainerList<RequirementsGroup> groups) throws TransactionException
+    private void RegisterRequirementsGroups(ThingTransaction transaction, RequirementsSpecification requirementsSpecification,
+            RequirementsGroup requirementsGroup) throws TransactionException
     {
-        for(RequirementsGroup requirementsGroup : groups)
+        while(requirementsGroup != null)
         {
-            transaction.createOrUpdate(requirementsGroup);
-            
-            if(!requirementsGroup.getGroup().isEmpty())
+            if(requirementsGroup.getOriginal() != null || requirementsGroup.getRevisionNumber() == 0)
             {
-                this.RegisterRequirementsGroups(transaction, requirementsGroup.getGroup());
+                transaction.createOrUpdate(requirementsGroup);
             }
+            
+            UUID requirementsGroupId = requirementsGroup.getIid();
+            
+            requirementsGroup = requirementsSpecification.getAllContainedGroups().stream()
+                    .filter(x -> x.getGroup().stream().anyMatch(g -> AreTheseEquals(requirementsGroupId, g.getIid())))
+                    .findFirst()
+                    .orElse(null);
         }
     }
 

@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -141,21 +141,21 @@ class DstRequirementToHubRequirementMappingRuleTest
         ArrayList<Element> containedRequirements1 = new ArrayList<Element>();
         containedRequirements1.add(this.sysMLRequirement0);
 
-        when(this.sysMLRequirement0.getOwner()).thenReturn(this.sysMLRequirementPackage2);
-        when(this.sysMLRequirement1.getOwner()).thenReturn(this.sysMLRequirementPackage1);
-        when(this.sysMLRequirement2.getOwner()).thenReturn(this.sysMLRequirementPackage1);
-        when(this.sysMLPackage.getOwner()).thenReturn(null);
-        when(this.sysMLRequirementPackage0.getOwner()).thenReturn(this.sysMLPackage);
-        when(this.sysMLRequirementPackage1.getOwner()).thenReturn(this.sysMLRequirementPackage0);
-        when(this.sysMLRequirementPackage2.getOwner()).thenReturn(this.sysMLRequirementPackage0);
+        when(this.sysMLRequirement0.getOwningPackage()).thenReturn(this.sysMLRequirementPackage2);
+        when(this.sysMLRequirement1.getOwningPackage()).thenReturn(this.sysMLRequirementPackage1);
+        when(this.sysMLRequirement2.getOwningPackage()).thenReturn(this.sysMLRequirementPackage1);
+        when(this.sysMLPackage.getOwningPackage()).thenReturn(null);
+        when(this.sysMLRequirementPackage0.getOwningPackage()).thenReturn(this.sysMLPackage);
+        when(this.sysMLRequirementPackage1.getOwningPackage()).thenReturn(this.sysMLRequirementPackage0);
+        when(this.sysMLRequirementPackage2.getOwningPackage()).thenReturn(this.sysMLRequirementPackage0);
         
         when(this.sysMLPackage.getOwnedElement()).thenReturn(Arrays.asList(this.sysMLRequirementPackage0));
         when(this.sysMLRequirementPackage0.getOwnedElement()).thenReturn(containedElements);
         when(this.sysMLRequirementPackage1.getOwnedElement()).thenReturn(containedRequirements0);
         when(this.sysMLRequirementPackage2.getOwnedElement()).thenReturn(containedRequirements1);
         
-        this.elements.add(new MappedRequirementRowViewModel(this.requirement0, this.sysMLRequirement0, MappingDirection.FromDstToHub));
-        this.elements.add(new MappedRequirementRowViewModel(this.sysMLRequirement1, MappingDirection.FromDstToHub));
-        this.elements.add(new MappedRequirementRowViewModel(this.sysMLRequirement2, MappingDirection.FromDstToHub));
+        this.elements.right.add(new MappedRequirementRowViewModel(this.requirement0, this.sysMLRequirement0, MappingDirection.FromDstToHub));
+        this.elements.right.add(new MappedRequirementRowViewModel(this.sysMLRequirement1, MappingDirection.FromDstToHub));
+        this.elements.right.add(new MappedRequirementRowViewModel(this.sysMLRequirement2, MappingDirection.FromDstToHub));
     }
 }
