@@ -79,7 +79,6 @@ import cdp4common.engineeringmodeldata.InterfaceEndKind;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterSwitchKind;
 import cdp4common.engineeringmodeldata.ParameterValueSet;
-import cdp4common.engineeringmodeldata.ParameterValueSetBase;
 import cdp4common.engineeringmodeldata.Relationship;
 import cdp4common.sitedirectorydata.BooleanParameterType;
 import cdp4common.sitedirectorydata.Category;

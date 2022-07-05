@@ -26,6 +26,7 @@ package ViewModels.Dialogs;
 import static Utils.Operators.Operators.AreTheseEquals;
 import static Utils.Stereotypes.StereotypeUtils.GetShortName;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,7 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
+import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
 import ViewModels.Interfaces.IElementDefinitionBrowserViewModel;
@@ -174,8 +176,8 @@ public class DstToHubMappingConfigurationDialogViewModel
 		}
 	}
 
-	/**
-	 * Updates this view model properties
+    /**
+     * Updates this view model properties
 	 */
 	@Override
 	protected void UpdateProperties()
@@ -189,13 +191,38 @@ public class DstToHubMappingConfigurationDialogViewModel
 		this.magicDrawObjectBrowser.BuildTree(this.originalSelection);
 	}
 
+    /**
+     * Pre-map the selected elements
+     * 
+     * @param selectedElement the collection of {@linkplain Element}
+     * @param requirements the collection of {@linkplain Element}
+     */
+    @Override
+	protected void PreMap(Collection<Element> selectedElement)
+	{
+	    ArrayList<Class> requirements = new ArrayList<>();
+        this.PreMap(selectedElement, requirements);
+        
+        Collection<MappedElementRowViewModel<DefinedThing, Class>> preMapRequirements = 
+                ((IDstController)this.dstController).PreMap(new MagicDrawRequirementCollection(false, requirements.stream()
+                    .map(x -> new MappedRequirementRowViewModel(x, MappingDirection.FromDstToHub))
+                    .collect(Collectors.toList())));
+        
+        for (MappedElementRowViewModel<DefinedThing, Class> mappedElementRowViewModel : preMapRequirements)
+        {
+            this.UpdateRowStatus(mappedElementRowViewModel, Requirement.class);
+        }
+        
+        this.mappedElements.addAll(preMapRequirements);
+	}
+	
 	/**
 	 * Pre-map the selected elements
 	 * 
 	 * @param selectedElement the collection of {@linkplain Element}
+	 * @param requirements the collection of {@linkplain Class}
 	 */
-	@Override
-	protected void PreMap(Collection<Element> selectedElement)
+	protected void PreMap(Collection<Element> selectedElement, Collection<Class> requirements)
 	{
 		if (selectedElement == null)
 		{
@@ -204,16 +231,23 @@ public class DstToHubMappingConfigurationDialogViewModel
 
 		for (Element element : selectedElement)
 		{
-			if (element instanceof Class)
-			{
-				MappedElementRowViewModel<DefinedThing, Class> mappedElement = this
-						.GetMappedElementRowViewModel((Class) element);
-
-				if (mappedElement != null)
-				{
-					this.mappedElements.add(mappedElement);
-				}
-			} else if (element instanceof Package)
+		    if(element instanceof Class)
+		    {		    
+    			if (this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Block))
+    			{
+    				MappedElementRowViewModel<DefinedThing, Class> mappedElement = this.GetBlockMappedElementRowViewModel((Class) element);
+    
+    				if (mappedElement != null)
+    				{
+    					this.mappedElements.add(mappedElement);
+    				}
+    			}
+    			else if (this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
+    			{
+    			    requirements.add((Class) element);
+    			}
+			}
+			else if (element instanceof Package)
 			{
 				this.PreMap(element.getOwnedElement());
 			}
@@ -228,60 +262,49 @@ public class DstToHubMappingConfigurationDialogViewModel
 	 * @return a {@linkplain MappedElementRowViewModel}
 	 */
 	@SuppressWarnings("unchecked")
-	private MappedElementRowViewModel<DefinedThing, Class> GetMappedElementRowViewModel(Class classElement)
+	private MappedElementRowViewModel<DefinedThing, Class> GetBlockMappedElementRowViewModel(Class classElement)
 	{
 		Ref<Boolean> refShouldCreateNewTargetElement = new Ref<>(Boolean.class, false);
 		MappedElementRowViewModel<? extends Thing, Class> mappedElementRowViewModel = null;
 
-		if (this.stereotypeService.DoesItHaveTheStereotype(classElement, Stereotypes.Block))
-		{
-			Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
+		Ref<ElementDefinition> refElementDefinition = new Ref<>(ElementDefinition.class);
 
-			if (this.TryGetElementDefinition(classElement, refElementDefinition, refShouldCreateNewTargetElement))
-			{
-				mappedElementRowViewModel = new MappedElementDefinitionRowViewModel(refElementDefinition.Get(),
-						classElement, MappingDirection.FromDstToHub);
-			}
-		} else if (this.stereotypeService.DoesItHaveTheStereotype(classElement, Stereotypes.Requirement))
+		if (this.TryGetElementDefinition(classElement, refElementDefinition, refShouldCreateNewTargetElement))
 		{
-			Ref<cdp4common.engineeringmodeldata.Requirement> refRequirement = new Ref<>(
-					cdp4common.engineeringmodeldata.Requirement.class);
-
-			if (this.TryGetRequirement(classElement, refRequirement, refShouldCreateNewTargetElement))
-			{
-				mappedElementRowViewModel = new MappedRequirementRowViewModel(refRequirement.Get(), classElement,
-						MappingDirection.FromDstToHub);
-			}
+			mappedElementRowViewModel = new MappedElementDefinitionRowViewModel(refElementDefinition.Get(),
+					classElement, MappingDirection.FromDstToHub);
 		}
-
+		
 		if (mappedElementRowViewModel != null)
 		{
-			mappedElementRowViewModel.SetShouldCreateNewTargetElement(refShouldCreateNewTargetElement.Get());
-			mappedElementRowViewModel.SetRowStatus(
-					Boolean.TRUE.equals(refShouldCreateNewTargetElement.Get()) ? MappedElementRowStatus.NewElement
-							: MappedElementRowStatus.ExisitingElement);
+			this.UpdateRowStatus(refShouldCreateNewTargetElement, mappedElementRowViewModel);
 			return (MappedElementRowViewModel<DefinedThing, Class>) mappedElementRowViewModel;
 		}
 
 		this.logger.warn(String.format(
 				"Impossible to map the provided class %s as it doesn't have a supported stereotype or is already present in the mapped rows",
 				classElement.getName()));
+		
 		return null;
 	}
 
+    private void UpdateRowStatus(Ref<Boolean> refShouldCreateNewTargetElement,
+            MappedElementRowViewModel<? extends Thing, Class> mappedElementRowViewModel)
+    {
+        mappedElementRowViewModel.SetShouldCreateNewTargetElement(refShouldCreateNewTargetElement.Get());
+        mappedElementRowViewModel.SetRowStatus(
+        		Boolean.TRUE.equals(refShouldCreateNewTargetElement.Get()) ? MappedElementRowStatus.NewElement
+        				: MappedElementRowStatus.ExisitingElement);
+    }
+
 	/**
-	 * Updates the {@linkplain MappedElementRowStatus} of the provided
-	 * {@linkplain MappedElementRowViewModel}
+	 * Updates the {@linkplain MappedElementRowStatus} of the provided {@linkplain MappedElementRowViewModel}
 	 * 
-	 * @param mappedElementRowViewModel the {@linkplain MappedElementRowViewModel}
-	 *                                  of which to update the row status
-	 * @param clazz                     the {@linkplain java.lang.Class} of the
-	 *                                  {@linkplain Thing} represented in the
-	 *                                  {@linkplain MappedElementRowViewModel}
+	 * @param mappedElementRowViewModel the {@linkplain MappedElementRowViewModel} of which to update the row status
+	 * @param clazz the {@linkplain java.lang.Class} of the {@linkplain Thing} represented in the {@linkplain MappedElementRowViewModel}
 	 */
 	@Override
-	protected <TThing extends Thing> void UpdateRowStatus(
-			MappedElementRowViewModel<? extends Thing, ? extends Class> mappedElementRowViewModel,
+	protected <TThing extends Thing> void UpdateRowStatus(MappedElementRowViewModel<? extends Thing, ? extends Class> mappedElementRowViewModel,
 			java.lang.Class<TThing> clazz)
 	{
 		Ref<TThing> refThing = new Ref<>(clazz);
@@ -290,14 +313,16 @@ public class DstToHubMappingConfigurationDialogViewModel
 		if (mappedElementRowViewModel.GetShouldCreateNewTargetElementValue())
 		{
 			mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.NewElement);
-		} else if (mappedElementRowViewModel.GetHubElement() != null)
+		} 
+		else if (mappedElementRowViewModel.GetHubElement() != null)
 		{
 			if (this.iDstController.GetDstMapResult().stream().filter(x -> x.GetHubElement().getClass() == clazz)
 					.anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(),
 							mappedElementRowViewModel.GetHubElement().getIid())))
 			{
 				mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.ExistingMapping);
-			} else if (this.hubController.TryGetThingById(mappedElementRowViewModel.GetHubElement().getIid(), refThing))
+			} 
+			else if (this.hubController.TryGetThingById(mappedElementRowViewModel.GetHubElement().getIid(), refThing))
 			{
 				mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.ExisitingElement);
 			}
@@ -309,15 +334,10 @@ public class DstToHubMappingConfigurationDialogViewModel
 	 * provided {@linkplain Class}, In the case the provided {@linkplain Class} is
 	 * already represented in the {@linkplain mappedElements} returns false
 	 * 
-	 * @param classElement                    the {@linkplain Class} element
-	 * @param refElementDefinition            the {@linkplain Ref} of
-	 *                                        {@linkplain ElementDefinition}
-	 * @param refShouldCreateNewTargetElement the {@linkplain Ref} of
-	 *                                        {@linkplain Boolean} indicating
-	 *                                        whether the target Hub element will be
-	 *                                        created
-	 * @return a value indicating whether the method execution was successful in
-	 *         getting a {@linkplain ElementDefinition}
+	 * @param classElement the {@linkplain Class} element
+	 * @param refElementDefinition the {@linkplain Ref} of {@linkplain ElementDefinition}
+	 * @param refShouldCreateNewTargetElement the {@linkplain Ref} of {@linkplain Boolean} indicating whether the target Hub element will be created
+	 * @return a value indicating whether the method execution was successful in getting a {@linkplain ElementDefinition}
 	 */
 	private boolean TryGetElementDefinition(Class classElement, Ref<ElementDefinition> refElementDefinition,
 			Ref<Boolean> refShouldCreateNewTargetElement)
@@ -345,106 +365,6 @@ public class DstToHubMappingConfigurationDialogViewModel
 		}
 
 		return refElementDefinition.HasValue();
-	}
-
-	/**
-	 * Gets or create an {@linkplain RequirementsSpecification} that can contained a
-	 * {@linkplain Requirement} that will represent the provided {@linkplain Class},
-	 * In the case the provided {@linkplain Class} is already represented in the
-	 * {@linkplain mappedElements} returns false
-	 * 
-	 * @param classElement                    the {@linkplain Class} element
-	 * @param refRequirementSpecification     the {@linkplain Ref} of
-	 *                                        {@linkplain RequirementsSecification}
-	 * @param refShouldCreateNewTargetElement the {@linkplain Ref} of
-	 *                                        {@linkplain Boolean} indicating
-	 *                                        whether the target Hub element will be
-	 *                                        created
-	 * @return a value indicating whether the method execution was successful in
-	 *         getting a {@linkplain RequirementSpecification}
-	 */
-	private boolean TryGetRequirement(Class classElement,
-			Ref<cdp4common.engineeringmodeldata.Requirement> refRequirement,
-			Ref<Boolean> refShouldCreateNewTargetElement)
-	{
-		Optional<cdp4common.engineeringmodeldata.Requirement> optionalRequirement = this.hubController
-				.GetOpenIteration().getRequirementsSpecification().stream().flatMap(x -> x.getRequirement().stream())
-				.filter(x -> AreTheseEquals(x.getName(), classElement.getName())).findFirst();
-
-		if (optionalRequirement.isPresent())
-		{
-			if (this.mappedElements.stream()
-					.anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), optionalRequirement.get().getIid())
-							&& AreTheseEquals(x.GetDstElement().getID(), classElement.getID())))
-			{
-				return false;
-			}
-
-			RequirementsSpecification requirementSpecification = optionalRequirement.get()
-					.getContainerOfType(RequirementsSpecification.class).clone(true);
-			
-			refRequirement.Set(requirementSpecification.getRequirement().stream()
-					.filter(x -> AreTheseEquals(x.getIid(), optionalRequirement.get().getIid()))
-					.filter(x -> !x.isDeprecated()).findFirst().orElse(null));
-		} else
-		{
-			refShouldCreateNewTargetElement.Set(true);
-
-			Ref<String> possibleParentName = new Ref<>(String.class);
-
-			if (this.TryGetPossibleRequirementsSpecificationName(classElement, possibleParentName))
-			{
-				RequirementsSpecification requirementSpecification = this.hubController.GetOpenIteration()
-						.getRequirementsSpecification().stream()
-						.filter(x -> AreTheseEquals(possibleParentName.Get(), x.getName(), true))
-						.map(x -> x.clone(true)).findFirst().orElseGet(() -> {
-							RequirementsSpecification newRequirementsSpecification = new RequirementsSpecification();
-							newRequirementsSpecification
-									.setName(possibleParentName.HasValue() ? possibleParentName.Get()
-											: "new RequirementsSpecification");
-							newRequirementsSpecification
-									.setShortName(GetShortName(possibleParentName.HasValue() ? possibleParentName.Get()
-											: newRequirementsSpecification.getName()));
-							newRequirementsSpecification.setIid(UUID.randomUUID());
-							newRequirementsSpecification.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-							return newRequirementsSpecification;
-						});
-
-				Requirement newRequirement = new cdp4common.engineeringmodeldata.Requirement();
-				newRequirement.setName(classElement.getName());
-				requirementSpecification.getRequirement().add(newRequirement);
-
-				refRequirement.Set(newRequirement);
-			}
-		}
-
-		return refRequirement.HasValue();
-	}
-
-	/**
-	 * Attempts to retrieve the parent of parent of the provided {@linkplain Class}
-	 * element. Hence this is not always possible if the user decides to structure
-	 * its SysML project differently. However, this feature is only a nice to have.
-	 * 
-	 * @param classElement the {@linkplain Class} element to get the parent from
-	 * @return a value indicating whether the name of the parent was retrieved with
-	 *         success
-	 */
-	private boolean TryGetPossibleRequirementsSpecificationName(Class classElement, Ref<String> possibleParentName)
-	{
-		Element owner = classElement.getOwner();
-		
-		if(owner != null) 
-		{
-			owner = owner.getOwner();
-			
-			if(owner instanceof NamedElement) 
-			{
-				possibleParentName.Set(((NamedElement)owner).getName());
-			}
-		}
-
-		return possibleParentName.HasValue();
 	}
 
 	/**
@@ -487,7 +407,8 @@ public class DstToHubMappingConfigurationDialogViewModel
 		if (this.selectedMappedElement.Value().GetHubElement() instanceof ElementDefinition)
 		{
 			this.UpdateRowStatus(this.selectedMappedElement.Value(), ElementDefinition.class);
-		} else if (this.selectedMappedElement.Value().GetHubElement() instanceof Requirement)
+		} 
+		else if (this.selectedMappedElement.Value().GetHubElement() instanceof Requirement)
 		{
 			this.UpdateRowStatus(this.selectedMappedElement.Value(), Requirement.class);
 		}

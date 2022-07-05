@@ -24,6 +24,10 @@
 package Utils.Stereotypes;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.MutablePair;
+
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Services.MappingEngineService.IMappableThingCollection;
@@ -43,4 +47,37 @@ import ViewModels.Rows.MappedRequirementRowViewModel;
  * Meaning that defining a rule that takes as input a {@linkplain ArrayList} of any type isn't supported because of the java generic implementation.
  */
 @SuppressWarnings("serial")
-public class MagicDrawRequirementCollection extends ArrayList<MappedRequirementRowViewModel> implements IMappableThingCollection { }
+public class MagicDrawRequirementCollection extends MutablePair<Boolean, ArrayList<MappedRequirementRowViewModel>> implements IMappableThingCollection 
+{
+    /**
+     * Initializes a new {@linkplain MagicDrawRequirementCollection}
+     * 
+     * @param shouldDoACompleteMapping a value indication whether the mapping rule should do a complete mapping
+     * @param mappedRequirementRowViewModels the {@linkplain ArrayList} of {@linkplain MappedRequirementRowViewModel} 
+     */
+    public MagicDrawRequirementCollection(boolean shouldDoACompleteMapping, List<MappedRequirementRowViewModel> mappedRequirementRowViewModels)
+    {
+        this.left = shouldDoACompleteMapping;
+        this.right = new ArrayList<>(mappedRequirementRowViewModels);
+    }
+    
+    /**
+     * Initializes a new {@linkplain MagicDrawRequirementCollection} 
+     */
+    public MagicDrawRequirementCollection()
+    {
+        this.left = true;
+        this.right = new ArrayList<>();
+    }
+
+
+    /**
+     * Returns true if this list contains no elements.
+     *
+     * @return true if this list contains no elements
+     */
+    public boolean isEmpty()
+    {
+        return this.getRight().isEmpty();
+    }
+}

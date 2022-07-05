@@ -318,7 +318,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
             selectableRows = new ArrayList<>();
         }
         
-        if(!selectedRow.GetIsHighlighted())
+        if(selectedRow == null || !selectedRow.GetIsHighlighted())
         {
             return selectableRows;
         }

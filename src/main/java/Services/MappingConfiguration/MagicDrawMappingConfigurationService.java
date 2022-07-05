@@ -112,7 +112,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
                 mappedElements.add(refMappedElementRowViewModel.Get());
             }
         }
-                
+        
         return mappedElements;
     }
 
