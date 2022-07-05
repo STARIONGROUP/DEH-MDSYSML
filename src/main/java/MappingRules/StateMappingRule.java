@@ -162,8 +162,9 @@ public class StateMappingRule implements IStateMappingRule
     private void MapStateDependenciesFromDstToHub(ParameterOrOverrideBase parameter, Property property)
     {
         List<Dependency> dependencies = StreamExtensions
-                .OfType(property.get_directedRelationshipOfSource(), Dependency.class).stream()
-                .filter(x -> x.getTarget().stream().anyMatch(t -> t instanceof State)).collect(Collectors.toList());
+                .OfType(property.get_directedRelationshipOfSource().stream(), Dependency.class)
+                .filter(x -> x.getTarget().stream()
+                        .anyMatch(t -> t instanceof State)).collect(Collectors.toList());
 
         if (dependencies.isEmpty())
         {
@@ -175,10 +176,8 @@ public class StateMappingRule implements IStateMappingRule
 
         for (Dependency dependency : dependencies)
         {
-            State state = StreamExtensions.OfType(dependency.getTarget().stream(), State.class).findFirst()
-                    .orElseGet(null);
-
-            possibleFiniteStateList.add(this.GetOrCreatePossibleFiniteState(state));
+            StreamExtensions.OfType(dependency.getTarget().stream(), State.class).findFirst().ifPresent(x ->
+                possibleFiniteStateList.add(this.GetOrCreatePossibleFiniteState(x)));
         }
 
         if (possibleFiniteStateList.isEmpty())
@@ -356,7 +355,8 @@ public class StateMappingRule implements IStateMappingRule
         if (optionalPossibleFiniteStateList.isPresent())
         {
             possibleFiniteStateList = optionalPossibleFiniteStateList.get().clone(true);
-        } else
+        }
+        else
         {
             possibleFiniteStateList = this.createdPossibleFiniteStateLists.stream()
                     .filter(x -> Operators.AreTheseEquals(x.getName(), state.getName(), true)
@@ -463,27 +463,50 @@ public class StateMappingRule implements IStateMappingRule
 
         List<State> existingDependentStates = StreamExtensions
                 .OfType(property.get_directedRelationshipOfSource().stream(), Dependency.class)
-                .map(x -> StreamExtensions.OfType(x.getTarget().stream(), State.class).findFirst().orElse(null))
-                .filter(x -> x != null).collect(Collectors.toList());
+                .map(x -> StreamExtensions.OfType(x.getTarget().stream(), State.class)
+                        .findFirst()
+                        .orElse(null))
+                .filter(x -> x != null)
+                .collect(Collectors.toList());
 
         for (PossibleFiniteStateList possibleFiniteState : parameter.getStateDependence().getPossibleFiniteStateList())
         {
-            State state = this.GetOrCreateStateAndDependency(property, existingDependentStates, possibleFiniteState);
-
+            State state = this.GetOrCreateState(existingDependentStates, possibleFiniteState);
+            this.CreateDependency(state, property);
             this.UpdateState(state, possibleFiniteState);
-            this.logger.debug(String.format("State [%s] was created or updated", state.getName()));
         }
+    }
+
+    /**
+     * Create a {@linkplain Dependency} if it does not already exist between the provided {@linkplain State} and {@linkplain Property}
+     * 
+     * @param state the {@linkplain State}
+     * @param property the {@linkplain Property}
+     */
+    private void CreateDependency(State state, Property property)
+    {
+        if(StreamExtensions.OfType(state.get_relationshipOfRelatedElement().stream(), Dependency.class)
+            .anyMatch(x -> x.getClient().stream().anyMatch(s -> Operators.AreTheseEquals(property.getID(), s.getID()))))
+        {
+            return;
+        }
+        
+        Dependency dependency = this.transactionService.Create(Dependency.class, "");
+        
+        dependency.getSupplier().add(state);
+        dependency.getClient().add(property);
+        
+        state.get_relationshipOfRelatedElement().add(dependency);
     }
 
     /**
      * Gets or creates a {@linkplain State} that corresponds to the provided {@linkplain possibleFiniteState}
      * 
-     * @param property the {@linkplain Property}
      * @param existingDependentStates the {@linkplain List} of existing {@linkplain State}
      * @param possibleFiniteState the {@linkplain PossibleFiniteState}
      * @return a {@linkplain State}
      */
-    private State GetOrCreateStateAndDependency(Property property, List<State> existingDependentStates,
+    private State GetOrCreateState(List<State> existingDependentStates,
             PossibleFiniteStateList possibleFiniteState)
     {
         Predicate<NamedElement> namePredicate = x -> Operators.AreTheseEquals(x.getName(), possibleFiniteState.getName(), true)
@@ -492,10 +515,10 @@ public class StateMappingRule implements IStateMappingRule
         Optional<State> optionalState = existingDependentStates.stream()
                 .filter(x -> namePredicate.test(x))
                 .findFirst();
-        
+
         if(!optionalState.isPresent())
         {        
-            State state = StreamExtensions.OfType(this.sessionService.GetProjectElements().stream(), StateMachine.class)
+            return StreamExtensions.OfType(this.sessionService.GetProjectElements().stream(), StateMachine.class)
                             .flatMap(x -> x.getRegion().stream())
                             .flatMap(x -> StreamExtensions.OfType(x.getOwnedElement().stream(), State.class))
                             .filter(x -> namePredicate.test(x))
@@ -505,16 +528,10 @@ public class StateMappingRule implements IStateMappingRule
                                     .findFirst()
                                     .orElseGet(() ->
                                     {
-                                        State newState = this.transactionService.Create(State.class, possibleFiniteState.getName());
+                                        State newState = this.transactionService.Create(State.class, possibleFiniteState.getName());                                        
                                         this.createdStates.add(newState);
                                         return newState;
                                     }));
-            
-            Dependency dependency = this.transactionService.Create(Dependency.class, "");
-            dependency.getSupplier().add(state);
-            dependency.getClient().add(property);
-            state.get_relationshipOfRelatedElement().add(dependency);
-            return state;
         }
         
         return optionalState.get();
@@ -524,11 +541,11 @@ public class StateMappingRule implements IStateMappingRule
      * Update the {@linkplain State} based on the {@linkplain PossibleFiniteState}
      * 
      * @param state the {@linkplain State} to update
-     * @param possibleFiniteState the {@linkplain PossibleFiniteState}
+     * @param possibleFiniteStateList the {@linkplain PossibleFiniteStateList}
      */
-    private void UpdateState(State state, PossibleFiniteStateList possibleFiniteState)
+    private void UpdateState(State state, PossibleFiniteStateList possibleFiniteStateList)
     {
-        List<Pair<String, String>> possibleStateNames = possibleFiniteState.getPossibleState().stream()
+        List<Pair<String, String>> possibleStateNames = possibleFiniteStateList.getPossibleState().stream()
                 .map(x -> Pair.of(x.getShortName(), x.getName())).collect(Collectors.toList());
 
         if (possibleStateNames.size() == 1)

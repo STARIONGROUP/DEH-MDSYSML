@@ -108,13 +108,13 @@ public class MappedThingRowViewModel
      * Initializes a new MappedThingRowViewModel 
      * 
      * @param dstThingName the name of the DST thing
-     * @param HubThingName the name of the Hub thing
+     * @param hubThingName the name of the Hub thing
      * @param mappingDirection the mapping direction represented by this row
      */
-    public MappedThingRowViewModel(String dstThingName, String HubThingName, MappingDirection mappingDirection)
+    public MappedThingRowViewModel(String dstThingName, String hubThingName, MappingDirection mappingDirection)
     {
         this.dstThingName = dstThingName;
-        this.hubThingName = HubThingName;
+        this.hubThingName = hubThingName;
         this.mappingDirection = mappingDirection;        
     }
 }

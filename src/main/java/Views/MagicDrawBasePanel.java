@@ -39,6 +39,7 @@ import Views.Interfaces.IView;
  * @param <TView> the type of the view that is enclosed by the inheriting v iew
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public abstract class MagicDrawBasePanel<TViewModel extends IViewModel, TView extends JPanel> extends DockableFrame implements IView<TViewModel>
 {
     /**
@@ -64,17 +65,17 @@ public abstract class MagicDrawBasePanel<TViewModel extends IViewModel, TView ex
     /**
      * The {@link INavigationService}
      */
-    protected INavigationService navigationService;
+    protected transient INavigationService navigationService;
 
     /**
      * The {@link TViewModel} as the data context of this view
      */
-    protected TViewModel DataContext;
+    protected transient TViewModel dataContext;
     
     /**
      * The {@linkplain TView} this view wraps
      */
-    protected TView View;
+    protected TView view;
     
     /**
      * Initializes a new {@linkplain MagicDrawBasePanel}
@@ -115,7 +116,7 @@ public abstract class MagicDrawBasePanel<TViewModel extends IViewModel, TView ex
     @Override
     public void SetDataContext(IViewModel viewModel)
     {
-        this.DataContext = (TViewModel)viewModel;   
+        this.dataContext = (TViewModel)viewModel;   
         this.Bind();
     }
 
@@ -127,6 +128,6 @@ public abstract class MagicDrawBasePanel<TViewModel extends IViewModel, TView ex
     @Override
     public TViewModel GetDataContext()
     {
-        return this.DataContext;
+        return this.dataContext;
     }
 }

@@ -25,10 +25,11 @@ package ViewModels.Interfaces;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 import Enumerations.MappingDirection;
 import ViewModels.MagicDrawImpactViewPanelViewModel;
+import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
+import cdp4common.engineeringmodeldata.Iteration;
 import io.reactivex.Observable;
 
 /**

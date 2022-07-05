@@ -26,25 +26,20 @@ package DstController;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-import com.nomagic.magicdraw.core.Project;
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 
 import Enumerations.MappingDirection;
 import Reactive.ObservableCollection;
 import Services.MappingEngineService.IMappableThingCollection;
 import Utils.Ref;
+import Utils.Stereotypes.MagicDrawRequirementCollection;
 import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.DefinedThing;
-import cdp4common.commondata.NamedThing;
-import cdp4common.commondata.ShortNamedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.BinaryRelationship;
 import cdp4common.sitedirectorydata.MeasurementScale;
@@ -67,19 +62,6 @@ public interface IDstController extends IDstControllerBase<Class>
      */
     boolean Map(IMappableThingCollection input, MappingDirection mappingDirection);
 
-    /**
-     * Gets The {@linkplain ObservableCollection} of dst map result
-     * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
-     */
-    ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetDstMapResult();
-    
-    /**
-     * Gets The {@linkplain ObservableCollection} of Hub map result
-     * 
-     * @return an {@linkplain ObservableCollection} of {@linkplain MappedElementRowViewModel}
-     */
-    ObservableCollection<MappedElementRowViewModel<? extends DefinedThing, ? extends Class>> GetHubMapResult();
 
     /**
      * Transfers all the {@linkplain Thing} contained in the {@linkplain dstMapResult} to the Hub
@@ -206,4 +188,14 @@ public interface IDstController extends IDstControllerBase<Class>
      * @return a {@linkplain ObservableCollection} of mapped {@linkplain DirectedRelationship}s
      */
     ObservableCollection<Abstraction> GetMappedBinaryRelationshipsToDirectedRelationships();
+
+
+    /**
+     * Pre-maps the {@linkplain input} by calling the {@linkplain IMappingEngine}
+     * and return the map result
+     * 
+     * @param input the {@linkplain IMappableThingCollection} in other words the  {@linkplain Collection} of {@linkplain Object} to map
+     * @return a {@linkplain Collection} of {@linkplain MappedElementRowViewModel}
+     */
+    Collection<MappedElementRowViewModel<DefinedThing, Class>> PreMap(IMappableThingCollection input);
 }

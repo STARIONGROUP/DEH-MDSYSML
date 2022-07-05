@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski
  *
  * This file is part of DEH-MDSYSML
  *
@@ -23,72 +23,71 @@
  */
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 
+import Services.Stereotype.StereotypeService;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 
 /**
- * The {@linkplain BlockRowViewModel} is the row view model that represents a SysML block
+ * The {@linkplain BlockRowViewModel} is the row view model that represents a
+ * SysML block
  */
 public class BlockRowViewModel extends ClassRowViewModel
 {
-    /**
-     * Initializes a new {@linkplain BlockRowViewModel}
-     * 
-     * @param parent the {@linkplain IElementRowViewModel} parent view model of this row view model
-     * @param element the {@linkplain Class} represented
-     */
-    public BlockRowViewModel(IElementRowViewModel<?> parent, Class element)
-    {
-        super(parent, element);
-        this.ComputeContainedRows();
-    }
+	/**
+	 * Initializes a new {@linkplain BlockRowViewModel}
+	 * 
+	 * @param parent  the {@linkplain IElementRowViewModel} parent view model of
+	 *                this row view model
+	 * @param element the {@linkplain Class} represented
+	 */
+	public BlockRowViewModel(IElementRowViewModel<?> parent, Class element)
+	{
+		super(parent, element);
+		this.ComputeContainedRows();
+	}
 
-    /**
-     * Gets the string representation of the type of thing represented
-     * 
-     * @return a {@linkplain Stereotypes}
-     */
-    @Override
-    public Stereotypes GetClassKind()
-    {
-        return Stereotypes.Block;
-    }
-        
-    /**
-     * Computes this row view model contained rows
-     */
-    @Override
-    public void ComputeContainedRows()
-    {
-        for (Property property : this.GetElement().getOwnedAttribute())
-        {
-            if(MDCustomizationForSysMLProfile.isReferenceProperty(property))
-            {
-                this.GetContainedRows().add(new ReferencePropertyRowViewModel(this, property));
-            }
-            else if(MDCustomizationForSysMLProfile.isValueProperty(property) || property.getType() instanceof DataType)
-            {
-                this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
-            }
-            else if(MDCustomizationForSysMLProfile.isPartProperty(property) || property.getType() instanceof Class)
-            {
-                this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
-            }
-            else
-            {
-                this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
-            }
-        }
-        
-        for (Port port : this.GetElement().getOwnedPort())
-        {
-            this.GetContainedRows().add(new PortPropertyRowViewModel(this, port));
-        }
-    }
+	/**
+	 * Gets the string representation of the type of thing represented
+	 * 
+	 * @return a {@linkplain Stereotypes}
+	 */
+	@Override
+	public Stereotypes GetClassKind()
+	{
+		return Stereotypes.Block;
+	}
+
+	/**
+	 * Computes this row view model contained rows
+	 */
+	@Override
+	public void ComputeContainedRows()
+	{
+		for (Property property : this.GetElement().getOwnedAttribute())
+		{
+			if (StereotypeService.Current().IsReferenceProperty(property))
+			{
+				this.GetContainedRows().add(new ReferencePropertyRowViewModel(this, property));
+			} else if (StereotypeService.Current().IsValueProperty(property) || property.getType() instanceof DataType)
+			{
+				this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
+			} else if (StereotypeService.Current().IsPartProperty(property) || property.getType() instanceof Class)
+			{
+				this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
+			} else
+			{
+				this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
+			}
+		}
+
+		for (Port port : this.GetElement().getOwnedPort())
+		{
+			this.GetContainedRows().add(new PortPropertyRowViewModel(this, port));
+		}
+	}
 }

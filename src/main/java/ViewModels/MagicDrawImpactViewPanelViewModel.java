@@ -23,6 +23,8 @@
  */
 package ViewModels;
 
+import static Utils.Operators.Operators.AreTheseEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -37,6 +39,7 @@ import HubController.IHubController;
 import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
+import Services.NavigationService.INavigationService;
 import Utils.Tasks.Task;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
 import ViewModels.Interfaces.IImpactViewContextMenuViewModel;
@@ -44,10 +47,9 @@ import ViewModels.Interfaces.IMagicDrawImpactViewPanelViewModel;
 import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.Interfaces.IRequirementImpactViewViewModel;
 import ViewModels.Interfaces.ITransferControlViewModel;
+import Views.MagicDrawImpactViewPanel;
 import cdp4common.engineeringmodeldata.ExternalIdentifierMap;
-
-import static Utils.Operators.Operators.AreTheseEquals;
-
+import cdp4common.engineeringmodeldata.Iteration;
 import io.reactivex.Observable;
 
 /**
@@ -151,6 +153,11 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     private IRequirementImpactViewViewModel requirementDefinitionImpactViewViewModel;
 
     /**
+     * The {@linkplain INavigationService}
+     */
+	private INavigationService navigationService;
+
+    /**
      * Gets the {@linkplain IRequirementImpactViewViewModel} requirementDefinitionImpactViewViewModel
      * 
      * @return the {@linkplain IRequirementImpactViewViewModel}
@@ -191,7 +198,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     @Override
     public boolean CanLoadMappingConfiguration()
     {
-        return this.HubController.GetIsSessionOpen();
+        return this.hubController.GetIsSessionOpen();
     }
 
     /**
@@ -212,7 +219,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
             IElementDefinitionImpactViewViewModel elementDefinitionImpactViewModel, IRequirementImpactViewViewModel requirementImpactViewModel,
             ITransferControlViewModel transferControlViewModel, IImpactViewContextMenuViewModel contextMenuViewModel,
             IMagicDrawMappingConfigurationService mappingConfigurationService, IMagicDrawImpactViewViewModel magicDrawImpactViewViewModel,
-            IMagicDrawUILogService logService, IMagicDrawSessionService sessionService)
+            IMagicDrawUILogService logService, IMagicDrawSessionService sessionService, INavigationService navigationService)
     {
         super(hubController);
         this.dstController = dstController;
@@ -222,9 +229,10 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
         this.magicDrawImpactViewViewModel = magicDrawImpactViewViewModel;
         this.logService = logService;
         this.sessionService = sessionService;
-        this.isSessionOpen = this.HubController.GetIsSessionOpenObservable();
+        this.isSessionOpen = this.hubController.GetIsSessionOpenObservable();
         this.elementDefinitionImpactViewViewModel = elementDefinitionImpactViewModel;
         this.requirementDefinitionImpactViewViewModel = requirementImpactViewModel;
+        this.navigationService = navigationService;
     }
 
     /**
@@ -235,12 +243,12 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     @Override
     public List<String> GetSavedMappingconfigurationCollection()
     {
-        if(!this.HubController.GetIsSessionOpen())
+        if(Boolean.FALSE.equals(this.hubController.GetIsSessionOpen()))
         {
             return new ArrayList<>();
         }
         
-        List<String> externalIdentifierMaps = this.HubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
+        List<String> externalIdentifierMaps = this.hubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
                 .stream()
                 .map(x -> x.getName())
                 .sorted()
@@ -278,7 +286,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
             return false;
         }
 
-        this.mappingConfigurationService.SetExternalIdentifierMap(this.HubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
+        this.mappingConfigurationService.SetExternalIdentifierMap(this.hubController.GetAvailableExternalIdentifierMap(DstController.THISTOOLNAME)
                 .stream().filter(x -> AreTheseEquals(x.getName(), configurationName))
                 .findFirst()
                 .orElse(this.CreateNewMappingConfiguration(configurationName)));
@@ -299,7 +307,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     private ExternalIdentifierMap CreateNewMappingConfiguration(String configurationName)
     {
         return this.mappingConfigurationService
-                .CreateExternalIdentifierMap(configurationName, this.sessionService.GetProject().getName()
+                .CreateExternalIdentifierMap(configurationName, this.sessionService.GetProjectName()
                         , this.CheckForExistingTemporaryMapping());
     }
 
@@ -312,7 +320,7 @@ public class MagicDrawImpactViewPanelViewModel extends ImpactViewPanelViewModel 
     {
         return this.mappingConfigurationService.IsTheCurrentIdentifierMapTemporary() 
                 && !this.mappingConfigurationService.GetExternalIdentifierMap().getCorrespondence().isEmpty()
-                && JOptionPane.showConfirmDialog(null, "You have some mapping defined already, do you want to keep it?", "", JOptionPane.YES_NO_OPTION) 
+                && this.navigationService.ShowConfirmDialog("You have some mapping defined already, do you want to keep it?", "", JOptionPane.YES_NO_OPTION) 
                     == JOptionPane.YES_OPTION;
     }
 }

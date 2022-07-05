@@ -26,6 +26,9 @@ package Views.Dialogs;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Enumerations.MappingDirection;
+import Renderers.MappedElementDefinitionListViewCellEditor;
+import Renderers.MappedElementDefinitionListViewCellRenderer;
+import Renderers.MappedElementDefinitionListViewCellRendererProvider;
 import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import Views.MagicDrawObjectBrowser;
@@ -45,5 +48,9 @@ public class MagicDrawHubToDstMappingConfigurationDialog extends MappingConfigur
     public MagicDrawHubToDstMappingConfigurationDialog()
     {
         super(MappingDirection.FromHubToDst, new MagicDrawObjectBrowser());
+        this.mappedElementListView.GetObjectBrowser().setDefaultRenderer(String.class, new MappedElementDefinitionListViewCellRenderer());
+        this.mappedElementListView.GetObjectBrowser().setDefaultEditor(String.class, new MappedElementDefinitionListViewCellEditor());
+        MappedElementDefinitionListViewCellRendererProvider.Current.ClearCache();
+        this.mappedElementListView.GetObjectBrowser().setRowHeight(100);
     }
 }

@@ -103,7 +103,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
     public void BuildTree(Collection<Element> elements)
     {
         this.browserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
-                new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProject().getName(), elements),
+                new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProjectName(), elements),
                 new MagicDrawObjectBrowserTreeRowViewModel(), true));
     
         this.isTheTreeVisible.Value(true);
@@ -124,5 +124,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
      */
     protected void UpdateBrowserTrees(Boolean isConnected)
     {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
     }
 }

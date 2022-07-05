@@ -41,13 +41,17 @@ public class MappingListViewSysMLRequirementRowViewModel extends MappingListView
      */
     public MappingListViewSysMLRequirementRowViewModel(Class requirement)
     {
-        super(requirement, requirement.getID(), String.format("%s-%s", StereotypeService.Current.GetRequirementId(requirement), 
-                requirement.getName()), StereotypeService.Current.GetRequirementText(requirement), ClassKind.Requirement);
+        super(requirement, requirement.getID(), String.format("%s-%s", StereotypeService.Current().GetRequirementId(requirement), 
+                requirement.getName()), StereotypeService.Current().GetRequirementText(requirement), ClassKind.Requirement);
     }
     
     /**
      * Computes the contained rows
      */
     @Override
-    public void ComputeContainedRows() { }
+    public void ComputeContainedRows() 
+    {
+    	// Added comment to satisfy the code smell raised by the rule 1186.
+    	// This method is empty because nothing has to be done there.
+    }
 }

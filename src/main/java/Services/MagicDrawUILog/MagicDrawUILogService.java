@@ -36,6 +36,7 @@ import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 /**
  * The {@linkplain MagicDrawUILogService} provides easy way to report status messages to the MagicDraw UI log
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawUILogService implements IMagicDrawUILogService
 {
     /**
@@ -96,7 +97,7 @@ public class MagicDrawUILogService implements IMagicDrawUILogService
     {
         if(successStatus)
         {
-            this.Append(String.format("%s %s", message, " with success"), NotificationSeverity.INFO);
+            this.Append(String.format("%s%s", message, " with success"), NotificationSeverity.INFO);
         }
         else
         {
@@ -116,7 +117,7 @@ public class MagicDrawUILogService implements IMagicDrawUILogService
         Application.getInstance().getGUILog().logNotification(
                 String.format("[MDSYSMLPlugin] [%s] %s", messageSeverity.getText(), message), messageSeverity, Notification.Context.ENVIRONMENT);
         
-        String logMessage = String.format("%s %s", this.GetCaller(), message);
+        String logMessage = String.format("%s %s ", this.GetCaller(), message);
         
         if(messageSeverity.equals(NotificationSeverity.INFO))
         {

@@ -24,8 +24,6 @@
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 

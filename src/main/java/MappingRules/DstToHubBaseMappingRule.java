@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import DstController.IDstController;
 import HubController.IHubController;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.Stereotype.IStereotypeService;
@@ -101,12 +100,12 @@ public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> ex
             }
             else
             {
-                this.Logger.debug(String.format("The Category %s could not be found or created", categoryShortName));
+                this.logger.debug(String.format("The Category %s could not be found or created", categoryShortName));
             }
         }
         catch(Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
         }
     }
     
@@ -130,7 +129,7 @@ public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> ex
         ReferenceDataLibrary rdl = this.hubController.GetDehpOrModelReferenceDataLibrary().clone(false);
         rdl.getDefinedCategory().add(newCategory);
         
-        return TryCreateOrUpdateReferenceDataLibraryThing(newCategory, rdl, refCategory);        
+        return this.TryCreateOrUpdateReferenceDataLibraryThing(newCategory, rdl, refCategory);        
     }
     
     /**
@@ -142,7 +141,6 @@ public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> ex
      * @param refThing the {@linkplain Ref} acting as an out parameter here
      * @return a value indicating whether the {@linkplain newThing} has been successfully created and retrieved from the cache
      */
-    @Annotations.ExludeFromCodeCoverageGeneratedReport
     protected <TThing extends Thing> boolean TryCreateOrUpdateReferenceDataLibraryThing(TThing thing, ReferenceDataLibrary clonedReferenceDataLibrary, Ref<TThing> refThing)
     {
         try
@@ -158,8 +156,8 @@ public abstract class DstToHubBaseMappingRule<TInput extends Object, TOutput> ex
         }
         catch(Exception exception)
         {
-            this.Logger.error(String.format("Could not create the %s because %s", thing.getClassKind(), exception));
-            this.Logger.catching(exception);
+            this.logger.error(String.format("Could not create the %s because %s", thing.getClassKind(), exception));
+            this.logger.catching(exception);
             return false;
         }
     }

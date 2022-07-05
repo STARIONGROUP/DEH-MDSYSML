@@ -52,7 +52,7 @@ public class OpenHubBrowserPanelAction extends MDAction
     /**
      * The current class logger
      */
-    private Logger logger = LogManager.getLogger();
+    private transient Logger logger = LogManager.getLogger();
     
     /**
      * The {@link MagicDrawHubBrowserPanel} instance
@@ -67,7 +67,7 @@ public class OpenHubBrowserPanelAction extends MDAction
     /**
      * The {@linkplain IMagicDrawSessionService}
      */
-    private IMagicDrawSessionService sessionService;
+    private transient IMagicDrawSessionService sessionService;
     
     /**
      * Initializes a new {@link OpenHubBrowserPanelAction}
@@ -117,22 +117,17 @@ public class OpenHubBrowserPanelAction extends MDAction
             DockingManager dockingManager = mainFrame.getDockingManager();
             Collection<String> allFrames = dockingManager.getAllFrames();
             
-            for (String string : allFrames)
-            {
-                this.logger.debug(String.format("FRAME => [%s]", string));
-            }
-            
             boolean isHubBrowserPanelPresent = false;
             boolean isImpactViewPanelPresent = false;
             
             for(String key : allFrames)
             {
-                if(key == this.hubBrowserPanel.GetPanelDockKey())
+                if(key.equals(hubBrowserPanel.GetPanelDockKey()))
                 {
                     this.hubBrowserPanel.ShowHide(dockingManager);
                     isHubBrowserPanelPresent = true;
                 }
-                else if(key == this.impactViewPanel.GetPanelDockKey())
+                else if(key.equals(this.impactViewPanel.GetPanelDockKey()))
                 {
                     this.impactViewPanel.ShowHide(dockingManager);
                     isImpactViewPanelPresent = true;

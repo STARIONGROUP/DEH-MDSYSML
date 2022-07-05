@@ -51,7 +51,7 @@ public class MappingListViewAction extends MDAction
     /**
      * The current class logger
      */
-    private Logger logger = LogManager.getLogger();
+    private transient Logger logger = LogManager.getLogger();
     
     /**
      * The {@linkplain MagicDrawMappingListView}
@@ -93,7 +93,7 @@ public class MappingListViewAction extends MDAction
 
              for(String key : allFrames)
              {
-                 if(key == this.mappingListView.GetPanelDockKey())
+                 if(key.equals(this.mappingListView.GetPanelDockKey()))
                  {
                      this.mappingListView.ShowHide(dockingManager);
                      isPanelPresent = true;

@@ -47,6 +47,7 @@ import com.nomagic.magicdraw.ui.browser.Tree;
 
 import Actions.Browser.MapAction;
 import Actions.ToolBar.MagicDrawAdapterRibbonActionCategory;
+import Annotations.ExludeFromCodeCoverageGeneratedReport;
 import DstController.DstController;
 import DstController.IDstController;
 import HubController.IHubController;
@@ -62,6 +63,8 @@ import Services.MagicDrawSession.MagicDrawProjectEventListener;
 import Services.MagicDrawSession.MagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.MagicDrawTransaction.MagicDrawTransactionService;
+import Services.MagicDrawTransaction.Clones.CloneReferenceService;
+import Services.MagicDrawTransaction.Clones.ICloneReferenceService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
 import Services.MagicDrawUILog.MagicDrawUILogService;
 import Services.Mapping.IMapCommandService;
@@ -100,6 +103,10 @@ import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewMod
 import ViewModels.MappingListView.MagicDrawMappingListViewViewModel;
 import ViewModels.MappingListView.Interfaces.IMappingListViewViewModel;
 
+/**
+ * The {@linkplain DEHMDSYSMLPlugin} is the {@linkplain Plugin} class, it is the entry point for the adapter
+ */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class DEHMDSYSMLPlugin extends Plugin
 {
     /**
@@ -116,12 +123,13 @@ public class DEHMDSYSMLPlugin extends Plugin
     {
         this.RegisterDependencies();
 
-	    SwingUtilities.invokeLater(() -> 
+	    SwingUtilities.invokeLater(() ->            
 	    {
-	        try
+	        try                 
 	        {
 	            AMConfigurator configurator = new AMConfigurator()
                 {
+	    	    	@Annotations.ExludeFromCodeCoverageGeneratedReport
 	                public void configure(ActionsManager manager)
 	                {
 	                   NMAction found = manager.getActionFor(ActionsID.NEW_PROJECT);
@@ -131,15 +139,17 @@ public class DEHMDSYSMLPlugin extends Plugin
 	                        // find the category of the "New Project" action.
 	                        ActionsCategory category = (ActionsCategory)manager.getActionParent(found);
 
-	                        // Get all actions from this category (menu).
-	                        List<NMAction> actionsInCategory = category.getActions();
-	                        
-	                        //Add the action after the "New Project" action.
-	                        int indexOfFound = actionsInCategory.indexOf(found);
-                            actionsInCategory.add(indexOfFound+1, new MagicDrawAdapterRibbonActionCategory());
-	             
-	                        // Set all actions.
-	                        category.setActions(actionsInCategory);
+	                        if(category != null) {
+		                        // Get all actions from this category (menu).
+		                        List<NMAction> actionsInCategory = category.getActions();
+		                        
+		                        //Add the action after the "New Project" action.
+		                        int indexOfFound = actionsInCategory.indexOf(found);
+	                            actionsInCategory.add(indexOfFound+1, new MagicDrawAdapterRibbonActionCategory());
+		             
+		                        // Set all actions.
+		                        category.setActions(actionsInCategory);
+	                        }
 	                    }
 	                }
                 };
@@ -147,16 +157,18 @@ public class DEHMDSYSMLPlugin extends Plugin
                 ActionsConfiguratorsManager.getInstance().addMainToolbarConfigurator(configurator);
                 
                 MapAction mapAction = AppContainer.Container.getComponent(MapAction.class);
-                
-                BrowserContextAMConfigurator configuratorContext = new BrowserContextAMConfigurator()
+
+                BrowserContextAMConfigurator configuratorContext = new  BrowserContextAMConfigurator()
                 {
                     @Override
+                    @ExludeFromCodeCoverageGeneratedReport
                     public int getPriority()
                     {
                         return 0;
                     }
 
                     @Override
+                    @ExludeFromCodeCoverageGeneratedReport
                     public void configure(ActionsManager manager, Tree tree)
                     {
                         ActionsCategory category = new ActionsCategory(null, "DEH-MDSYSML action category");
@@ -231,6 +243,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(IMagicDrawSelectionService.class, MagicDrawSelectionService.class);
             AppContainer.Container.addComponent(IMapCommandService.class, MapCommandService.class);
             AppContainer.Container.addComponent(IStereotypeService.class, StereotypeService.class);
+            AppContainer.Container.addComponent(ICloneReferenceService.class, CloneReferenceService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawTransactionService.class, MagicDrawTransactionService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawSessionService.class, MagicDrawSessionService.class);
             AppContainer.Container.as(CACHE).addComponent(IMagicDrawLocalExchangeHistoryService.class, MagicDrawLocalExchangeHistoryService.class);

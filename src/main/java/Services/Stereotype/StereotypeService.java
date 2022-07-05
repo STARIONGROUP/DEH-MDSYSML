@@ -57,6 +57,8 @@ import Services.MagicDrawSession.IMagicDrawSessionService;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
+import ViewModels.Rows.MappedElementRowViewModel;
+import cdp4common.sitedirectorydata.CategorizableThing;
 
 /**
  * The {@linkplain Stereotype} service provides a layer of abstraction between operations around {@linkplain Stereotype} and the adapter.
@@ -65,21 +67,42 @@ import Utils.Stereotypes.Stereotypes;
 @Annotations.ExludeFromCodeCoverageGeneratedReport
 public class StereotypeService implements IStereotypeService
 {
-    /**
-     * Singleton implementation of this service.
-     * 
-     * MagicDraw API exposes static helpers for Stereotype which are used in different places such as RowViewModels, which should not depend on services.
-     * This convenient property, is short for resolving the service in the {@linkplain AppContainer}
-     */
-    public static final IStereotypeService Current;
-    
-    /**
-     * Sets the final {@linkplain #Current} property
-     */
-    static
-    {
-        Current = new StereotypeService(AppContainer.Container.getComponent(IMagicDrawSessionService.class));
-    }
+	/**
+	* Singleton implementation of this service.
+	*
+	* MagicDraw API exposes static helpers for Stereotype which are used in different places such as RowViewModels, which should not depend on services.
+	* This convenient property, is short for resolving the service in the {@linkplain AppContainer}
+	*/
+	private static IStereotypeService current;
+
+	/**
+	* Sets the final {@linkplain #Current} property
+	*/
+	static
+	{
+		current = new StereotypeService(AppContainer.Container.getComponent(IMagicDrawSessionService.class));
+	}
+
+	/**
+	* Gets the {@linkplain current}
+	*
+	* @return instance the {@linkplain IStereotypeService}
+	*/
+	public static IStereotypeService Current()
+	{
+		return StereotypeService.current;
+	}
+
+	/**
+	* Sets the {@linkplain current}.
+	* Use this setter only for test purpose.
+	*
+	* @param instance the {@linkplain IStereotypeService}
+	*/
+	public static void SetCurrent(IStereotypeService instance)
+	{
+		StereotypeService.current = instance;
+	}
     
     /**
      * The current class logger
@@ -133,10 +156,11 @@ public class StereotypeService implements IStereotypeService
      * @param stereotypeName the {@linkplain String} stereotype name
      * @return a {@linkplain Stereotype}
      */
-    private Stereotype GetStereotype(String stereotypeName)
+    @Override
+    public Stereotype GetStereotype(String stereotypeName)
     {
-        Collection<Stereotype> allStereoType = StereotypesHelper.getAllStereotypes(this.sessionService.GetProject());
-        Optional<Stereotype> optionalStereotype = allStereoType.stream().filter(x -> AreTheseEquals(x.getName(), stereotypeName, true)).findFirst();
+        Collection<Stereotype> allStereotype = StereotypesHelper.getAllStereotypes(this.sessionService.GetProject());
+        Optional<Stereotype> optionalStereotype = allStereotype.stream().filter(x -> AreTheseEquals(x.getName(), stereotypeName, true)).findFirst();
           
         if(optionalStereotype.isPresent())
         {
@@ -226,7 +250,7 @@ public class StereotypeService implements IStereotypeService
     @Override
     public Collection<Stereotype> GetAllStereotype(Element element)
     {
-        return MDCustomizationForSysMLProfile.getInstance(element).getAllStereotypes();
+        return StereotypesHelper.getStereotypes(element);
     }
     
     /**
@@ -238,7 +262,7 @@ public class StereotypeService implements IStereotypeService
     @Override
     public void ApplyStereotype(Element element, Stereotypes stereotype)
     {
-        StereotypesHelper.addStereotype(element, this.GetStereotype(stereotype));
+        this.ApplyStereotype(element, this.GetStereotype(stereotype));
     }
     
     /**
@@ -277,6 +301,17 @@ public class StereotypeService implements IStereotypeService
         return MDCustomizationForSysMLProfile.isValueProperty(property);
     }
     
+    /**
+     * Gets a value indicating whether the provided {@linkplain Property} is a reference property
+     * 
+     * @param property the {@linkplain Property}
+     * @return a {@linkplain boolean}
+     */
+	@Override
+	public boolean IsReferenceProperty(Property property)
+	{
+		return MDCustomizationForSysMLProfile.isReferenceProperty(property);
+	}
     
     /**
      * Gets value representation string out of the specified {@linkplain LiteralNumericValue}
@@ -436,5 +471,37 @@ public class StereotypeService implements IStereotypeService
     public String GetRequirementId(Class requirement)
     {
         return AppContainer.Container.getComponent(IMagicDrawTransactionService.class).GetRequirementId(requirement);
+    }
+    
+    /**
+     * Applies existing {@linkplain Stereotypes} represented by means of {@linkplain Categories} to the provided element {@linkplain Class}
+     * 
+     * @param thing the {@linkplain CategorizableThing}
+     * @param element the {@linkplain Element}
+     */
+    @Override
+    public void ApplyStereotypesFrom(CategorizableThing thing, Element element)
+    {
+        List<String> categories = thing.getCategory().stream().map(x -> x.getName()).collect(Collectors.toList());
+        
+        for (String category : categories)
+        {
+            this.ApplyStereotype(element, this.GetStereotype(category));
+        }
+    }
+    
+    /**
+     * Applies the provided {@linkplain Stereotype}  to the provided element {@linkplain Class}
+     * 
+     * @param element the {@linkplain Element}
+     * @param stereotype the {@linkplain Stereotype}
+     */
+    @Override
+    public void ApplyStereotype(Element element, Stereotype stereotype)
+    {
+        if(stereotype != null)
+        {
+            StereotypesHelper.addStereotype(element, stereotype);
+        }
     }
 }

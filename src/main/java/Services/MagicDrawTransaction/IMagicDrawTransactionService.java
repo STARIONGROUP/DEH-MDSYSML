@@ -23,28 +23,24 @@
  */
 package Services.MagicDrawTransaction;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.nomagic.magicdraw.core.Project;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.InstanceSpecification;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
-import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.Region;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
 
+import Services.MagicDrawTransaction.Clones.ClonedReferenceElement;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import cdp4common.ChangeKind;
 
@@ -99,7 +95,7 @@ public interface IMagicDrawTransactionService
      * @return an instance of a {@linkplain Class}
      */
     <TElement extends Element> TElement Create(Stereotypes stereotype, String name);
-   
+
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain Stereotypes}
      * 
@@ -152,7 +148,7 @@ public interface IMagicDrawTransactionService
      * @param original the original {@linkplain #TElement}
      * @return a clone of the {@linkplain #original}
      */
-    <TElement extends Element> TElement Clone(TElement original);
+    <TElement extends Element> TElement CloneElement(TElement original);
 
     /**
      * Gets the {@linkplain CapellaElement} where the element id == the provided id
@@ -172,21 +168,6 @@ public interface IMagicDrawTransactionService
      * @return a {@linkplain ClonedReferenceElement} of type {@linkplain #TElement}
      */
     <TElement extends Element> ClonedReferenceElement<TElement> GetClone(TElement element);
-
-    /**
-     * Gets a read only {@linkplain Collection} of the clones reference of type {@linkplain #TElement}
-     *  
-     * @param stereotype the {@linkplain Stereotypes} type of element 
-     * @return a {@linkplain Collection} of {@linkplain ClonedReferenceElement}
-     */
-    Collection<ClonedReferenceElement<? extends Element>> GetClones(Stereotypes stereotype);
-
-    /**
-     * Gets a read only {@linkplain Collection} of the clones reference
-     * 
-     * @return a {@linkplain Collection} of {@linkplain ClonedReferenceElement}
-     */
-    Map<String, ClonedReferenceElement<? extends Element>> GetClones();
 
     /**
      * Adds the provided {@linkplain DataType} to the {@linkplain DataPackage} of the current project
@@ -272,4 +253,11 @@ public interface IMagicDrawTransactionService
      * @return a {@linkplain List} of {@linkplain Pair} of {@linkplain Region} and {@linkplain ChangeKind}
      */
     Set<Entry<State, List<Pair<Region, ChangeKind>>>> GetStatesModifiedRegions();
+
+    /**
+     * Deletes the specified {@linkplain Element} from the model
+     * 
+     * @param element the {@linkplain Element}
+     */
+    void Delete(Element element);
 }

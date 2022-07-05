@@ -24,11 +24,13 @@
 package Actions.Browser;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
 
 import com.nomagic.magicdraw.actions.MDAction;
+import com.nomagic.magicdraw.ui.browser.Tree;
 import com.nomagic.magicdraw.ui.browser.actions.DefaultBrowserAction;
 
 import Enumerations.MappingDirection;
@@ -41,17 +43,18 @@ import Views.MagicDrawHubBrowserPanel;
  * The {@link MapAction} is a {@link MDAction} that is to be added to the Cameo/Magic draw element browser context menu
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MapAction extends DefaultBrowserAction
 {
     /**
      * The {@linkplain IMapCommandService}
      */
-    private IMapCommandService mapCommandService;
+    private transient IMapCommandService mapCommandService;
     
     /**
      * The {@linkplain IMapCommandService}
      */
-    private IMagicDrawSelectionService selectionService;
+    private transient IMagicDrawSelectionService selectionService;
 
     /**
      * Initializes a new {@linkplain MapAction}
@@ -61,7 +64,7 @@ public class MapAction extends DefaultBrowserAction
      */
     public MapAction(IMapCommandService mapCommandService, IMagicDrawSelectionService selectionService) 
     {
-        super("Map Selection", "Map the current selection", KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK, true), null);
+        super("Map Selection", "Map the current selection", KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_DOWN_MASK, true), null);
         this.setSmallIcon(ImageLoader.GetIcon("icon16.png"));
         this.selectionService = selectionService;
         this.mapCommandService = mapCommandService;
@@ -85,7 +88,9 @@ public class MapAction extends DefaultBrowserAction
      */
     private void SetIsEnabled(boolean shouldEnable)
     {
-        shouldEnable &= this.getTree() != null && this.getTree().getSelectedNodes().length > 0;
+    	Tree tree = this.getTree();
+    	
+        shouldEnable &= tree != null && tree.getSelectedNodes().length > 0;
         this.setEnabled(shouldEnable);
     }
 

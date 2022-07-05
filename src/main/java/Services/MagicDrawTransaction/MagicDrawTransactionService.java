@@ -26,23 +26,20 @@ package Services.MagicDrawTransaction;
 import static Utils.Operators.Operators.AreTheseEquals;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 
-import com.nomagic.magicdraw.core.Project;
+import com.nomagic.magicdraw.openapi.uml.ModelElementsManager;
+import com.nomagic.magicdraw.openapi.uml.ReadOnlyElementException;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
 import com.nomagic.magicdraw.sysml.util.SysMLProfile;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
@@ -71,16 +68,18 @@ import com.nomagic.uml2.impl.ElementsFactory;
 
 import App.AppContainer;
 import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.MagicDrawTransaction.Clones.ClonedReferenceElement;
+import Services.MagicDrawTransaction.Clones.ICloneReferenceService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.DirectedRelationshipType;
 import Utils.Stereotypes.RequirementType;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import cdp4common.ChangeKind;
 
 /**
  * The MagicDrawTransactionService is a service that takes care of clones and transactions in MagicDraw
  */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawTransactionService implements IMagicDrawTransactionService
 {
     /**
@@ -114,9 +113,9 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     private final IStereotypeService stereotypeService;
     
     /**
-     * Backing field for {@linkplain #GetClones(Class)} and {@linkplain #GetClones()}
+     * The {@linkplain ICloneReferenceService}
      */
-    private HashMap<String, ClonedReferenceElement<? extends Element>> cloneReferences = new HashMap<>();
+    private final ICloneReferenceService cloneReferenceService;
     
     /**
      * Holds the newly created {@linkplain Element} for future reference such as in {@linkplain #IsClonedOrNew(EObject)}, {@linkplain #GetNew(String, Class)}
@@ -137,42 +136,19 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * The reference to the {@linkplain #dataPackageName}
      */
     private Package dataPackage;
-    
-    /**
-     * Gets a read only {@linkplain Collection} of the clones reference
-     * 
-     * @return a {@linkplain Collection} of {@linkplain ClonedReferenceElement}
-     */    
-    @Override
-    public Map<String, ClonedReferenceElement<? extends Element>> GetClones()
-    {
-        return Collections.unmodifiableMap(cloneReferences);
-    }
-    
-    /**
-     * Gets a read only {@linkplain Collection} of the clones reference of type {@linkplain #TElement}
-     *  
-     * @param stereotype the {@linkplain Stereotypes} type of element 
-     * @return a {@linkplain Collection} of {@linkplain ClonedReferenceElement}
-     */    
-    @Override
-    public Collection<ClonedReferenceElement<? extends Element>> GetClones(Stereotypes stereotype)
-    {
-        return Collections.unmodifiableCollection(cloneReferences.values().stream()
-                .filter(x -> StereotypesHelper.hasStereotype(x.GetOriginal(), this.stereotypeService.GetStereotype(stereotype)))
-                .collect(Collectors.toList()));
-    }
-    
+        
     /**
      * Initializes a new {@linkplain CapellaTransactionService}
      * 
      * @param sessionService the {@linkplain IMagicDrawSessionService}
      * @param stereotypeService the {@linkplain IStereotypeService}
+     * @param cloneReferenceService the {@linkplain ICloneReferenceService}
      */
-    public MagicDrawTransactionService(IMagicDrawSessionService sessionService, IStereotypeService stereotypeService)
+    public MagicDrawTransactionService(IMagicDrawSessionService sessionService, IStereotypeService stereotypeService, ICloneReferenceService cloneReferenceService)
     {
         this.sessionService = sessionService;
         this.stereotypeService = stereotypeService;
+        this.cloneReferenceService = cloneReferenceService;
         
         this.sessionService.HasAnyOpenSessionObservable().subscribe(x -> 
                             this.elementFactory = x.booleanValue() ? this.sessionService.GetProject().getElementsFactory() : null);
@@ -186,10 +162,9 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * @return a {@linkplain ClonedReferenceElement} of type {@linkplain #TElement}
      */
     @Override
-    @SuppressWarnings("unchecked")
     public <TElement extends Element> ClonedReferenceElement<TElement> GetClone(TElement element)
     {
-        return (ClonedReferenceElement<TElement>) this.cloneReferences.get(element.getID());
+        return this.cloneReferenceService.GetClone(element);
     }
 
     /**
@@ -206,6 +181,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     {
         return (TElement) this.newReferences.get(id);
     }
+    
     /**
      * Clones the original and returns the clone or returns the clone if it already exist
      * 
@@ -214,54 +190,11 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
      * @return a clone of the {@linkplain #original}
      */    
     @Override
-    @SuppressWarnings("unchecked")
-    public <TElement extends Element> TElement Clone(TElement original)
+    public <TElement extends Element> TElement CloneElement(TElement original)
     {
-        if(original == null)
-        {
-            return null;
-        }
-        
-        if(this.cloneReferences.containsKey(original.getID()))
-        {
-            return (TElement) this.cloneReferences.get(original.getID()).GetClone();
-        }
-        
-        ClonedReferenceElement<TElement> clonedReference = ClonedReferenceElement.Create(original, this.stereotypeService, this.cloneReferences);
-        
-        if(original instanceof Package)
-        {
-            this.AddToCloneReferencesClonedContainedElements(((ClonedReferencePackage)clonedReference).ContainedElements());
-        }
-    
-        this.cloneReferences.put(original.getID(), clonedReference); 
-        return clonedReference.GetClone();
+        return this.cloneReferenceService.CloneElement(original);
     }
     
-    /**
-     * Adds to the {@linkplain #cloneReferences} all the element present in the provided {@linkplain Collection} of {@linkplain ClonedReferenceElement}
-     * 
-     * @param collection The {@linkplain Collection} of {@linkplain ClonedReferenceElement}
-     */
-    private void AddToCloneReferencesClonedContainedElements(Collection<ClonedReferenceElement<? extends Element>> collection)
-    {
-        for (ClonedReferenceElement<? extends Element> clonedReferenceElement : collection)
-        {
-            this.cloneReferences.put(clonedReferenceElement.GetClone().getID(), clonedReferenceElement);
-            
-            if(clonedReferenceElement instanceof ClonedReferencePackage)
-            {
-                Collection<ClonedReferenceElement<? extends Element>> containedElements = ((ClonedReferencePackage)clonedReferenceElement).ContainedElements();
-                
-                if(!containedElements.isEmpty())
-                {
-                    this.AddToCloneReferencesClonedContainedElements(containedElements);
-                }
-            }
-        }
-    }
-    
-
     /**
      * Verifies that the provided {@linkplain #TElement} is a clone
      * 
@@ -272,14 +205,8 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     @Override
     public <TElement extends Element> boolean IsCloned(TElement element)
     {
-        if(!(element instanceof Element))
-        {
-            return false;
-        }
-        
-        return this.cloneReferences.containsKey(((Element)element).getID()) 
-                && this.cloneReferences.get(((Element)element).getID()).GetClone() == element;
-    }    
+        return this.cloneReferenceService.IsCloned(element);
+    }
 
     /**
      *  Verifies that the provided {@linkplain #TElement} is a new element
@@ -418,7 +345,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     {
         return (TElement) this.CreateFromEnum(stereotype, name);
     }
-    
+
     /**
      * Initializes a new {@linkplain Class} from the specified {@linkplain Stereotypes}
      * 
@@ -558,12 +485,12 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
         
         if(magicDrawStereotype != null)
         {
-            StereotypesHelper.addStereotype(reference, magicDrawStereotype);
+            this.stereotypeService.ApplyStereotype(reference, magicDrawStereotype);
         }
         
         this.newReferences.put(reference.getID(), reference);
         return reference;
-    }    
+    }
     
     /**
      * Gets the existing or create the {@linkplain Package} that is meant to hold parameter types created from COMET
@@ -629,7 +556,7 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     @Override
     public void Clear()
     {
-        this.cloneReferences.clear();
+        this.cloneReferenceService.Reset();
         this.newReferences.clear();
         this.stateModifiedRegions.clear();
     }
@@ -812,5 +739,22 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     public Set<Entry<State, List<Pair<Region, ChangeKind>>>> GetStatesModifiedRegions()
     {        
         return this.stateModifiedRegions.entrySet();
+    }
+
+    /**
+     * Deletes the specified {@linkplain Element} from the model
+     * 
+     * @param element the {@linkplain Element}
+     */
+    public void Delete(Element element)
+    {
+        try
+        {
+            ModelElementsManager.getInstance().removeElement(element);
+        } 
+        catch (ReadOnlyElementException exception)
+        {
+            this.logger.info(String.format("Error while trying to delete element [%s], the element is readonly.", element.getHumanName()));
+        }
     }
 }

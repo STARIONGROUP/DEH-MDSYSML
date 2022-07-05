@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski
  *
  * This file is part of DEH-MDSYSML
  *
@@ -30,14 +30,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.nomagic.magicdraw.sysml.util.MDCustomizationForSysMLProfile;
-import com.nomagic.requirements.util.RequirementUtilities;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 
@@ -48,12 +45,11 @@ import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
-import Utils.Stereotypes.RequirementType;
-import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.ClassKind;
 import cdp4common.commondata.Definition;
 import cdp4common.engineeringmodeldata.Requirement;
+import cdp4common.engineeringmodeldata.RequirementsContainer;
 import cdp4common.engineeringmodeldata.RequirementsGroup;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
 
@@ -63,14 +59,14 @@ import cdp4common.engineeringmodeldata.RequirementsSpecification;
 public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappingRule<MagicDrawRequirementCollection, ArrayList<MappedRequirementRowViewModel>>
 {
     /**
-     * The collection of {@linkplain RequirementsSpecification} that are being mapped
+     * A collection of <see cref="RequirementsSpecification" />
      */
-    private ArrayList<RequirementsSpecification> requirementsSpecifications = new ArrayList<>();
+    private final ArrayList<RequirementsSpecification> requirementsSpecifications = new ArrayList<>();
 
     /**
-     * The collection of {@linkplain RequirementsGroup} that are being mapped
+     *A collection of <see cref="RequirementsGroup" />
      */
-    private ArrayList<RequirementsGroup> temporaryRequirementsGroups = new ArrayList<>();
+    private final ArrayList<RequirementsGroup> requirementsGroups = new ArrayList<>();
 
     /**
      * The {@linkplain IMagicDrawTransactionService}
@@ -78,8 +74,13 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     private final IMagicDrawTransactionService transactionService;
 
     /**
+     * The {@linkplain Collection} of {@linkplain MappedRequirementRowViewModel}
+     */
+    private ArrayList<MappedRequirementRowViewModel> mappedElements;
+
+    /**
      * Initializes a new {@linkplain DstRequirementToHubRequirementMappingRule}
-     * 
+     *
      * @param hubController the {@linkplain IHubController}
      * @param mappingConfiguration the {@linkplain IMagicDrawMappingConfigurationService}
      * @param mappingConfiguration the {@linkplain IMagicDrawTransactionService}
@@ -90,11 +91,11 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     {
         super(hubController, mappingConfiguration, stereotypeService);
         this.transactionService = transactionService;
-    }    
-    
+    }
+
     /**
      * Transforms an {@linkplain MagicDrawRequirementCollection} of type {@linkplain Class} to an {@linkplain ArrayList} of {@linkplain RequirementsSpecification}
-     * 
+     *
      * @param input the {@linkplain MagicDrawRequirementCollection} to transform
      * @return the {@linkplain ArrayList} of {@linkplain MappedDstRequirementRowViewModel}
      */
@@ -103,245 +104,369 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     {
         try
         {
-            MagicDrawRequirementCollection mappedElements = this.CastInput(input);
-            this.Map(mappedElements);
-            this.SaveMappingConfiguration(mappedElements, MappingDirection.FromDstToHub);
-            return new ArrayList<>(mappedElements);
+            MagicDrawRequirementCollection mappedElementsAndMappingType = this.CastInput(input);
+
+            for (RequirementsSpecification requirementsSpecification : this.hubController.GetOpenIteration().getRequirementsSpecification()
+                    .stream().filter(x -> !x.isDeprecated()).collect(Collectors.toList()))
+            {
+                RequirementsSpecification requirementsSpecificationsClone = requirementsSpecification.clone(true);
+                this.requirementsSpecifications.add(requirementsSpecificationsClone);
+                this.PopulateRequirementsGroupCollection(requirementsSpecificationsClone);
+            }
+
+            this.mappedElements = new ArrayList<>(mappedElementsAndMappingType.getRight());
+
+            for (MappedRequirementRowViewModel mappedElement : this.mappedElements)
+            {
+                this.MapRequirement(mappedElement);
+            }
+
+            if (mappedElementsAndMappingType.getLeft())
+            {
+                this.MapCategories();
+                this.SaveMappingConfiguration(this.mappedElements, MappingDirection.FromDstToHub);
+            }
+
+            return this.mappedElements;
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
         {
             this.requirementsSpecifications.clear();
-            this.temporaryRequirementsGroups.clear();
+            this.requirementsGroups.clear();
         }
     }
-    
-    /**
-     * Maps the provided collection of block
-     * 
-     * @param mappedRequirements the collection of {@linkplain Class} or requirements to map
-     */
-    private void Map(MagicDrawRequirementCollection mappedRequirements)
-    {
-        for (MappedRequirementRowViewModel mappedRequirement : mappedRequirements)
-        {
-            try
-            {
-                Element parentPackage = mappedRequirement.GetDstElement().getOwner();
-                
-                Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
-                   
-                if(!mappedRequirement.GetShouldCreateNewTargetElementValue() && mappedRequirement.GetHubElement() != null)
-                {
-                    refRequirementsSpecification.Set(mappedRequirement.GetHubElement().getContainerOfType(RequirementsSpecification.class));
-                }
-                else
-                {
-                    while (parentPackage != null 
-                            && !(this.CanBeARequirementSpecification(parentPackage)
-                            && parentPackage instanceof Package
-                            && this.TryGetOrCreateRequirementSpecification((Package)parentPackage, refRequirementsSpecification)))
-                    {
-                        parentPackage = parentPackage.getOwner();
-                    }
-                }
-                
-                if(!refRequirementsSpecification.HasValue())
-                {
-                    this.Logger.error(
-                            String.format("The mapping of the current requirement %s is not possible, because no eligible parent could be found current package name %s", 
-                                    mappedRequirement.GetDstElement().getName(), mappedRequirement.GetDstElement().getOwner().getHumanName()));
-                    
-                    continue;
-                }
-    
-                Ref<RequirementsGroup> refRequirementsGroup = new Ref<>(RequirementsGroup.class);
-                Ref<Requirement> refRequirement = new Ref<>(Requirement.class);
-                
-                Collection<Element> parentElements = parentPackage.getOwnedElement();
-                
-                if(!TryCreateRelevantGroupsAndTheRequirement(mappedRequirement.GetDstElement(), parentElements, refRequirementsSpecification, refRequirementsGroup, refRequirement))
-                {
-                    this.Logger.error(String.format("Could not map requirement %s", mappedRequirement.GetDstElement().getName()));
-                }
-                
-                if(refRequirement.HasValue())
-                {
-                    this.UpdateProperties(mappedRequirement.GetDstElement(), refRequirementsSpecification, refRequirement);
-                }
-
-                mappedRequirement.SetHubElement(refRequirement.Get());
-            }
-            catch(Exception exception)
-            {
-                this.Logger.catching(exception);
-            }
-        }
-    }
-    
-   /**
-    * Updates the target {@linkplain cdp4common.engineeringmodeldata.Requirement} properties
-    * 
-    * @param dstRequirement the source {@linkplain Requirement}
-    * @param refRequirementsSpecification the {@linkplain Ref} of {@linkplain RequirementsSpecification} container
-    * @param refRequirement the {@linkplain Ref} of {@linkplain cdp4common.engineeringmodeldata.Requirement} target
-    */
-   private void UpdateProperties(Class dstRequirement,
-           Ref<RequirementsSpecification> refRequirementsSpecification,
-           Ref<cdp4common.engineeringmodeldata.Requirement> refRequirement)
-   {
-       this.UpdateOrCreateDefinition(dstRequirement, refRequirement);
-       refRequirement.Get().setName(dstRequirement.getName());
-       refRequirement.Get().setShortName(this.transactionService.GetRequirementId(dstRequirement));
-
-       refRequirementsSpecification.Get().getRequirement().removeIf(x -> AreTheseEquals(x.getIid(), refRequirement.Get().getIid()));
-       refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
-
-       this.MapCategories(dstRequirement, refRequirement.Get());
-   }
 
     /**
-     * Tries to create the groups between the current {@linkplain RequirementsSpecification} and the current {@linkplain Requirement} to be created,
-     * and creates the {@linkplain Requirement}. This method is called recursively until the methods reaches the {@linkplain Requirement}
+     * Maps the provided {@linkplain MappedRequirementRowViewModel}
      *
-     * @param requirement the {@linkplain Class} requirement from MagicDraw
-     * @param elements the children of the current {@linkplain Package} being processed
-     * @param refRequirementsSpecification the {@linkplain Ref} of {@linkplain RequirementsSpecification}
-     * @param refRequirementsGroup the {@linkplain Ref} of {@linkplain RequirementsGroup}, 
-     * holds the last group that was created, also the closest to the {@linkplain Requirement}
-     * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement}
-     * @return a value indicating whether the requirement has been created/updated
-     * @throws UnsupportedOperationException in case the {@linkplain Requirement could not be created}
+     * @param mappedElement the {@linkplain MappedRequirementRowViewModel}
      */
-    private boolean TryCreateRelevantGroupsAndTheRequirement(Class requirement, Collection<Element> elements,
-            Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup,
-            Ref<Requirement> refRequirement)
+    private void MapRequirement(MappedRequirementRowViewModel mappedElement)
     {
-        for (Element element : elements)
+        if (!mappedElement.GetShouldCreateNewTargetElementValue() && mappedElement.GetHubElement() != null)
         {
-            if(element instanceof Package)
+            this.UpdateProperties(mappedElement.GetDstElement(), mappedElement.GetHubElement());
+            RequirementsSpecification requirementSpecification = mappedElement.GetHubElement().getContainerOfType(RequirementsSpecification.class).clone(true);
+            
+            requirementSpecification.getRequirement().removeIf(x -> x.getIid() == mappedElement.GetHubElement().getIid());
+            requirementSpecification.getRequirement().add(mappedElement.GetHubElement());
+            return;
+        }
+
+        Ref<Requirement> refRequirement = new Ref<>(Requirement.class);
+        Package packageParent = mappedElement.GetDstElement().getOwningPackage();
+
+        if (packageParent.getOwningPackage() == null)
+        {
+            if (!this.TryGetOrCreateRequirementsSpecificationAndRequirement(mappedElement.GetDstElement(), refRequirement))
             {
-                if(element.isParentOf(requirement))
-                {                
-                    if(!this.TryGetOrCreateRequirementGroup((Package)element, refRequirementsSpecification, refRequirementsGroup))
-                    {
-                        this.Logger.error(String.format("Could not create the requirement %s, because the creation/update of the requirement group %s failed", 
-                                requirement.getName(), ((Package)element).getName()));
-                        
-                        break;
-                    }
-                }
+                this.logger.error(String.format("Error during creation of the RequirementsSpecification for %s requirement", mappedElement.GetDstElement().getName()));
             }
-                        
-            else if(element instanceof Class && AreTheseEquals(element.getID(), requirement.getID()))
+        }
+        else
+        {
+            if (!this.TryGetOrCreateRequirement(mappedElement.GetDstElement(), refRequirement))
             {
-                if(!this.TryGetOrCreateRequirement((Class)element, refRequirementsSpecification, refRequirementsGroup, refRequirement))
-                {
-                    throw new UnsupportedOperationException(
-                            String.format("Could not create the requirement %s", requirement.getName()));
-                }
+                this.logger.error(String.format("Error during creation of the Requirement for %s package", mappedElement.GetDstElement().getName()));
+                return;
             }
             
-            if(this.TryCreateRelevantGroupsAndTheRequirement(requirement, element.getOwnedElement(), refRequirementsSpecification, refRequirementsGroup, refRequirement))
+            Package packageGrandParent = packageParent.getOwningPackage();
+
+            Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
+
+            if (packageGrandParent.getOwningPackage() == null)
             {
-                break;
+                if (!this.TryGetOrCreateRequirementsSpecification(packageParent, refRequirementsSpecification))
+                {
+                    this.logger.error(String.format("Error during creation of the RequirementsSpecification for package %s", packageParent.getName()));
+                    return;
+                }
             }
+            else
+            {
+                if (!this.ProcessPackageHierarchy(packageParent, refRequirement.Get(), refRequirementsSpecification))
+                {
+                    this.logger.error(String.format("Error during creation of the RequirementsSpecification for %s requirement during the Process hierarchy",
+                            refRequirement.Get().getName()));
+
+                    return;
+                }
+            }
+
+            refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
+        }
+
+        mappedElement.SetHubElement(refRequirement.Get());
+        mappedElement.SetShouldCreateNewTargetElement(mappedElement.GetHubElement().getOriginal() == null);
+    }
+    
+    /**
+     * Tries to get a existing <see cref="Requirement" /> or created one based on the <see cref="Element" />
+     * It also creates the <see cref="Requirement" /> corresponding to the <see cref="Element" />
+     * 
+     * @param requirementElement The <see cref="Class" />
+     * @param refRequirement The <see cref="Requirement" />
+     * @return A value indicating whether the <see cref="RequirementsSpecification" /> has been created or retrieved
+     */
+    private boolean TryGetOrCreateRequirementsSpecificationAndRequirement(Class requirementElement, Ref<Requirement> refRequirement)
+    {
+        Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
+        
+        if (!this.TryGetOrCreateRequirement(requirementElement, refRequirement) || !this.TryGetOrCreateRequirementsSpecification(requirementElement.getName(), refRequirementsSpecification))
+        {
+            return false;
         }
         
-        return refRequirement.HasValue();
+        refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
+        return true;
     }
 
     /**
-     * Tries to get from the current {@linkplain RequirementsSpecification} the represented {@linkplain Requirement} by the provided {@linkplain Class} element
+     * Process the whole hierachy from the <see cref="Package" /> containing the Requirement to the root of 
+     * the project to create <see cref="RequirementsGroup" /> and <see cref="RequirementsSpecification" />
      * 
-     * @param element the {@linkplain Class} element
-     * @param refRequirementsGroup the {@linkplain Ref} of {@linkplain RequirementsGroup}, the closest parent in the tree of the {@linkplain Requirement}
-     * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement}
-     * @return a value indicating whether the {@linkplain Requirement} has been created or retrieved
+     * @param packageParent The <see cref="Package" />
+     * @param requirement The <see cref="Requirement" />
+     * @param refRequirementsSpecification The <see cref="RequirementsSpecification" />
+     * @return Value representing if the whole hierarchy has been processed
      */
-    private boolean TryGetOrCreateRequirement(Class element, Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup, Ref<Requirement> refRequirement)
+    private boolean ProcessPackageHierarchy(Package packageParent, Requirement requirement, Ref<RequirementsSpecification> refRequirementsSpecification)
+   {
+       Package packageGrandParent = packageParent.getOwningPackage();
+
+       Ref<RequirementsGroup> refParentRequirementsGroup = new Ref<>(RequirementsGroup.class);
+
+       if (!this.TryGetOrCreateRequirementsGroup(packageParent, refParentRequirementsGroup))
+       {
+           this.logger.error(String.format("Error during creation of the RequirementsGroup for %s package", packageParent.getName()));
+           return false;
+       }
+
+       requirement.setGroup(refParentRequirementsGroup.Get());
+
+       while (packageGrandParent.getOwningPackage() != null)
+       {
+           packageParent = packageGrandParent;
+           packageGrandParent = packageParent.getOwningPackage();
+
+           if (packageGrandParent.getOwningPackage() == null)
+           {
+               break;
+           }
+
+           Ref<RequirementsGroup> refNewestRequirementsGroup = new Ref<>(RequirementsGroup.class);
+
+           if (!this.TryGetOrCreateRequirementsGroup(packageParent, refNewestRequirementsGroup))
+           {
+               this.logger.error(String.format("Error during creation of the RequirementsGroup for %s package", packageParent.getName()));
+               return false;
+           }
+
+           refNewestRequirementsGroup.Get().getGroup().removeIf(x -> AreTheseEquals(x.getIid(), refParentRequirementsGroup.Get().getIid()));
+           refNewestRequirementsGroup.Get().getGroup().add(refParentRequirementsGroup.Get());
+           refParentRequirementsGroup.Set(refNewestRequirementsGroup.Get());
+       }
+
+       if (!this.TryGetOrCreateRequirementsSpecification(packageParent, refRequirementsSpecification))
+       {
+           this.logger.error(String.format("Error during creation of the RequirementsSpecification for %s package", packageGrandParent.getName()));
+           return false;
+       }
+
+       refRequirementsSpecification.Get().getGroup().removeIf(x -> AreTheseEquals(x.getIid(), refParentRequirementsGroup.Get().getIid()));
+       refRequirementsSpecification.Get().getGroup().add(refParentRequirementsGroup.Get());
+
+       return true;
+   }
+   
+   /**
+    * Tries to get a existing <see cref="RequirementsGroup" /> or created one based on the <see cref="Package" />
+    *
+    * @param package The <see cref="Package" />
+    * @param refRequirementsGroup The <see cref="RequirementsGroup" />
+    * @return A value indicating whether the <see cref="RequirementsGroup" /> has been created or retrieved
+    */
+    private boolean TryGetOrCreateRequirementsGroup(Package requirementPackage, Ref<RequirementsGroup> refRequirementsGroup)
     {
-        Optional<Requirement> optionalRequirement = refRequirementsSpecification.Get()
-                .getRequirement()
-                .stream()
-                .filter(x -> this.AreShortNamesEquals(x, GetShortName(element)) && !x.isDeprecated())
+        String shortName = GetShortName(requirementPackage.getName());
+       
+        Optional<RequirementsGroup> optionalRequirementsGroup = this.requirementsGroups.stream()
+                .filter(x -> AreTheseEquals(x.getShortName(), shortName, true))
                 .findFirst();
-        
-        if(optionalRequirement.isPresent())
+       
+        if (optionalRequirementsGroup.isPresent())
         {
-            refRequirement.Set(optionalRequirement.get().clone(true));
+            refRequirementsGroup.Set(optionalRequirementsGroup.get());
+        }
+        else
+        {
+            RequirementsGroup requirementsGroup = new RequirementsGroup();
+            requirementsGroup.setName(requirementPackage.getName());
+            requirementsGroup.setShortName(shortName);
+            requirementsGroup.setIid(UUID.randomUUID());
+            requirementsGroup.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+
+            refRequirementsGroup.Set(requirementsGroup);
+            this.requirementsGroups.add(requirementsGroup);
+        }
+       
+        return refRequirementsGroup.HasValue();
+    }
+
+   /**
+    * Tries to get a existing <see cref="RequirementsGroup" /> or created one based on the <see cref="Package" />
+    *
+    * @param requirementPackage The <see cref="Package" />
+    * @param requirementsSpecification The <see cref="RequirementsSpecification" />
+    * @return A value indicating whether the <see cref="RequirementsSpecification" /> has been created or retrieved
+    */
+   private boolean TryGetOrCreateRequirementsSpecification(Package requirementPackage, Ref<RequirementsSpecification> requirementsSpecification)
+   {
+       return this.TryGetOrCreateRequirementsSpecification(requirementPackage.getName(), requirementsSpecification);
+   }
+
+   /**
+    * Tries to get a existing <see cref="RequirementsSpecification" /> or created one based on the name
+    *
+    * @param packageName The name
+    * @param refRequirementsSpecification The <see cref="RequirementsSpecification" />
+    * @return A value indicating whether the <see cref="RequirementsSpecification" /> has been created or retrieved
+    */
+    private boolean TryGetOrCreateRequirementsSpecification(String packageName, Ref<RequirementsSpecification> refRequirementsSpecification)
+    {
+        String shortName = GetShortName(packageName);
+
+        Optional<RequirementsSpecification> optionalRequirementsSpecification = this.requirementsSpecifications.stream()
+                .filter(x -> AreTheseEquals(x.getShortName(), shortName, true))
+                .findFirst();
+
+        if (!optionalRequirementsSpecification.isPresent())
+        {
+            RequirementsSpecification newRequirementSpecification = new RequirementsSpecification();
+            newRequirementSpecification.setIid(UUID.randomUUID());
+            newRequirementSpecification.setName(packageName);
+            newRequirementSpecification.setShortName(shortName);
+            newRequirementSpecification.setOwner(this.hubController.GetCurrentDomainOfExpertise());
+            refRequirementsSpecification.Set(newRequirementSpecification);
+            this.requirementsSpecifications.add(refRequirementsSpecification.Get());
+        }
+        else
+        {
+            refRequirementsSpecification.Set(optionalRequirementsSpecification.get());
+        }
+
+        this.requirementsGroups.addAll(refRequirementsSpecification.Get().getAllContainedGroups());
+
+        return refRequirementsSpecification.HasValue();
+    }
+
+    /**
+     * Tries to get a existing <see cref="Requirement" /> or created one based on the <see cref="Element" />
+     *
+     * @param dstRequirement the {@linkplain Class} requirement
+     * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement}
+     * @return a value indicating whether the {@linkplain Requirement} was either found or created
+     */
+    private boolean TryGetOrCreateRequirement(Class dstRequirement, Ref<Requirement> refRequirement)
+    {
+        if (this.TryGetRequirement(dstRequirement, refRequirement))
+        {
+            RequirementsSpecification requirementsSpecification = refRequirement.Get().getContainerOfType(RequirementsSpecification.class);
+            requirementsSpecification.getRequirement().removeIf(x -> AreTheseEquals(x.getIid(), refRequirement.Get().getIid()));
         }
         else
         {
             Requirement requirement = new Requirement();
             requirement.setIid(UUID.randomUUID());
             requirement.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-            requirement.setGroup(refRequirementsGroup.Get());
             refRequirement.Set(requirement);
         }
 
-        refRequirementsSpecification.Get().getRequirement().removeIf(x -> AreTheseEquals(x.getIid(), refRequirement.Get().getIid()));
-        refRequirementsSpecification.Get().getRequirement().add(refRequirement.Get());
-        
+        this.UpdateProperties(dstRequirement, refRequirement.Get());
         return refRequirement.HasValue();
     }
 
     /**
-     * Applies category onto the created {@linkplain Requirement}
-     * 
-     * @param element the {@linkplain Class} element
-     * @param requirement the 10-25 requirement
+     * Try to get an existing {@linkplain Requirement}
+     *
+     * @param dstRequirement the {@linkplain Class} requirement
+     * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement}
+     * @return a value indicating whether the {@linkplain Requirement} was either found
      */
-    private void MapCategories(Class element, Requirement requirement)
+    private boolean TryGetRequirement(Class dstRequirement, Ref<Requirement> refRequirement)
     {
-        for(Stereotype stereotype : this.stereotypeService.GetAllStereotype(element))
+        String requirementShortname = this.transactionService.GetRequirementId(dstRequirement);
+
+        refRequirement.Set(this.requirementsSpecifications.stream()
+                .flatMap(x -> x.getRequirement().stream())
+                .filter(x -> !x.isDeprecated() && AreTheseEquals(x.getShortName(), requirementShortname, true))
+                .findFirst()
+                .orElse(null));
+
+        return refRequirement.HasValue();
+    }
+
+    /**
+     * Updates the target {@linkplain cdp4common.engineeringmodeldata.Requirement} properties
+     *
+     * @param dstRequirement the source {@linkplain Requirement}
+     * @param requirement the {@linkplain cdp4common.engineeringmodeldata.Requirement} target
+     */
+    private void UpdateProperties(Class dstRequirement, Requirement requirement)
+    {
+        this.UpdateOrCreateDefinition(dstRequirement, requirement);
+        requirement.setName(dstRequirement.getName());
+        requirement.setShortName(this.transactionService.GetRequirementId(dstRequirement));
+    }
+
+    /**
+     * Applies categories for each {@linkplain #mappedElements}
+     */
+    private void MapCategories()
+    {
+        for (MappedRequirementRowViewModel mappedRequirementRowViewModel : this.mappedElements)
         {
-            RequirementType requirementType = RequirementType.From(stereotype);
-            
-            if(requirementType != null)
+            for(Stereotype stereotype : this.stereotypeService.GetAllStereotype(mappedRequirementRowViewModel.GetDstElement()))
             {
-                this.Logger.debug(String.format("MAP CATEGORY %s, %s, %s", stereotype.getName(), stereotype.getHumanName(), stereotype.getHumanType()));
-                this.MapCategory(requirement, requirementType.name(), ClassKind.Requirement);
+                this.MapCategory(mappedRequirementRowViewModel.GetHubElement(), stereotype.getName(), ClassKind.Requirement);
             }
         }
     }
 
     /**
-     * Updates or creates the definition according to the provided {@linkplain Class} assignable to the {@linkplain Requirement}  
-     * 
+     * Updates or creates the definition according to the provided {@linkplain Class} assignable to the {@linkplain Requirement}
+     *
      * @param element the {@linkplain Class} element that represents the requirement in MagicDraw
-     * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement} to update
+     * @param requirement the {@linkplain Requirement} to update
      */
-    private void UpdateOrCreateDefinition(Class element, Ref<Requirement> refRequirement)
+    private void UpdateOrCreateDefinition(Class element, Requirement requirement)
     {
-        if(refRequirement.HasValue())
-        {            
-            Definition definition = refRequirement.Get().getDefinition()
+            Definition definition = requirement.getDefinition()
                     .stream()
                     .filter(x -> x.getLanguageCode().equalsIgnoreCase("en"))
                     .findFirst()
                     .map(x -> x.clone(true))
-                    .orElse(this.createDefinition());
+                    .orElse(this.CreateDefinition());
 
             String requirementText  = this.stereotypeService.GetRequirementText(element);
             definition.setContent(StringUtils.isBlank(requirementText) ? "-" : requirementText);
-            
-            refRequirement.Get().getDefinition().removeIf(x -> AreTheseEquals(x.getIid(), definition.getIid()));
-            
-            refRequirement.Get().getDefinition().add(definition);
-        }
+
+            requirement.getDefinition().removeIf(x -> AreTheseEquals(x.getIid(), definition.getIid()));
+            requirement.getDefinition().add(definition);
     }
-    
+
     /**
      * Creates a {@linkplain Definition} to be added to a {@linkplain Requirement}
-     * 
+     *
      * @return a {@linkplain Definition}
      */
-    private Definition createDefinition()
+    private Definition CreateDefinition()
     {
         Definition definition = new Definition();
         definition.setIid(UUID.randomUUID());
@@ -350,124 +475,18 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
 
     /**
-     * Try to create the {@linkplain RequirementsSpecification} represented by the provided {@linkplain Package}
-     * 
-     * @param currentPackage the {@linkplain Package} to create or retrieve the {@linkplain RequirementsSpecification} that represents it
-     * @param refRequirementsSpecification the {@linkplain Ref} parent {@linkplain RequirementsSpecification}
-     * @param refRequirementsGroup the {@linkplain Ref} of {@linkplain RequirementsGroup}
-     * @return a value indicating whether the {@linkplain RequirementsGroup} has been found or created
+     * Populate the <see cref="requirementsGroups"/> collection
+     *
+     *@param container The <see cref="RequirementsContainer"/>
      */
-    private boolean TryGetOrCreateRequirementGroup(Package currentPackage, Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup)
+    private void PopulateRequirementsGroupCollection(RequirementsContainer container)
     {
-        Ref<RequirementsGroup> refCurrentRequirementsGroup = new Ref<>(RequirementsGroup.class);
-        
-        if(this.TryToFindGroup(currentPackage, refRequirementsSpecification, refCurrentRequirementsGroup))
+        this.requirementsGroups.addAll(container.getGroup());
+
+        for (RequirementsGroup requirementsGroup : container.getGroup())
         {
-            refRequirementsGroup.Set(refCurrentRequirementsGroup.Get());
+            this.PopulateRequirementsGroupCollection(requirementsGroup);
         }
-        else
-        {
-            RequirementsGroup requirementsgroup = new RequirementsGroup();
-            requirementsgroup.setName(currentPackage.getName());
-            requirementsgroup.setShortName(GetShortName(currentPackage));
-            requirementsgroup.setIid(UUID.randomUUID());
-            requirementsgroup.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-            
-            if(refRequirementsGroup.HasValue())
-            {
-                refRequirementsGroup.Get().getGroup().add(requirementsgroup);
-            }
-            else
-            {
-                refRequirementsSpecification.Get().getGroup().add(requirementsgroup);                
-            }
-            
-            refRequirementsGroup.Set(requirementsgroup);
-            this.temporaryRequirementsGroups.add(requirementsgroup);
-        }
-        
-        return refRequirementsGroup.HasValue();
-    }
-    
-    /**
-     * Tries to find the group represented by / representing the provided {@linkplain Package}
-     * 
-     * @param currentPackage the {@linkplain Package}
-     * @param refRequirementsSpecification the {@linkplain Ref} of the current {@linkplain RequirementsSpecification}
-     * @param refRequirementsGroup the {@linkplain Ref} of {@linkplain RequirementsGroup}
-     * @return a value indicating whether the {@linkplain RequirementsGroup} has been found
-     */
-    private boolean TryToFindGroup(Package currentPackage, Ref<RequirementsSpecification> refRequirementsSpecification, Ref<RequirementsGroup> refRequirementsGroup)
-    {
-        Optional<RequirementsGroup> optionalRequirementsGroup = Stream.concat(this.temporaryRequirementsGroups.stream(), 
-                refRequirementsSpecification.Get().getAllContainedGroups().stream())
-            .filter(x -> this.AreShortNamesEquals(x, GetShortName(currentPackage)))
-            .findFirst();
-        
-        if(optionalRequirementsGroup.isPresent())
-        {
-            refRequirementsGroup.Set(optionalRequirementsGroup.get().getRevisionNumber() > 0 
-                    ? optionalRequirementsGroup.get().clone(true)
-                            : optionalRequirementsGroup.get());
-        }
-        
-        return refRequirementsGroup.HasValue();
     }
 
-    /**
-     * Try to create the {@linkplain RequirementsSpecification} represented by the provided {@linkplain Package}
-     * 
-     * @param currentPackage the {@linkplain Package} to create or retrieve the {@linkplain RequirementsSpecification} that represents it
-     * @param refRequirementSpecification the {@linkplain Ref} of {@linkplain RequirementsSpecification}
-     * @return a value indicating whether the {@linkplain RequirementsGroup} has been found or created
-     */
-    private boolean TryGetOrCreateRequirementSpecification(Package currentPackage, Ref<RequirementsSpecification> refRequirementSpecification)
-    {
-        Optional<RequirementsSpecification> optionalRequirementsSpecification = this.requirementsSpecifications
-                .stream()
-                .filter(x -> this.AreShortNamesEquals(x, GetShortName(currentPackage)))
-                .findFirst();
-
-        if(optionalRequirementsSpecification.isPresent())
-        {
-            refRequirementSpecification.Set(optionalRequirementsSpecification.get());
-        }
-        else
-        {
-            optionalRequirementsSpecification = this.hubController.GetOpenIteration()
-                    .getRequirementsSpecification()
-                    .stream()
-                    .filter(x -> this.AreShortNamesEquals(x, GetShortName(currentPackage)))
-                    .findFirst();
-            
-            if(optionalRequirementsSpecification.isPresent())
-            {
-                refRequirementSpecification.Set(optionalRequirementsSpecification.get().clone(true));
-            }
-            else
-            {
-                RequirementsSpecification requirementsSpecification = new RequirementsSpecification();
-                requirementsSpecification.setName(currentPackage.getName());
-                requirementsSpecification.setShortName(GetShortName(currentPackage));
-                requirementsSpecification.setIid(UUID.randomUUID());
-                requirementsSpecification.setOwner(this.hubController.GetCurrentDomainOfExpertise());
-                refRequirementSpecification.Set(requirementsSpecification);             
-            }
-        
-            this.requirementsSpecifications.add(refRequirementSpecification.Get());
-        }
-        
-        return refRequirementSpecification.HasValue();
-    }
-    
-    /**
-     * Verifies if the provided {@linkplain Element} contains any requirement
-     * 
-     * @param element the current {@linkplain Element} to verify
-     * @return a value indicating whether the {@linkplain Element} has any requirement as child
-     */
-    public boolean CanBeARequirementSpecification(Element element)
-    {
-        return !element.getOwnedElement().stream().anyMatch(x -> this.stereotypeService.DoesItHaveTheStereotype(x, Stereotypes.Requirement));
-    }
 }

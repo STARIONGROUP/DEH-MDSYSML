@@ -29,8 +29,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ClassUtils.Interfaces;
@@ -38,7 +40,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.emf.ecore.xml.type.internal.DataValue;
 import org.javafmi.modeldescription.v2.Unit;
 
-import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Usage;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.Interface;
 import com.nomagic.uml2.ext.magicdraw.classes.mdinterfaces.InterfaceRealization;
@@ -69,7 +70,6 @@ import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.ValueSetUtils;
 import Utils.Stereotypes.HubElementCollection;
-import Utils.Stereotypes.StereotypeUtils;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import cdp4common.commondata.DefinedThing;
@@ -79,11 +79,14 @@ import cdp4common.engineeringmodeldata.ElementBase;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.ElementUsage;
 import cdp4common.engineeringmodeldata.InterfaceEndKind;
+import cdp4common.engineeringmodeldata.Iteration;
+import cdp4common.engineeringmodeldata.Option;
 import cdp4common.engineeringmodeldata.Parameter;
 import cdp4common.engineeringmodeldata.ParameterOrOverrideBase;
 import cdp4common.engineeringmodeldata.Relationship;
 import cdp4common.engineeringmodeldata.RequirementsSpecification;
 import cdp4common.sitedirectorydata.BooleanParameterType;
+import cdp4common.sitedirectorydata.CategorizableThing;
 import cdp4common.sitedirectorydata.EnumerationParameterType;
 import cdp4common.sitedirectorydata.EnumerationValueDefinition;
 import cdp4common.sitedirectorydata.MeasurementScale;
@@ -127,6 +130,11 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * The {@linkplain HashMap} of {@linkplain Interface} that were created during this mapping
      */
     private HashMap<UUID, Interface> temporaryInterfaces = new HashMap<>();
+    
+    /**
+     * The {@linkplain HashMap} of {@linkplain ActualFiniteState} id and {@linkplain Property} id
+     */
+    private HashMap<UUID, UUID> selectedStatesAndParameter = new HashMap<>();
 
     /**
      * Initializes a new {@linkplain ElementToClassMappingRule}
@@ -164,11 +172,12 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
 
             this.Map(this.elements);
             this.SaveMappingConfiguration(this.elements, MappingDirection.FromHubToDst);
+            this.SaveSelectedActualFiniteSateMapping();
             return new ArrayList<>(this.elements);
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -177,9 +186,24 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             this.temporaryDataTypes.clear();
             this.portsToConnect.clear();
             this.temporaryInterfaces.clear();
+            this.selectedStatesAndParameter.clear();
         }
     }
     
+    /**
+     * Saves the selected {@linkplain ActualFiniteState}
+     * 
+     * @param elements the {@linkplain HubElementCollection}
+     */
+    private void SaveSelectedActualFiniteSateMapping()
+    {
+        for (Entry<UUID, UUID> selectedStateAndParameter :  this.selectedStatesAndParameter.entrySet())
+        {
+            this.mappingConfiguration.AddOrUpdateSelectedActualFiniteStateToExternalIdentifierMap(
+                    selectedStateAndParameter.getValue(), selectedStateAndParameter.getKey(), MappingDirection.FromHubToDst);
+        }
+    }
+
     /**
      * Maps the provided collection of {@linkplain ElementBase}
      * 
@@ -196,70 +220,105 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             }
             
             this.MapContainedElement(mappedElement);
-            this.MapProperties(mappedElement.GetHubElement(), mappedElement.GetDstElement());
+            this.MapProperties(mappedElement.GetHubElement(), mappedElement.GetDstElement(), x -> mappedElement.GetSelectedActualFiniteStateFor(x));
             this.MapPort(mappedElement);
+            this.MapStereotypes(mappedElement);
         }
 
         this.ConnectPorts();
     }
     
     /**
+     * Maps the {@linkplain Stereotype}s represented by means of applied {@linkplain Category}
+     * 
+     * @param mappedElement the {@linkplain mappedElement}
+     */
+    private void MapStereotypes(MappedElementDefinitionRowViewModel mappedElement)
+    {
+        this.stereotypeService.ApplyStereotypesFrom(mappedElement.GetHubElement(), mappedElement.GetDstElement());
+    }
+
+    /**
      * Connects the {@linkplain #portsToConnect} via {@linkplain Interfaces}
      */
     private void ConnectPorts()
     {
-        for (ElementUsage portElementUsage : this.portsToConnect.keySet())
+        for (Entry<ElementUsage, Port> portElementUsage : this.portsToConnect.entrySet())
         {            
-            Port port = this.portsToConnect.get(portElementUsage);
+            Port port = portElementUsage.getValue();
             
-            for (BinaryRelationship relationship : portElementUsage.getRelationships().stream()
+            for (BinaryRelationship relationship : portElementUsage.getKey().getRelationships().stream()
                     .filter(x -> x instanceof BinaryRelationship)
                     .map(x -> (BinaryRelationship)x)
                     .collect(Collectors.toList()))
             {
                 Ref<Interface> refInterface = new Ref<>(Interface.class);
 
-                if(!this.GetOrCreateInterface(relationship, refInterface))
+                Class portType = (Class)port.getType();
+
+                if(!this.GetOrCreateInterface(relationship, refInterface) || portType == null)
                 {
                     continue;
                 }
                 
-                Class portType = (Class)port.getType();
-                
-                if(AreTheseEquals(relationship.getSource().getIid(), portElementUsage.getIid()))
+                if(AreTheseEquals(relationship.getSource().getIid(), portElementUsage.getKey().getIid()))
                 {
-                    Ref<Usage> refRelation = new Ref<>(Usage.class);
-                    
-                    if(!this.dstController.TryGetElementBy(x -> x instanceof Usage 
-                            && x.getTarget().stream().anyMatch(r -> AreTheseEquals(r.getID(), refInterface.Get().getID()))
-                            && x.getSource().stream().anyMatch(r -> AreTheseEquals(x.getID(), portType.getID())), refRelation))
-                    {
-                        Usage newUsageRelation = this.transactionService.Create(Usage.class, "");
-                        newUsageRelation.getSupplier().add(refInterface.Get());
-                        newUsageRelation.getClient().add(port.getType());
-                        portType.get_relationshipOfRelatedElement().add(newUsageRelation);
-                    }
+                    this.GetOrCreateUsage(port, refInterface, portType);
                 }
                 else
                 {
-                    Optional<InterfaceRealization> optionalInterfaceRealisation = portType.get_relationshipOfRelatedElement().stream()
-                        .filter(x -> x instanceof InterfaceRealization)
-                        .map(x -> ((InterfaceRealization)x))
-                        .filter(x -> AreTheseEquals(x.getContract().getID(), refInterface.Get().getID())
-                                && AreTheseEquals(x.getImplementingClassifier().getID(), port.getType().getID()))
-                        .findFirst();
-                    
-                    if(!optionalInterfaceRealisation.isPresent())
-                    {
-                        InterfaceRealization interfaceRealizationRelation = this.transactionService.Create(InterfaceRealization.class, "");
-                        interfaceRealizationRelation.setContract(refInterface.Get());
-                        interfaceRealizationRelation.setImplementingClassifier(portType);
-                        portType.get_relationshipOfRelatedElement().add(interfaceRealizationRelation);
-                    }
+                    this.GetOrCreateInterfaceRealisation(port, refInterface, portType);
                 }
             }
         }
     }
+
+	/**
+	 * Gets or creates the usage realisation if not present
+	 * 
+	 * @param port The {@linkplain Port}
+	 * @param refInterface The {@linkplain Ref<Interface>}
+	 * @param portType The port type {@linkplain Class}
+	 */
+	private void GetOrCreateUsage(Port port, Ref<Interface> refInterface, Class portType)
+	{
+		Ref<Usage> refRelation = new Ref<>(Usage.class);
+		
+		if(!this.dstController.TryGetElementBy(x -> x instanceof Usage 
+		        && x.getTarget().stream().anyMatch(r -> AreTheseEquals(r.getID(), refInterface.Get().getID()))
+		        && x.getSource().stream().anyMatch(r -> AreTheseEquals(x.getID(), portType.getID())), refRelation))
+		{
+		    Usage newUsageRelation = this.transactionService.Create(Usage.class, "");
+		    newUsageRelation.getSupplier().add(refInterface.Get());
+		    newUsageRelation.getClient().add(port.getType());
+		    portType.get_relationshipOfRelatedElement().add(newUsageRelation);
+		}
+	}
+
+	/**
+	 * Gets or creates the interface realisation if not present
+	 * 
+	 * @param port The {@linkplain Port}
+	 * @param refInterface The {@linkplain Ref<Interface>}
+	 * @param portType The port type {@linkplain Class}
+	 */
+	private void GetOrCreateInterfaceRealisation(Port port, Ref<Interface> refInterface, Class portType)
+	{
+		Optional<InterfaceRealization> optionalInterfaceRealisation = portType.get_relationshipOfRelatedElement().stream()
+		    .filter(x -> x instanceof InterfaceRealization)
+		    .map(x -> ((InterfaceRealization)x))
+		    .filter(x -> AreTheseEquals(x.getContract().getID(), refInterface.Get().getID())
+		            && AreTheseEquals(x.getImplementingClassifier().getID(), port.getType().getID()))
+		    .findFirst();
+		
+		if(!optionalInterfaceRealisation.isPresent())
+		{
+		    InterfaceRealization interfaceRealizationRelation = this.transactionService.Create(InterfaceRealization.class, "");
+		    interfaceRealizationRelation.setContract(refInterface.Get());
+		    interfaceRealizationRelation.setImplementingClassifier(portType);
+		    portType.get_relationshipOfRelatedElement().add(interfaceRealizationRelation);
+		}
+	}
 
     /**
      * Gets or create an {@linkplain Interface} based on the provided {@linkplain Relationship}
@@ -310,9 +369,9 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * @param hubElement the {@linkplain ElementDefinition} from which the properties are to be mapped
      * @param element the target {@linkplain Class}
      */
-    private void MapProperties(ElementDefinition hubElement, Class element)
+    private void MapProperties(ElementDefinition hubElement, Class element, Function<UUID, ActualFiniteState> getSelectedStateDependence)
     {
-        this.MapProperties(hubElement.getParameter(), element);
+        this.MapProperties(hubElement.getParameter(), element, getSelectedStateDependence);
     }
 
     /**
@@ -320,8 +379,9 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * 
      * @param hubElement the {@linkplain ElementUsage} from which the properties are to be mapped
      * @param element the target {@linkplain Class}
+     * @param getSelectedStateDependency a {@linkplain Function} that returns the selected {@linkplain ActualFiniteState} for the Parameter
      */
-    private void MapProperties(ElementUsage hubElement, Class element)
+    private void MapProperties(ElementUsage hubElement, Class element, Function<UUID, ActualFiniteState> getSelectedStateDependency)
     {
         List<ParameterOrOverrideBase> allParametersAndOverrides = hubElement.getElementDefinition().getParameter().stream()
                 .filter(x -> hubElement.getParameterOverride().stream()
@@ -331,7 +391,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
         
         allParametersAndOverrides.addAll(hubElement.getParameterOverride());
         
-        this.MapProperties(allParametersAndOverrides, element);
+        this.MapProperties(allParametersAndOverrides, element, getSelectedStateDependency);
     }
     
     /**
@@ -339,8 +399,9 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * 
      * @param parameters the {@linkplain Collection} of {@linkplain ParameterOrOverrideBase} to map
      * @param element the target {@linkplain Class}
+     * @param getSelectedStateDependency a {@linkplain Function} that returns the selected {@linkplain ActualFiniteState} for the Parameter
      */
-    private void MapProperties(Collection<? extends ParameterOrOverrideBase> parameters, Class element)
+    private void MapProperties(Collection<? extends ParameterOrOverrideBase> parameters, Class element, Function<UUID, ActualFiniteState> getSelectedStateDependency)
     {
         for (ParameterOrOverrideBase parameter : parameters)
         {
@@ -353,17 +414,27 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
                 this.CreateProperty(parameter, refProperty, refParameterType);
                 element.getOwnedAttribute().add(refProperty.Get());
             }
+            
             if(refProperty.Get().getType() != null)
             {
                 refParameterType.Set((DataType)refProperty.Get().getType());
             }
+            
             if(refProperty.Get().getAppliedStereotypeInstance() == null)
             {
                 this.stereotypeService.ApplyStereotype(refProperty.Get(), Stereotypes.ValueProperty);
             }
             
             this.stateMappingRule.MapStateDependencies(parameter, refProperty.Get(), MappingDirection.FromHubToDst);
-            this.UpdateValue(parameter, refProperty, refParameterType);
+
+            ActualFiniteState stateDependency = getSelectedStateDependency.apply(parameter.getIid());
+            
+            if(stateDependency != null)
+            {
+                this.selectedStatesAndParameter.put(parameter.getIid(), stateDependency.getIid());
+            }
+            
+            this.UpdateValue(parameter, refProperty, refParameterType, stateDependency);
         }
     }
 
@@ -492,8 +563,9 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * @param parameter the {@linkplain ParameterOrOverrideBase} that contains the values to transfer
      * @param refProperty the {@linkplain Ref} of {@linkplain Property}
      * @param refDataType the {@linkplain Ref} of {@linkplain DataType}
+     * @param selectedActualFiniteState the selected {@linkplain ActualFiniteState}
      */
-    private void UpdateValue(ParameterOrOverrideBase parameter, Ref<Property> refProperty, Ref<DataType> refDataType)
+    private void UpdateValue(ParameterOrOverrideBase parameter, Ref<Property> refProperty, Ref<DataType> refDataType, ActualFiniteState selectedActualFiniteState)
     {
         Ref<ValueSpecification> refDataValue = new Ref<>(ValueSpecification.class);
         
@@ -503,30 +575,25 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
         }
         else
         {
-            refDataValue.Set(CreateValueSpecification(parameter, refDataType));
+            refDataValue.Set(CreateValueSpecification(parameter));
             refProperty.Get().setDefaultValue(refDataValue.Get());
         }
         
-        UpdateValue(refDataValue.Get(), parameter);
+        this.UpdateValue(refDataValue.Get(), parameter, selectedActualFiniteState);
     }
     
     /**
      * Updates the value of the provided {@linkplain Property}
      * 
-     * @param dataValue the {@linkplain DataValue}
+     * @param valueSpecification the {@linkplain ValueSpecification}
      * @param parameter the {@linkplain ParameterOrOverrideBase} that contains the values to transfer
-     * @param refProperty the {@linkplain Ref} of {@linkplain Property} 
+     * @param selectedActualFiniteState the selected {@linkplain ActualFiniteState}
      */
-    private void UpdateValue(ValueSpecification valueSpecification, ParameterOrOverrideBase parameter)
-    {
-        ActualFiniteState state = null;
+    private void UpdateValue(ValueSpecification valueSpecification, ParameterOrOverrideBase parameter, ActualFiniteState selectedActualFiniteState)
+    {   
+        Option option = parameter.isOptionDependent() ? parameter.getContainerOfType(Iteration.class).getOption().get(0) : null;
         
-        if(parameter.getStateDependence() != null)
-        {
-            state = parameter.getStateDependence().getActualState().get(0);
-        }
-        
-        String value = ValueSetUtils.QueryParameterBaseValueSet(parameter, null, state).getActualValue().get(0);
+        String value = ValueSetUtils.QueryParameterBaseValueSet(parameter, option, selectedActualFiniteState).getActualValue().get(0);
         Optional<String> valueString = "-".equals(value) || StringUtils.isBlank(value) ? Optional.empty() : Optional.of(value);
         
         if(valueSpecification instanceof LiteralInteger && valueString.isPresent())
@@ -580,7 +647,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      * 
      * @return a {@linkplain ValueSpecification}
      */
-    private ValueSpecification CreateValueSpecification(ParameterOrOverrideBase parameter, Ref<DataType> refDataType)
+    private ValueSpecification CreateValueSpecification(ParameterOrOverrideBase parameter)
     {
         java.lang.Class<? extends ValueSpecification> valueType = this.GetValueSpecificationType(parameter);
         
@@ -659,7 +726,9 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
                         return newMappedElement;
                     });
             
-            this.MapProperties(containedUsage, usageDefinitionMappedElement.GetDstElement());
+            this.MapProperties(containedUsage, usageDefinitionMappedElement.GetDstElement(), 
+                    x -> usageDefinitionMappedElement.GetSelectedActualFiniteStateFor(x));
+            
             this.MapPort(usageDefinitionMappedElement);
             this.UpdateContainement(mappedElement.GetDstElement(), usageDefinitionMappedElement.GetDstElement());
             this.MapContainedElement(usageDefinitionMappedElement);
@@ -681,7 +750,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
             
             if(!this.GetOrCreatePort(containedUsage, mappedElement.GetDstElement(), refPort, refDefinition))
             {
-                this.Logger.error(String.format("The rule was not able to map port [%s]", containedUsage.getUserFriendlyName()));
+                this.logger.error(String.format("The rule was not able to map port [%s]", containedUsage.getUserFriendlyName()));
                 continue;
             }
 
@@ -744,18 +813,8 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
      */
     private Class GetOrCreateElement(ElementBase elementBase)
     {
-        return this.GetOrCreateElement(elementBase.getName());
-    }
-    
-    /**
-     * Gets or creates the {@linkplain RequirementsPkg} that can represent the {@linkplain RequirementsSpecification}
-     * 
-     * @param <TClass> the type of {@linkplain Class}
-     * @param hubElementName the {@linkplain String} element name in the HUB side
-     * @return a {@linkplain RequirementsPkg}
-     */
-    private Class GetOrCreateElement(String hubElementName)
-    {
+        String hubElementName = elementBase.getName();
+        
         Ref<Class> refElement = new Ref<>(Class.class);
         
         if(!this.dstController.TryGetElementBy(x -> x instanceof NamedElement && 
@@ -765,7 +824,7 @@ public class ElementToBlockMappingRule extends HubToDstBaseMappingRule<HubElemen
         }
         else
         {
-            refElement.Set(this.transactionService.Clone(refElement.Get()));
+            refElement.Set(this.transactionService.CloneElement(refElement.Get()));
         }
         
         

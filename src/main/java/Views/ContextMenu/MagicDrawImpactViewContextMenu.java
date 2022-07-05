@@ -27,6 +27,7 @@ package Views.ContextMenu;
  * The {@linkplain MagicDrawImpactViewContextMenu} is the context menu for the {@linkplain MagicDrawObjectBrowser}
  */
 @SuppressWarnings("serial")
+@Annotations.ExludeFromCodeCoverageGeneratedReport
 public class MagicDrawImpactViewContextMenu extends ImpactViewContextMenu
 {
     /**

@@ -1,0 +1,46 @@
+/*
+ * ClonedReferencePackage.java
+ *
+ * Copyright (c) 2020-2021 RHEA System S.A.
+ *
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ *
+ * This file is part of DEH-MDSYSML
+ *
+ * The DEH-MDSYSML is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * The DEH-MDSYSML is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+package Services.MagicDrawTransaction.Clones;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+
+import Services.Stereotype.IStereotypeService;
+
+/**
+ * The ClonedReferencePackage is a POJO class that represents a cloned {@linkplain Package} with it's original reference
+ */
+@Annotations.ExludeFromCodeCoverageGeneratedReport
+public class ClonedReferencePackage extends ClonedReferenceElement<Package>
+{
+    /**
+     * Initializes a new {@linkplain ClonedReferencePackage}
+     * 
+     * @param stereotypeService the {@linkplain IStereotypeService}
+     * @param original the {@linkplain Package} original reference
+     */
+    ClonedReferencePackage(IStereotypeService stereotypeService, Package original)
+    {
+        super(original, null, stereotypeService);
+    }
+}

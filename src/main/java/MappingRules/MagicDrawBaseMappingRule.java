@@ -24,6 +24,9 @@
 package MappingRules;
 
 import java.util.Collection;
+import java.util.Map.Entry;
+import java.util.UUID;
+
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import Enumerations.MappingDirection;
@@ -31,8 +34,10 @@ import HubController.IHubController;
 import Services.MappingConfiguration.IMagicDrawMappingConfigurationService;
 import Services.MappingEngineService.MappingRule;
 import Services.Stereotype.IStereotypeService;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.ActualFiniteState;
 
 /**
  * The CapellaBaseMappingRule is the base mapping rule for all the Capella adapter rules

@@ -40,7 +40,7 @@ public abstract class HubToDstBaseMappingRule<TInput extends Object, TOutput> ex
     /**
      * The {@linkplain IDstController} instance
      */
-    IDstController dstController;
+    protected IDstController dstController;
     
     /**
      * The {@linkplain IMagicDrawTransactionService} instance

@@ -156,7 +156,7 @@ public class MapCommandService implements IMapCommandService
         Observable.combineLatest(this.sessionService.HasAnyOpenSessionObservable().startWith(this.sessionService.HasAnyOpenSession()), 
                     this.hubController.GetIsSessionOpenObservable().startWith(this.hubController.GetIsSessionOpen()),
                 (hasAnyOpenSession, isHubSessionOpen) -> hasAnyOpenSession && isHubSessionOpen)
-        .subscribe(x -> this.canExecute.Value(x));
+        .subscribe(x -> this.canExecute.Value(x), x -> this.logger.catching(x));
     }
     
     /**
@@ -189,19 +189,14 @@ public class MapCommandService implements IMapCommandService
     @Override
     public void MapSelection(MappingDirection mappingDirection)
     {
-        switch (mappingDirection)
-        {
-            case FromHubToDst:
-                this.MapFromHubToDst(null);
-                break;
-        
-            case FromDstToHub:
-                this.MapFromDstToHub();
-                break;
-
-            default:
-                break;
-        }
+        if (mappingDirection == MappingDirection.FromHubToDst)
+		{
+			this.MapFromHubToDst(null);
+		} 
+        else if (mappingDirection == MappingDirection.FromDstToHub)
+		{
+			this.MapFromDstToHub();
+		}
     }
 
     /**
@@ -313,7 +308,7 @@ public class MapCommandService implements IMapCommandService
                     this.logger.catching(t.GetException());
                 }
                 
-                this.logService.Append(String.format("Mapping action is done in %s ms", timer.getTime(TimeUnit.MILLISECONDS)), t.GetResult() == true);
+                this.logService.Append(String.format("Mapping action is done in %s ms", timer.getTime(TimeUnit.MILLISECONDS)), Boolean.TRUE.equals(t.GetResult()));
                 
             }, t -> this.logger.catching(t));
     }
@@ -390,7 +385,7 @@ public class MapCommandService implements IMapCommandService
         MagicDrawBlockCollection mappedComponents = new MagicDrawBlockCollection();
         MagicDrawRequirementCollection mappedDstRequirements = new MagicDrawRequirementCollection();
         
-        mappedDstRequirements.addAll(mappableElements.stream()
+        mappedDstRequirements.getRight().addAll(mappableElements.stream()
                 .filter(x -> x.GetTThingClass().isAssignableFrom(cdp4common.engineeringmodeldata.Requirement.class))
                 .map(x -> (MappedRequirementRowViewModel)x)
                 .collect(Collectors.toList()));
@@ -400,9 +395,9 @@ public class MapCommandService implements IMapCommandService
                 .map(x -> (MappedElementDefinitionRowViewModel)x)
                 .collect(Collectors.toList()));
         
-        if(!mappedDstRequirements.isEmpty())
+        if(!mappedDstRequirements.getRight().isEmpty())
         {
-            this.logService.Append("Mapping of %s Requirements in progress...", mappedDstRequirements.size());
+            this.logService.Append("Mapping of %s Requirements in progress...", mappedDstRequirements.getRight().size());
             result &= this.dstController.Map(mappedDstRequirements, MappingDirection.FromDstToHub);
         }
         

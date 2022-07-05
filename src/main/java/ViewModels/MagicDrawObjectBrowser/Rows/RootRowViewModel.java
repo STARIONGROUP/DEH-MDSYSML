@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 RHEA System S.A.
  *
- * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski 
+ * Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski
  *
  * This file is part of DEH-MDSYSML
  *
@@ -24,73 +24,70 @@
 package ViewModels.MagicDrawObjectBrowser.Rows;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
-import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
-import b.c.x;
 
 /**
- * The {@linkplain RootRowViewModel} represents the root element in one containment tree
+ * The {@linkplain RootRowViewModel} represents the root element in one
+ * containment tree
  */
 public class RootRowViewModel extends PackageRowViewModel implements IHaveContainedRows<IElementRowViewModel<?>>
 {
-    /**
-     * The {@linkplain Collection} of {@linkplain Element} that the {@linkplain containedRows} should contain 
-     */
-    private Collection<Element> containedElements;
-        
-    /**
-     * Initializes a new {@linkplain RootRowViewModel}
-     * 
-     * @param name the name of this row
-     * @param elements the children element that this row contains
-     */
-    public RootRowViewModel(String name, Collection<Element> elements)
-    {
-        super(null, null);
-        
-        this.containedElements = elements.stream()
-                .filter(x -> x instanceof NamedElement)
-                .map(x -> (NamedElement)x)
-                .sorted(Comparator.comparing(NamedElement::getName))
-                .collect(Collectors.toList());
-        
-        this.UpdateProperties(name);
-    }
+	/**
+	 * The {@linkplain Collection} of {@linkplain Element} that the
+	 * {@linkplain containedRows} should contain
+	 */
+	private Collection<Element> containedElements;
 
-    /**
-     * Updates this view model properties
-     * 
-     * @param name the name of this row
-     * @param elements the children element that this row contains
-     */
-    protected void UpdateProperties(String name)
-    {
-        super.UpdateProperties(name);
-        this.ComputeContainedRows();
-    }
+	/**
+	 * Initializes a new {@linkplain RootRowViewModel}
+	 * 
+	 * @param name     the name of this row
+	 * @param elements the children element that this row contains
+	 */
+	public RootRowViewModel(String name, Collection<Element> elements)
+	{
+		super(null, null);
 
-    /**
-     * Computes the contained rows of this row view model
-     */
-    @Override
-    public void ComputeContainedRows() 
-    {
-        if(this.containedElements == null)
-        {
-            return;
-        }
-            
-        for (Element element : this.containedElements)
-        {
-            this.ComputeContainedRow(element);
-        }
-    }
+		this.containedElements = elements.stream().filter(x -> x instanceof NamedElement).map(x -> (NamedElement) x)
+				.sorted(Comparator.comparing(NamedElement::getName)).collect(Collectors.toList());
+
+		this.UpdateProperties(name);
+	}
+
+	/**
+	 * Updates this view model properties
+	 * 
+	 * @param name     the name of this row
+	 * @param elements the children element that this row contains
+	 */
+	@Override
+	protected void UpdateProperties(String name)
+	{
+		super.UpdateProperties(name);
+		this.ComputeContainedRows();
+	}
+
+	/**
+	 * Computes the contained rows of this row view model
+	 */
+	@Override
+	public void ComputeContainedRows()
+	{
+		if (this.containedElements == null)
+		{
+			return;
+		}
+
+		for (Element element : this.containedElements)
+		{
+			this.ComputeContainedRow(element);
+		}
+	}
 }

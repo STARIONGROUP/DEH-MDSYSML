@@ -53,10 +53,10 @@ public class MappingListViewBlockRowViewModel extends MappingListViewContainerBa
     {
         for (Property property : this.element.getOwnedAttribute())
         {
-            if(StereotypeService.Current.DoesItHaveTheStereotype(property, Stereotypes.ValueProperty))
+            if(StereotypeService.Current().DoesItHaveTheStereotype(property, Stereotypes.ValueProperty))
             {
                 this.containedRows.add(new MappingListViewBaseRowViewModel(property.getID(),
-                        property.getName(), StereotypeService.Current.GetValueRepresentation(property), ClassKind.Parameter));
+                        property.getName(), StereotypeService.Current().GetValueRepresentation(property), ClassKind.Parameter));
             }
         }
     }

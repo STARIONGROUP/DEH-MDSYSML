@@ -45,6 +45,7 @@ import Utils.Stereotypes.HubRequirementCollection;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
 import Utils.Stereotypes.RequirementType;
 import Utils.Stereotypes.Stereotypes;
+import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.Definition;
 import cdp4common.commondata.NamedThing;
@@ -107,7 +108,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
         }
         catch (Exception exception)
         {
-            this.Logger.catching(exception);
+            this.logger.catching(exception);
             return new ArrayList<>();
         }
         finally
@@ -133,9 +134,20 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
             
             this.UpdateProperties(mappedRequirementRowViewModel.GetHubElement(), mappedRequirementRowViewModel.GetDstElement());            
             this.UpdateOrCreateRequirementPackages(mappedRequirementRowViewModel.GetHubElement(), mappedRequirementRowViewModel.GetDstElement());
+            this.MapStereotypes(mappedRequirementRowViewModel);
         }
     }
 
+    /**
+     * Maps the {@linkplain Stereotype}s represented by means of applied {@linkplain Category}
+     * 
+     * @param mappedElement the {@linkplain mappedElement}
+     */
+    private void MapStereotypes(MappedRequirementRowViewModel mappedElement)
+    {
+        this.stereotypeService.ApplyStereotypesFrom(mappedElement.GetHubElement(), mappedElement.GetDstElement());
+    }    
+    
     /**
      * Updates the target requirement properties
      * 
@@ -144,14 +156,14 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
      */
     private void UpdateProperties(cdp4common.engineeringmodeldata.Requirement hubRequirement, Class dstRequirement)
     {
-        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
+        this.logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
                 this.transactionService.GetRequirementText(dstRequirement)));
         
         this.transactionService.SetRequirementId(dstRequirement, hubRequirement.getShortName());
         dstRequirement.setName(hubRequirement.getName());
         this.UpdateOrCreateDefinition(hubRequirement, dstRequirement);
         
-        this.Logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
+        this.logger.debug(String.format("%s - %s %s", this.transactionService.GetRequirementId(dstRequirement), dstRequirement.getName(), 
                 this.transactionService.GetRequirementText(dstRequirement)));
     }
 
@@ -193,7 +205,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
         }
         else
         {
-            refElement.Set(this.transactionService.Clone(refElement.Get()));
+            refElement.Set(this.transactionService.CloneElement(refElement.Get()));
         }
         
         return refElement.Get();
@@ -317,7 +329,7 @@ public class HubRequirementToDstRequirementMappingRule extends HubToDstBaseMappi
             }
             else
             {
-                refElement.Set(this.transactionService.Clone(refElement.Get()));
+                refElement.Set(this.transactionService.CloneElement(refElement.Get()));
             }
         }
         
