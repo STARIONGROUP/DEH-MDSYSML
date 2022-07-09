@@ -529,7 +529,7 @@ class DstControllerTest
         Class element1 = mock(Class.class);
         when(element1.getName()).thenReturn("");
 
-        when(this.sessionService.GetProjectElements()).thenReturn(Arrays.asList(element0, element1));
+        when(this.sessionService.GetAllProjectElements()).thenReturn(Arrays.asList(element0, element1));
 
         this.SetupHubElements();
         
@@ -551,7 +551,7 @@ class DstControllerTest
         Class element0 = mock(Class.class);
         when(element0.getID()).thenReturn("");
 
-        when(this.sessionService.GetProjectElements()).thenReturn(Arrays.asList(element0));
+        when(this.sessionService.GetAllProjectElements()).thenReturn(Arrays.asList(element0));
         
         Ref<Class> refElement = new Ref<>(Class.class);
         assertFalse(this.controller.TryGetElementById(UUID.randomUUID().toString(), refElement));

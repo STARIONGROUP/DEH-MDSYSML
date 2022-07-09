@@ -168,6 +168,20 @@ public class MagicDrawTransactionService implements IMagicDrawTransactionService
     }
 
     /**
+     * Gets the original reference from the {@linkplain ClonedReferenceElement} where the element id == the provided {@linkplain #TElement} id.
+     * In the case the provided element is not a clone, it is returned.
+     * 
+     * @param <TElement> the type of the element
+     * @param element the element
+     * @return a {@linkplain #TElement}
+     */
+    @Override
+    public <TElement extends Element> TElement GetOriginal(TElement element)
+    {
+        return this.IsCloned(element) ? this.cloneReferenceService.GetClone(element).GetOriginal() : element;
+    }
+    
+    /**
      * Gets the {@linkplain CapellaElement} where the element id == the provided id
      * 
      * @param <TElement> the type of the element

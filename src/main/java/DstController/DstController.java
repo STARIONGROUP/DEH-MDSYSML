@@ -424,7 +424,7 @@ public final class DstController implements IDstController
         
         StopWatch timer = StopWatch.createStarted();
         
-        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.sessionService.GetProjectElements()
+        Collection<IMappedElementRowViewModel> things = this.mappingConfigurationService.LoadMapping(this.sessionService.GetAllProjectElements()
                 .stream()
                 .filter(Class.class::isInstance)
                 .map(Class.class::cast)
@@ -1557,7 +1557,7 @@ public final class DstController implements IDstController
     @SuppressWarnings("unchecked")
     public <TElement extends NamedElement> boolean TryGetElementBy(Predicate<TElement> predicate, Ref<TElement> refElement)
     {
-        Optional<TElement> element = this.sessionService.GetProjectElements().stream()
+        Optional<TElement> element = this.sessionService.GetAllProjectElements().stream()
                 .filter(x -> refElement.GetType().isInstance(x))
                 .map(x -> (TElement)x)
                 .filter(predicate)

@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -89,7 +89,7 @@ class StateMappingRuleTest
         
         when(this.hubController.GetOpenIteration()).thenReturn(this.iteration);
         
-        when(this.sessionService.GetProjectElements()).thenReturn(Arrays.asList(this.stateMachine0));
+        when(this.sessionService.GetAllProjectElements()).thenReturn(Arrays.asList(this.stateMachine0));
 
         when(this.transactionService.Create(Dependency.class, "")).thenAnswer(x -> 
         {

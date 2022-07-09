@@ -35,6 +35,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import Reactive.ObservableValue;
 import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
@@ -52,7 +53,12 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
     /**
      * The {@linkplain IMagicDrawSessionService}
      */
-    protected IMagicDrawSessionService sessionService;
+    protected final IMagicDrawSessionService sessionService;
+
+    /**
+     * The {@linkplain IMagicDrawTransactionService}
+     */
+    protected final IMagicDrawTransactionService transactionService;
     
     /**
      * Backing field for {@linkplain GetSelectedElement}
@@ -74,10 +80,12 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
      * Initializes a new {@linkplain MagicDrawObjectBrowser}
      * 
      * @param sessionService the {@linkplain IMagicDrawSessionService}
+     * @param transactionService the {@linkplain IMagicDrawTransactionService}
      */
-    public MagicDrawObjectBrowserViewModel(IMagicDrawSessionService sessionService)
+    public MagicDrawObjectBrowserViewModel(IMagicDrawSessionService sessionService, IMagicDrawTransactionService transactionService)
     {
         this.sessionService = sessionService;
+        this.transactionService = transactionService;
     }
     
     /**
@@ -103,7 +111,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
     public void BuildTree(Collection<Element> elements)
     {
         this.browserTreeModel.Value(DefaultOutlineModel.createOutlineModel(
-                new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProjectName(), elements),
+                new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProjectName(), elements, this.transactionService),
                 new MagicDrawObjectBrowserTreeRowViewModel(), true));
     
         this.isTheTreeVisible.Value(true);

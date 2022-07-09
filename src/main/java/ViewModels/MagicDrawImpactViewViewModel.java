@@ -75,11 +75,6 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	private final IDstController dstController;
 
 	/**
-	 * The {@linkplain IMagicDrawTransactionService}
-	 */
-	private final IMagicDrawTransactionService transactionService;
-
-	/**
 	 * The {@linkplain IStereotypeService}
 	 */
 	private final IStereotypeService stereotypeService;
@@ -95,9 +90,8 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	public MagicDrawImpactViewViewModel(IDstController dstController, IMagicDrawSessionService sessionService,
 			IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
 	{
-		super(sessionService);
+		super(sessionService, transactionService);
 		this.dstController = dstController;
-		this.transactionService = transactionService;
 		this.stereotypeService = stereotypeService;
 		this.InitializesObservables();
 	}
@@ -247,7 +241,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 				.collect(Collectors.toList());
 		containedRows.removeIf(x -> AreTheseEquals(x.getID(), parent.getID()));
 		containedRows.add(parent);
-		rootRowViewModel = new RootRowViewModel(rootRowViewModel.GetName(), containedRows);
+		rootRowViewModel = new RootRowViewModel(rootRowViewModel.GetName(), containedRows, this.transactionService);
 
 		return rootRowViewModel;
 	}
@@ -368,7 +362,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 		{
 			MagicDrawObjectBrowserTreeViewModel treeModel = this.dstController.GetHubMapResult().isEmpty()
 					? new MagicDrawObjectBrowserTreeViewModel(this.sessionService.GetProjectName(),
-							this.sessionService.GetProjectElements())
+							this.sessionService.GetProjectElements(), this.transactionService)
 					: new MagicDrawObjectBrowserTreeViewModel(this.ComputeDifferences());
 
 			this.SetOutlineModel(DefaultOutlineModel.createOutlineModel(treeModel,

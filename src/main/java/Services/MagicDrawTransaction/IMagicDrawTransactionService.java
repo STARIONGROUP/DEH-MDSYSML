@@ -159,7 +159,7 @@ public interface IMagicDrawTransactionService
      * @return a {@linkplain ClonedReferenceElement} of type {@linkplain #TElement}
      */
     <TElement extends Element> TElement GetNew(String id, java.lang.Class<TElement> elementType);
-
+    
     /**
      * Gets the {@linkplain ClonedReferenceElement} where the element id == the provided {@linkplain #TElement} id
      * 
@@ -168,6 +168,16 @@ public interface IMagicDrawTransactionService
      * @return a {@linkplain ClonedReferenceElement} of type {@linkplain #TElement}
      */
     <TElement extends Element> ClonedReferenceElement<TElement> GetClone(TElement element);
+
+    /**
+     * Gets the original reference from the {@linkplain ClonedReferenceElement} where the element id == the provided {@linkplain #TElement} id.
+     * In the case the provided element is not a clone, it is returned.
+     * 
+     * @param <TElement> the type of the element
+     * @param element the element
+     * @return a {@linkplain #TElement}
+     */
+    <TElement extends Element> TElement GetOriginal(TElement element);
 
     /**
      * Adds the provided {@linkplain DataType} to the {@linkplain DataPackage} of the current project

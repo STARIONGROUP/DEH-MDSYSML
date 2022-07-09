@@ -28,6 +28,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.Stereotype.StereotypeService;
 
 import Reactive.ObservableCollection;
@@ -41,6 +42,11 @@ import ViewModels.ObjectBrowser.Interfaces.IRowViewModel;
  */
 public class PackageRowViewModel extends ElementRowViewModel<Package> implements IHaveContainedRows<IElementRowViewModel<?>>
 {
+    /**
+     * The {@linkplain IMagicDrawTransactionService} 
+     */
+    private IMagicDrawTransactionService transactionService;
+    
     /**
      * The {@linkplain ObservableCollection} of {@linkplain IElementRowViewModel}
      */
@@ -60,12 +66,13 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
     /**
      * Initializes a new {@linkplain PackageRowViewModel}
      * 
-     * @param parent the {@linkplain IRowViewModel} parent of this view model
-     * {@linkplain package}
+     * @param parent the {@linkplain IRowViewModel} parent of this view model {@linkplain package}
+     * @param transactionService the {@linkplain IMagicDrawTransactionService}
      */
-    public PackageRowViewModel(IElementRowViewModel<?> parent, Package element)
+    public PackageRowViewModel(IElementRowViewModel<?> parent, Package element, IMagicDrawTransactionService transactionService)
     {
         super(parent, element);
+        this.transactionService = transactionService;
         this.ComputeContainedRows();
     }
     
@@ -91,19 +98,20 @@ public class PackageRowViewModel extends ElementRowViewModel<Package> implements
         if (element instanceof Class)
         {
             Class classElement = (Class)element;
-            
-            if(StereotypeService.Current().DoesItHaveTheStereotype(classElement, Stereotypes.Block))
+            Class stereoTypedElement = this.transactionService.GetOriginal(classElement);
+                    
+            if(StereotypeService.Current().DoesItHaveTheStereotype(stereoTypedElement, Stereotypes.Block))
             {
                 this.containedRows.add(new BlockRowViewModel(this, classElement));
             }
-            else
+            else if(StereotypeService.Current().DoesItHaveTheStereotype(stereoTypedElement, Stereotypes.Requirement))
             {
                 this.containedRows.add(new RequirementRowViewModel(this, classElement));
             }
         }
         else if(element instanceof Package)
         {
-            this.containedRows.add(new PackageRowViewModel(this, (Package)element));
+            this.containedRows.add(new PackageRowViewModel(this, (Package)element, this.transactionService));
         }
     }
     
