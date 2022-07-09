@@ -48,6 +48,7 @@ import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IElementDefinitionBrowserViewModel;
@@ -63,7 +64,6 @@ import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowV
 import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
-import ViewModels.Rows.MappedRequirementRowViewModel;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -88,6 +88,7 @@ class DstToHubMappingConfigurationDialogViewModelTest
 	ObservableValue<MappedElementRowViewModel<DefinedThing, Class>> mappedSelectedElement;
 	ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> dstMapResult;
 	Iteration iteration;
+    private IMagicDrawTransactionService transactionService;
 
 	@SuppressWarnings("unchecked")
 	@BeforeEach
@@ -106,6 +107,7 @@ class DstToHubMappingConfigurationDialogViewModelTest
 		this.magicDrawObjectBrowserViewModel = mock(IMagicDrawObjectBrowserViewModel.class);
 		this.mappedElementListViewViewModel = mock(IMappedElementListViewViewModel.class);
 		this.stereotypeService = mock(IStereotypeService.class);
+		this.transactionService = mock(IMagicDrawTransactionService.class);
 
 		DomainOfExpertise domain = new DomainOfExpertise();
 		domain.setName("THERMAL");
@@ -171,7 +173,7 @@ class DstToHubMappingConfigurationDialogViewModelTest
 		assertEquals(1, this.viewModel.GetMappedElementCollection().size());
 
 		OutlineModel model = DefaultOutlineModel.createOutlineModel(
-				new MagicDrawObjectBrowserTreeViewModel(("Envision"), new ArrayList<Element>()),
+				new MagicDrawObjectBrowserTreeViewModel(("Envision"), new ArrayList<Element>(), this.transactionService),
 				new MagicDrawObjectBrowserTreeRowViewModel(), true);
 
 		when(this.magicDrawObjectBrowserViewModel.GetBrowserTreeModel()).thenReturn(model);

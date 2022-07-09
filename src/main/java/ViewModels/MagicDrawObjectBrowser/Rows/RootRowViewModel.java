@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 
@@ -50,10 +51,11 @@ public class RootRowViewModel extends PackageRowViewModel implements IHaveContai
 	 * 
 	 * @param name     the name of this row
 	 * @param elements the children element that this row contains
+     * @param transactionService the {@linkplain IMagicDrawTransactionService}
 	 */
-	public RootRowViewModel(String name, Collection<Element> elements)
+	public RootRowViewModel(String name, Collection<Element> elements, IMagicDrawTransactionService transactionService)
 	{
-		super(null, null);
+		super(null, null, transactionService);
 
 		this.containedElements = elements.stream().filter(x -> x instanceof NamedElement).map(x -> (NamedElement) x)
 				.sorted(Comparator.comparing(NamedElement::getName)).collect(Collectors.toList());

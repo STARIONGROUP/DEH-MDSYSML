@@ -80,7 +80,7 @@ public interface IMagicDrawSessionService
 	 * 
 	 * @return a {@linkplain Collection} of {@linkplain Element}
 	 */
-	Collection<Element> GetProjectElements();
+	Collection<Element> GetAllProjectElements();
 
 	/**
 	 * Gets the project root package
@@ -88,4 +88,11 @@ public interface IMagicDrawSessionService
 	 * @return a {@linkplain Package}
 	 */
 	Package GetModel();
+
+    /**
+     * Gets the open project elements
+     * 
+     * @return a {@linkplain Collection} of {@linkplain Element}
+     */
+    Collection<Element> GetProjectElements();
 }
