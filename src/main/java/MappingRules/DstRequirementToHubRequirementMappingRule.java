@@ -59,12 +59,12 @@ import cdp4common.engineeringmodeldata.RequirementsSpecification;
 public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappingRule<MagicDrawRequirementCollection, ArrayList<MappedRequirementRowViewModel>>
 {
     /**
-     * A collection of <see cref="RequirementsSpecification" />
+     * A collection of {@linkplain RequirementsSpecification}
      */
     private final ArrayList<RequirementsSpecification> requirementsSpecifications = new ArrayList<>();
 
     /**
-     *A collection of <see cref="RequirementsGroup" />
+     *A collection of {@linkplain RequirementsGroup}
      */
     private final ArrayList<RequirementsGroup> requirementsGroups = new ArrayList<>();
 
@@ -148,29 +148,19 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
      */
     private void MapRequirement(MappedRequirementRowViewModel mappedElement)
     {
-        if (!mappedElement.GetShouldCreateNewTargetElementValue() && mappedElement.GetHubElement() != null)
-        {
-            this.UpdateProperties(mappedElement.GetDstElement(), mappedElement.GetHubElement());
-            RequirementsSpecification requirementSpecification = mappedElement.GetHubElement().getContainerOfType(RequirementsSpecification.class).clone(true);
-            
-            requirementSpecification.getRequirement().removeIf(x -> x.getIid() == mappedElement.GetHubElement().getIid());
-            requirementSpecification.getRequirement().add(mappedElement.GetHubElement());
-            return;
-        }
-
         Ref<Requirement> refRequirement = new Ref<>(Requirement.class);
         Package packageParent = mappedElement.GetDstElement().getOwningPackage();
 
         if (packageParent.getOwningPackage() == null)
         {
-            if (!this.TryGetOrCreateRequirementsSpecificationAndRequirement(mappedElement.GetDstElement(), refRequirement))
+            if (!this.TryGetOrCreateRequirementsSpecificationAndRequirement(mappedElement, refRequirement))
             {
                 this.logger.error(String.format("Error during creation of the RequirementsSpecification for %s requirement", mappedElement.GetDstElement().getName()));
             }
         }
         else
         {
-            if (!this.TryGetOrCreateRequirement(mappedElement.GetDstElement(), refRequirement))
+            if (!this.TryGetOrCreateRequirement(mappedElement, refRequirement))
             {
                 this.logger.error(String.format("Error during creation of the Requirement for %s package", mappedElement.GetDstElement().getName()));
                 return;
@@ -207,18 +197,19 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
     
     /**
-     * Tries to get a existing <see cref="Requirement" /> or created one based on the <see cref="Element" />
-     * It also creates the <see cref="Requirement" /> corresponding to the <see cref="Element" />
+     * Tries to get a existing {@linkplain Requirement} or created one based on the {@linkplain Element}
+     * It also creates the {@linkplain Requirement} corresponding to the {@linkplain Element}
      * 
-     * @param requirementElement The <see cref="Class" />
-     * @param refRequirement The <see cref="Requirement" />
-     * @return A value indicating whether the <see cref="RequirementsSpecification" /> has been created or retrieved
+     * @param mappedElement The {@linkplain MappedRequirementRowViewModel}
+     * @param refRequirement The {@linkplain Requirement}
+     * @return A value indicating whether the {@linkplain RequirementsSpecification} has been created or retrieved
      */
-    private boolean TryGetOrCreateRequirementsSpecificationAndRequirement(Class requirementElement, Ref<Requirement> refRequirement)
+    private boolean TryGetOrCreateRequirementsSpecificationAndRequirement(MappedRequirementRowViewModel mappedElement, Ref<Requirement> refRequirement)
     {
         Ref<RequirementsSpecification> refRequirementsSpecification = new Ref<>(RequirementsSpecification.class);
         
-        if (!this.TryGetOrCreateRequirement(requirementElement, refRequirement) || !this.TryGetOrCreateRequirementsSpecification(requirementElement.getName(), refRequirementsSpecification))
+        if (!this.TryGetOrCreateRequirement(mappedElement, refRequirement) || 
+                !this.TryGetOrCreateRequirementsSpecification(mappedElement.GetDstElement().getName(), refRequirementsSpecification))
         {
             return false;
         }
@@ -228,12 +219,12 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
 
     /**
-     * Process the whole hierachy from the <see cref="Package" /> containing the Requirement to the root of 
-     * the project to create <see cref="RequirementsGroup" /> and <see cref="RequirementsSpecification" />
+     * Process the whole hierachy from the {@linkplain Package} containing the Requirement to the root of 
+     * the project to create {@linkplain RequirementsGroup} and {@linkplain RequirementsSpecification}
      * 
-     * @param packageParent The <see cref="Package" />
-     * @param requirement The <see cref="Requirement" />
-     * @param refRequirementsSpecification The <see cref="RequirementsSpecification" />
+     * @param packageParent The {@linkplain Package}
+     * @param requirement The {@linkplain Requirement}
+     * @param refRequirementsSpecification The {@linkplain RequirementsSpecification}
      * @return Value representing if the whole hierarchy has been processed
      */
     private boolean ProcessPackageHierarchy(Package packageParent, Requirement requirement, Ref<RequirementsSpecification> refRequirementsSpecification)
@@ -286,11 +277,11 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
    }
    
    /**
-    * Tries to get a existing <see cref="RequirementsGroup" /> or created one based on the <see cref="Package" />
+    * Tries to get a existing {@linkplain RequirementsGroup} or created one based on the {@linkplain Package}
     *
-    * @param package The <see cref="Package" />
-    * @param refRequirementsGroup The <see cref="RequirementsGroup" />
-    * @return A value indicating whether the <see cref="RequirementsGroup" /> has been created or retrieved
+    * @param package The {@linkplain Package}
+    * @param refRequirementsGroup The {@linkplain RequirementsGroup}
+    * @return A value indicating whether the {@linkplain RequirementsGroup} has been created or retrieved
     */
     private boolean TryGetOrCreateRequirementsGroup(Package requirementPackage, Ref<RequirementsGroup> refRequirementsGroup)
     {
@@ -320,11 +311,11 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
 
    /**
-    * Tries to get a existing <see cref="RequirementsGroup" /> or created one based on the <see cref="Package" />
+    * Tries to get a existing {@linkplain RequirementsGroup} or created one based on the {@linkplain Package}
     *
-    * @param requirementPackage The <see cref="Package" />
-    * @param requirementsSpecification The <see cref="RequirementsSpecification" />
-    * @return A value indicating whether the <see cref="RequirementsSpecification" /> has been created or retrieved
+    * @param requirementPackage The {@linkplain Package}
+    * @param requirementsSpecification The {@linkplain RequirementsSpecification}
+    * @return A value indicating whether the {@linkplain RequirementsSpecification} has been created or retrieved
     */
    private boolean TryGetOrCreateRequirementsSpecification(Package requirementPackage, Ref<RequirementsSpecification> requirementsSpecification)
    {
@@ -332,11 +323,11 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
    }
 
    /**
-    * Tries to get a existing <see cref="RequirementsSpecification" /> or created one based on the name
+    * Tries to get a existing {@linkplain RequirementsSpecification} or created one based on the name
     *
     * @param packageName The name
-    * @param refRequirementsSpecification The <see cref="RequirementsSpecification" />
-    * @return A value indicating whether the <see cref="RequirementsSpecification" /> has been created or retrieved
+    * @param refRequirementsSpecification The {@linkplain RequirementsSpecification}
+    * @return A value indicating whether the {@linkplain RequirementsSpecification} has been created or retrieved
     */
     private boolean TryGetOrCreateRequirementsSpecification(String packageName, Ref<RequirementsSpecification> refRequirementsSpecification)
     {
@@ -367,15 +358,15 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
 
     /**
-     * Tries to get a existing <see cref="Requirement" /> or created one based on the <see cref="Element" />
+     * Tries to get a existing {@linkplain Requirement} or created one based on the {@linkplain Element}
      *
-     * @param dstRequirement the {@linkplain Class} requirement
+     * @param mappedElement the {@linkplain MappedRequirementRowViewModel}
      * @param refRequirement the {@linkplain Ref} of {@linkplain Requirement}
      * @return a value indicating whether the {@linkplain Requirement} was either found or created
      */
-    private boolean TryGetOrCreateRequirement(Class dstRequirement, Ref<Requirement> refRequirement)
+    private boolean TryGetOrCreateRequirement(MappedRequirementRowViewModel mappedElement, Ref<Requirement> refRequirement)
     {
-        if (this.TryGetRequirement(dstRequirement, refRequirement))
+        if (!mappedElement.GetShouldCreateNewTargetElementValue() && this.TryGetRequirement(mappedElement.GetDstElement(), refRequirement))
         {
             RequirementsSpecification requirementsSpecification = refRequirement.Get().getContainerOfType(RequirementsSpecification.class);
             requirementsSpecification.getRequirement().removeIf(x -> AreTheseEquals(x.getIid(), refRequirement.Get().getIid()));
@@ -388,7 +379,7 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
             refRequirement.Set(requirement);
         }
 
-        this.UpdateProperties(dstRequirement, refRequirement.Get());
+        this.UpdateProperties(mappedElement.GetDstElement(), refRequirement.Get());
         return refRequirement.HasValue();
     }
 
@@ -475,9 +466,9 @@ public class DstRequirementToHubRequirementMappingRule extends DstToHubBaseMappi
     }
 
     /**
-     * Populate the <see cref="requirementsGroups"/> collection
+     * Populate the {@linkplain requirementsGroups} collection
      *
-     *@param container The <see cref="RequirementsContainer"/>
+     *@param container The {@linkplain RequirementsContainer}
      */
     private void PopulateRequirementsGroupCollection(RequirementsContainer container)
     {

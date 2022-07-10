@@ -162,7 +162,8 @@ public class DstToHubMappingConfigurationDialogViewModel
 			{
 				mappedElement = new MappedElementDefinitionRowViewModel(rowViewModel.GetElement(),
 						MappingDirection.FromDstToHub);
-			} else
+			} 
+			else
 			{
 				mappedElement = new MappedRequirementRowViewModel(rowViewModel.GetElement(),
 						MappingDirection.FromDstToHub);
@@ -242,7 +243,9 @@ public class DstToHubMappingConfigurationDialogViewModel
     					this.mappedElements.add(mappedElement);
     				}
     			}
-    			else if (this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Requirement))
+    			else if (this.stereotypeService.DoesItHaveTheStereotype(element, Stereotypes.Requirement)
+    			        && this.dstController.GetDstMapResult().stream()
+    			                .noneMatch(x -> AreTheseEquals(x.GetDstElement().getID(), element.getID())))
     			{
     			    requirements.add((Class) element);
     			}
