@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -86,7 +86,7 @@ class MagicDrawImpactViewViewModelTest
 		when(this.sessionService.HasAnyOpenSession()).thenReturn(false);
 		when(this.sessionService.SessionUpdated()).thenReturn(this.sessionUpdated.Observable());
 		when(this.sessionService.GetProjectName()).thenReturn("Envision");
-		when(this.sessionService.GetProjectElements()).thenReturn(this.projectElements);
+		when(this.sessionService.GetAllProjectElements()).thenReturn(this.projectElements);
 
 		when(this.dstController.GetHubMapResult()).thenReturn(this.hubMapResult);
 		when(this.dstController.GetSelectedHubMapResultForTransfer()).thenReturn(this.selectedHubMapResult);

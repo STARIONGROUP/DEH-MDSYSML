@@ -30,6 +30,7 @@ import javax.swing.tree.TreeModel;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
 import ViewModels.ObjectBrowser.BrowserTreeBaseViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.ElementDefinitionBrowserTreeRowViewModel;
@@ -54,10 +55,11 @@ public class MagicDrawObjectBrowserTreeViewModel extends BrowserTreeBaseViewMode
      * Initializes a new {@linkplain MagicDrawObjectBrowserTreeRowViewModel}
      * 
      * @param elements the {@linkplain Collection} {@linkplain Class} that composes the tree
+     * @param transactionService the {@linkplain IMagicDrawTransactionService}
      */
-    public MagicDrawObjectBrowserTreeViewModel(String modelName, Collection<Element> elements)
+    public MagicDrawObjectBrowserTreeViewModel(String modelName, Collection<Element> elements, IMagicDrawTransactionService transactionService)
     {
-        this.root = new RootRowViewModel(modelName, elements);
+        this.root = new RootRowViewModel(modelName, elements, transactionService);
     }
     
     /**

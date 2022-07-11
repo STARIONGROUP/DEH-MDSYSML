@@ -99,14 +99,25 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
     }
     
     /**
-     * Gets the open project element
+     * Gets all the open project element flatten as one list
+     * 
+     * @return a {@linkplain Collection} of {@linkplain Element}
+     */
+    @Override
+    public Collection<Element> GetAllProjectElements()
+    {
+        return this.GetProject().getAllElements().stream().filter(x -> x instanceof Element).map(Element.class::cast).collect(Collectors.toList());
+    }
+    
+    /**
+     * Gets the open project elements
      * 
      * @return a {@linkplain Collection} of {@linkplain Element}
      */
     @Override
     public Collection<Element> GetProjectElements()
     {
-        return this.GetProject().getAllElements().stream().filter(x -> x instanceof Element).map(Element.class::cast).collect(Collectors.toList());
+        return this.GetProject().getPrimaryModel().getPackagedElement().stream().filter(x -> x instanceof Element).map(Element.class::cast).collect(Collectors.toList());
     }
     
     /**

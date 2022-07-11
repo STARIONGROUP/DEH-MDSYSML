@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -26,6 +26,7 @@ package ViewModels;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -41,6 +42,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.compositestructures.mdports.Port;
 
 import Services.MagicDrawSession.IMagicDrawSessionService;
+import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import Services.Stereotype.IStereotypeService;
 import Services.Stereotype.StereotypeService;
 import Utils.Stereotypes.Stereotypes;
@@ -56,19 +58,27 @@ class MagicDrawObjectBrowserViewModelTest
 	IMagicDrawSessionService sessionService;
 	ArrayList<Element> elements;
 	IStereotypeService stereotypeService;
+    private IMagicDrawTransactionService transactionService;
 
 	@BeforeEach
 	void setUp()
 	{
 		this.elements = new ArrayList<>();
 		this.stereotypeService = mock(IStereotypeService.class);
+		this.transactionService = mock(IMagicDrawTransactionService.class);
+		
 		StereotypeService.SetCurrent(this.stereotypeService);
 
 		this.sessionService = mock(IMagicDrawSessionService.class);
 		when(this.sessionService.GetProjectName()).thenReturn("MODEL");
 		when(this.sessionService.GetProjectElements()).thenReturn(this.elements);
+		
+		when(this.transactionService.GetOriginal(any())).thenAnswer(x -> 
+		{
+		    return x.getArgument(0);
+		});
 
-		this.viewModel = new MagicDrawObjectBrowserViewModel(this.sessionService);
+		this.viewModel = new MagicDrawObjectBrowserViewModel(this.sessionService, this.transactionService);
 	}
 
 	@Test
@@ -165,7 +175,7 @@ class MagicDrawObjectBrowserViewModelTest
 
 		Class requirement = mock(Class.class);
 		when(requirement.getName()).thenReturn("requirement");
-		when(this.stereotypeService.DoesItHaveTheStereotype(requirement, Stereotypes.Block)).thenReturn(false);
+		when(this.stereotypeService.DoesItHaveTheStereotype(requirement, Stereotypes.Requirement)).thenReturn(true);
 
 		containedElements.add(block);
 		containedElements.add(requirement);
