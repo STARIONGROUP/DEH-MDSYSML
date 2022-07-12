@@ -510,15 +510,15 @@ class DstControllerTest
     
         assertDoesNotThrow(() -> this.controller.AddOrRemoveAllFromSelectedThingsToTransfer(ClassKind.ElementDefinition, false));
         assertEquals(3, this.controller.GetSelectedHubMapResultForTransfer().size());
-        assertEquals(1, this.controller.GetSelectedDstMapResultForTransfer().size());
+        assertEquals(2, this.controller.GetSelectedDstMapResultForTransfer().size());
     
         assertDoesNotThrow(() -> this.controller.AddOrRemoveAllFromSelectedThingsToTransfer(ClassKind.Requirement, false));
         assertEquals(3, this.controller.GetSelectedHubMapResultForTransfer().size());
-        assertEquals(2, this.controller.GetSelectedDstMapResultForTransfer().size());
+        assertEquals(3, this.controller.GetSelectedDstMapResultForTransfer().size());
 
         assertDoesNotThrow(() -> this.controller.AddOrRemoveAllFromSelectedThingsToTransfer(ClassKind.Requirement, true));
         assertEquals(3, this.controller.GetSelectedHubMapResultForTransfer().size());
-        assertEquals(1, this.controller.GetSelectedDstMapResultForTransfer().size());
+        assertEquals(2, this.controller.GetSelectedDstMapResultForTransfer().size());
     }
 
     @Test
@@ -832,24 +832,23 @@ class DstControllerTest
         when(port1.getType()).thenReturn(portProvidingBlock);
         
         Property property0 = mock(Property.class);
-        String id = UUID.randomUUID().toString();
-        when(property0.getID()).thenReturn(id);
+        when(property0.getID()).thenReturn(UUID.randomUUID().toString());
         Property property1 = mock(Property.class);
-        when(property1.getID()).thenReturn(id);
+        when(property1.getID()).thenReturn(UUID.randomUUID().toString());
         
         this.block0 = mock(Class.class);
         when(this.block0.getName()).thenReturn("block0");
         when(this.block0.getID()).thenReturn(UUID.randomUUID().toString());
         when(this.block0.getOwnedPort()).thenReturn(Arrays.asList(port0));
         when(this.block0.eContents()).thenReturn(new BasicEList<>());
-        when(this.block0.getOwnedAttribute()).thenReturn(Arrays.asList(property0));
+        when(this.block0.getOwnedAttribute()).thenReturn(new ArrayList<>(Arrays.asList(property0)));
 
         this.block0Cloned = mock(Class.class);
         when(this.block0Cloned.getName()).thenReturn("block0");
         when(this.block0Cloned.getID()).thenReturn(UUID.randomUUID().toString());
         when(this.block0Cloned.getOwnedPort()).thenReturn(Arrays.asList(port0));
         when(this.block0Cloned.eContents()).thenReturn(new BasicEList<>());
-        when(this.block0.getOwnedAttribute()).thenReturn(Arrays.asList(property1));
+        when(this.block0.getOwnedAttribute()).thenReturn(new ArrayList<>(Arrays.asList(property1)));
         
         this.block1 = mock(Class.class);
         when(this.block1.getName()).thenReturn("block1");

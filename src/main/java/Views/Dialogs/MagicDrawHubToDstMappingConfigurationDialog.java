@@ -31,6 +31,7 @@ import Renderers.MappedElementDefinitionListViewCellRenderer;
 import Renderers.MappedElementDefinitionListViewCellRendererProvider;
 import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import Views.MagicDrawObjectBrowser;
 import cdp4common.commondata.Thing;
 
@@ -40,7 +41,7 @@ import cdp4common.commondata.Thing;
  */
 @SuppressWarnings("serial")
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class MagicDrawHubToDstMappingConfigurationDialog extends MappingConfigurationDialog<IHubToDstMappingConfigurationDialogViewModel, Thing, Class, ClassRowViewModel>
+public class MagicDrawHubToDstMappingConfigurationDialog extends MappingConfigurationDialog<IHubToDstMappingConfigurationDialogViewModel, Thing, Class, ElementRowViewModel<?>>
 {
     /**
      * Initializes a new {@linkplain MagicDrawHubToDstMappingConfigurationDialog}

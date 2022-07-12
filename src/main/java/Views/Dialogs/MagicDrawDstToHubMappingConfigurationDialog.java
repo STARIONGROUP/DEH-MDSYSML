@@ -29,6 +29,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import Enumerations.MappingDirection;
 import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import Views.MagicDrawObjectBrowser;
 
 /**
@@ -37,7 +38,7 @@ import Views.MagicDrawObjectBrowser;
  */
 @SuppressWarnings("serial")
 @Annotations.ExludeFromCodeCoverageGeneratedReport
-public class MagicDrawDstToHubMappingConfigurationDialog extends MappingConfigurationDialog<IDstToHubMappingConfigurationDialogViewModel, Element, Class, ClassRowViewModel>
+public class MagicDrawDstToHubMappingConfigurationDialog extends MappingConfigurationDialog<IDstToHubMappingConfigurationDialogViewModel, Element, Class, ElementRowViewModel<?>>
 {
     /**
      * Initializes a new {@linkplain MagicDrawDstToHubMappingConfigurationDialog}

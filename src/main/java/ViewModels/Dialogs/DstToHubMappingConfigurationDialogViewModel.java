@@ -54,6 +54,7 @@ import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
 import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
@@ -71,7 +72,7 @@ import io.reactivex.Observable;
  * model for the {@linkplain DstMappingConfigurationDialog}
  */
 public class DstToHubMappingConfigurationDialogViewModel
-		extends MappingConfigurationDialogViewModel<Element, Class, ClassRowViewModel>
+		extends MappingConfigurationDialogViewModel<Element, Class, ElementRowViewModel<?>>
 		implements IDstToHubMappingConfigurationDialogViewModel
 {
 	/**
@@ -95,7 +96,7 @@ public class DstToHubMappingConfigurationDialogViewModel
 	 * @return an {@linkplain IObjectBrowserBaseViewModel}
 	 */
 	@Override
-	public IObjectBrowserBaseViewModel<ClassRowViewModel> GetDstObjectBrowserViewModel()
+	public IObjectBrowserBaseViewModel<ElementRowViewModel<?>> GetDstObjectBrowserViewModel()
 	{
 		return this.magicDrawObjectBrowser;
 	}
@@ -140,7 +141,10 @@ public class DstToHubMappingConfigurationDialogViewModel
 	{
 		super.InitializeObservables();
 		
-		this.magicDrawObjectBrowser.GetSelectedElement().subscribe(x -> this.UpdateMappedElements(x));
+		this.magicDrawObjectBrowser.GetSelectedElement()
+		        .filter(x -> x instanceof ClassRowViewModel)
+		        .map(x -> (ClassRowViewModel)x)
+		        .subscribe(x -> this.UpdateMappedElements(x));
 	}
 
 	/**

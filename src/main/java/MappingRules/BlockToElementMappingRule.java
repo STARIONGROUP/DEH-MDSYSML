@@ -677,7 +677,6 @@ public class BlockToElementMappingRule extends DstToHubBaseMappingRule<MagicDraw
         Optional<Parameter> existingParameter = elementDefinition.getContainedParameter().stream()
                 .filter(areParameterParameterTypeShortNameEqualsPredicate)
                 .findAny();
-
         
         InstanceSpecification appliedStereotype = property.getAppliedStereotypeInstance();
         

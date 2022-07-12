@@ -225,7 +225,7 @@ public final class DstController implements IDstController
     /**
      * Backing field for {@linkplain GetSelectedHubMapResultForTransfer}
      */    
-    private ObservableCollection<Class> selectedHubMapResultForTransfer = new ObservableCollection<>(Class.class);
+    private ObservableCollection<NamedElement> selectedHubMapResultForTransfer = new ObservableCollection<>(NamedElement.class);
     
     /**
      * Gets the {@linkplain ObservableCollection} of that are selected for transfer to the Cameo/MagicDraw
@@ -233,7 +233,7 @@ public final class DstController implements IDstController
      * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
     @Override
-    public ObservableCollection<Class> GetSelectedHubMapResultForTransfer()
+    public ObservableCollection<NamedElement> GetSelectedHubMapResultForTransfer()
     {
         return this.selectedHubMapResultForTransfer;
     }
@@ -745,7 +745,9 @@ public final class DstController implements IDstController
      */
     private void PrepareThingsForTransfer()
     {
-        for (Class element : this.selectedHubMapResultForTransfer)
+        Collection<Class> allElementToTransfer = StreamExtensions.OfType(this.selectedHubMapResultForTransfer, Class.class);
+        
+        for (Class element : allElementToTransfer)
         {
             Class reference = element;
             
@@ -893,6 +895,9 @@ public final class DstController implements IDstController
         }
         else
         {
+            element.getOwnedAttribute().removeIf(x -> this.GetSelectedHubMapResultForTransfer().stream()
+                        .noneMatch(d -> AreTheseEquals(x.getID(), d.getID())));
+            
             this.sessionService.GetModel().getOwnedElement().add(element);
             this.exchangeHistory.Append(element, ChangeKind.CREATE);
         }
@@ -949,7 +954,10 @@ public final class DstController implements IDstController
      */
     private void UpdateElementParameters(Class clone, Class original)
     {
-        for (Property property : clone.getOwnedAttribute().stream().collect(Collectors.toList()))
+        for (Property property : clone.getOwnedAttribute().stream()
+                .filter(x -> this.GetSelectedHubMapResultForTransfer().stream()
+                        .anyMatch(d -> AreTheseEquals(x.getID(), d.getID())))
+                .collect(Collectors.toList()))
         {
             try
             {
@@ -1193,7 +1201,9 @@ public final class DstController implements IDstController
 
         List<Parameter> allParameters = this.dstMapResult.stream()
                 .filter(x -> x.GetHubElement() instanceof ElementDefinition)
-                .flatMap(x -> ((ElementDefinition)x.GetHubElement()).getParameter().stream())
+                .flatMap(x -> ((ElementDefinition)x.GetHubElement()).getParameter().stream()
+                        .filter(p -> this.GetSelectedDstMapResultForTransfer().stream()
+                                .anyMatch(d -> AreTheseEquals(p.getIid(), d.getIid()))))
                 .collect(Collectors.toList());
         
         for(Parameter parameter : allParameters)
@@ -1298,8 +1308,6 @@ public final class DstController implements IDstController
     private void PrepareElementDefinitionForTransfer(Iteration iterationClone, ThingTransaction transaction, 
             ElementDefinition elementDefinition) throws TransactionException
     {
-        this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
-        
         for (ElementUsage elementUsage : elementDefinition.getContainedElement())
         {
             this.AddOrUpdateIterationAndTransaction(elementUsage.getElementDefinition(), iterationClone.getElement(), transaction);
@@ -1312,11 +1320,26 @@ public final class DstController implements IDstController
             this.PrepareDefinition(transaction, elementDefinition);
         }
 
-        for(Parameter parameter : elementDefinition.getParameter())
+        for(Parameter parameter : elementDefinition.getParameter().stream()
+                .filter(x -> this.GetSelectedDstMapResultForTransfer().stream()
+                        .anyMatch(d -> AreTheseEquals(x.getIid(), d.getIid())))
+                .collect(Collectors.toList()))
         {            
             transaction.createOrUpdate(parameter);
             this.PrepareStates(iterationClone, transaction, parameter);
         }
+        
+        for(Parameter parameter : elementDefinition.getParameter().stream()
+                .filter(x -> this.GetSelectedDstMapResultForTransfer().stream()
+                        .noneMatch(d -> AreTheseEquals(x.getIid(), d.getIid()))
+                        && x.getOriginal() != null)
+                .collect(Collectors.toList()))
+        {
+            elementDefinition.getParameter().remove(parameter);
+            elementDefinition.getParameter().add((Parameter) parameter.getOriginal());
+        }
+        
+        this.AddOrUpdateIterationAndTransaction(elementDefinition, iterationClone.getElement(), transaction);
     }
 
     /**
@@ -1494,6 +1517,35 @@ public final class DstController implements IDstController
                         .filter(predicateClassKind)
                         .collect(Collectors.toList()));
         }
+        
+        if(classKind == ClassKind.ElementDefinition)
+        {
+            this.AddOrRemoveAllParameterFromSelectedDstMapResultForTransfer(shouldRemove);
+        }
+        
+    }
+    /**
+     * Adds or Removes all {@linkplain ParameterBase} from/to the relevant selected things to transfer
+     * 
+     * @param shouldRemove a value indicating whether the things are to be removed
+     */
+    private void AddOrRemoveAllParameterFromSelectedDstMapResultForTransfer(boolean shouldRemove)
+    {
+        this.selectedDstMapResultForTransfer.removeIf(x -> x.getClassKind() == ClassKind.Parameter || x.getClassKind() == ClassKind.ParameterOverride);
+        
+        if(!shouldRemove)
+        {
+            this.selectedDstMapResultForTransfer.addAll(this.dstMapResult.stream()
+                        .filter(x -> x.GetHubElement() instanceof ElementDefinition)
+                        .flatMap(x -> ((ElementDefinition)x.GetHubElement()).getParameter().stream())
+                        .collect(Collectors.toList()));            
+
+            this.selectedDstMapResultForTransfer.addAll(this.dstMapResult.stream()
+                        .filter(x -> x.GetHubElement() instanceof ElementDefinition)
+                        .flatMap(x -> ((ElementDefinition)x.GetHubElement()).getContainedElement().stream())
+                        .flatMap(x -> x.getParameterOverride().stream())
+                        .collect(Collectors.toList()));
+        }
     }
 
     /**
@@ -1503,15 +1555,56 @@ public final class DstController implements IDstController
      */
     private void AddOrRemoveAllFromSelectedHubMapResultForTransfer(boolean shouldRemove)
     {
-        this.selectedHubMapResultForTransfer.clear();
+        this.selectedHubMapResultForTransfer.removeIf(x -> true);
         
         if(!shouldRemove)
         {
-            List<? extends Class> elements = this.hubMapResult.stream()
+            List<Class> elements = this.hubMapResult.stream()
                     .map(MappedElementRowViewModel::GetDstElement)
                     .collect(Collectors.toList());
+
+            List<NamedElement> elementsToAdd = new ArrayList<>(elements);
             
-            this.selectedHubMapResultForTransfer.addAll(elements);
+            this.AddAllFromSelectedHubMapResultForTransfer(elements, elementsToAdd);
+            
+            this.selectedHubMapResultForTransfer.addAll(elementsToAdd);
+        }
+    }
+
+    /**
+     * Adds or Removes all {@linkplain Class} from/to the relevant selected things to transfer
+     * 
+     * @param elements a {@linkplain List} of {@linkplain Class}
+     * @param elementsToAdd a {@linkplain List} of {@linkplain NamedElement}
+     */
+    private void AddAllFromSelectedHubMapResultForTransfer(List<Class> elements, List<NamedElement> elementsToAdd)
+    {
+        for(Class block : elements.stream()
+                .filter(x -> this.stereotypeService.DoesItHaveTheStereotype(this.transactionService.GetOriginal(x), Stereotypes.Block))
+                .collect(Collectors.toList()))
+        {
+            this.AddAllFromSelectedHubMapResultForTransfer(elementsToAdd, block);
+        }
+    }
+
+    /**
+     * Adds or Removes all {@linkplain Class} from/to the relevant selected things to transfer
+     * 
+     * @param elementsToAdd a {@linkplain List} of {@linkplain NamedElement}
+     * @param block the {@linkplain Class} block
+     */
+    private void AddAllFromSelectedHubMapResultForTransfer(List<NamedElement> elementsToAdd, Class block)
+    {
+        elementsToAdd.addAll(block.getOwnedAttribute().stream()
+                .filter(p -> this.stereotypeService.IsValueProperty(p) || p.getType() instanceof DataType)
+                .collect(Collectors.toList()));
+        
+        for (Property property : block.getOwnedAttribute().stream()
+                .filter(p -> this.stereotypeService.DoesItHaveTheStereotype(p, Stereotypes.PartProperty) || p.getType() instanceof Class)
+                .collect(Collectors.toList()))
+        {
+            elementsToAdd.add(property);
+            this.AddAllFromSelectedHubMapResultForTransfer(elementsToAdd, (Class)property.getType());
         }
     }
 
