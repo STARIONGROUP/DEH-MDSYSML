@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.MutableTriple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -106,10 +106,10 @@ class MagicDrawMappingConfigurationServiceTest
         externalIdentifier1.Identifier = this.dstRequirement.getID();
         externalIdentifier1.MappingDirection = MappingDirection.FromDstToHub;
 
-        this.service.correspondences.add(ImmutableTriple.of(UUID.randomUUID(), externalIdentifier0, this.elementDefinition.getIid()));
-        this.service.correspondences.add(ImmutableTriple.of(UUID.randomUUID(), externalIdentifier1, this.elementDefinition.getIid()));
-        this.service.correspondences.add(ImmutableTriple.of(UUID.randomUUID(), externalIdentifier2, this.requirement.getIid()));
-        this.service.correspondences.add(ImmutableTriple.of(UUID.randomUUID(), externalIdentifier3, this.requirement.getIid()));
+        this.service.correspondences.add(MutableTriple.of(UUID.randomUUID(), externalIdentifier0, this.elementDefinition.getIid()));
+        this.service.correspondences.add(MutableTriple.of(UUID.randomUUID(), externalIdentifier1, this.elementDefinition.getIid()));
+        this.service.correspondences.add(MutableTriple.of(UUID.randomUUID(), externalIdentifier2, this.requirement.getIid()));
+        this.service.correspondences.add(MutableTriple.of(UUID.randomUUID(), externalIdentifier3, this.requirement.getIid()));
         
         assertEquals(0, this.service.LoadMapping(Arrays.asList(block0, dstRequirement)).size());
         when(this.stereotypeService.DoesItHaveTheStereotype(any(), same(Stereotypes.Block))).thenReturn(true);

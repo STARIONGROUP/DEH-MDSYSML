@@ -32,11 +32,12 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import ViewModels.MagicDrawObjectBrowserViewModel;
 import ViewModels.Interfaces.IObjectBrowserBaseViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 
 /**
  * The {@linkplain IMagicDrawObjectBrowserViewModel} is the interface definition for the {@linkplain MagicDrawObjectBrowserViewModel}
  */
-public interface IMagicDrawObjectBrowserViewModel extends IObjectBrowserBaseViewModel<ClassRowViewModel>
+public interface IMagicDrawObjectBrowserViewModel extends IObjectBrowserBaseViewModel<ElementRowViewModel<?>>
 {
     /**
      * Creates the {@linkplain OutlineModel} tree from the provided {@linkplain Collection} of {@linkplain Class}

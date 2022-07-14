@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -51,6 +51,7 @@ import ViewModels.Interfaces.IRequirementBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
 import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
 import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
@@ -73,7 +74,7 @@ class HubToDstMappingConfigurationDialogViewModelTest
 	IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel;
 	IMagicDrawTransactionService transactionService;
 	IMappedElementListViewViewModel<Class> mappedElementListViewViewModel;
-	ObservableValue<ClassRowViewModel> magicDrawSelectedElement;
+	ObservableValue<ElementRowViewModel<?>> magicDrawSelectedElement;
 	ObservableValue<ThingRowViewModel<Thing>> elementDefinitionSelectedElement;
 	ObservableValue<ThingRowViewModel<Thing>> requirementSelectedElement;
 	ObservableValue<MappedElementRowViewModel<DefinedThing, Class>> mappedElementSelectedElement;

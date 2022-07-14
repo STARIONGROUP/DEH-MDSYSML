@@ -27,10 +27,11 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 
 /**
  * The {@linkplain IDstToHubMappingConfigurationDialogViewModel} is the interface definition for the {@linkplain DstToHubMappingConfigurationDialogViewModel}
  */
-public interface IDstToHubMappingConfigurationDialogViewModel extends IMappingConfigurationDialogViewModel<Element, Class, ClassRowViewModel>
+public interface IDstToHubMappingConfigurationDialogViewModel extends IMappingConfigurationDialogViewModel<Element, Class, ElementRowViewModel<?>>
 {
 }

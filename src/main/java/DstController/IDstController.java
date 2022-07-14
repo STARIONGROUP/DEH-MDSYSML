@@ -96,7 +96,7 @@ public interface IDstController extends IDstControllerBase<Class>
      * 
      * @return an {@linkplain ObservableCollection} of {@linkplain Class}
      */
-    ObservableCollection<Class> GetSelectedHubMapResultForTransfer();
+    ObservableCollection<NamedElement> GetSelectedHubMapResultForTransfer();
 
     /**
      * Gets the current {@linkplain MappingDirection} from {@linkplain currentMappingDirection}

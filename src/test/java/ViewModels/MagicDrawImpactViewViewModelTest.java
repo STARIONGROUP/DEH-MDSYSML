@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import DstController.IDstController;
@@ -65,7 +66,7 @@ class MagicDrawImpactViewViewModelTest
 	ObservableValue<Boolean> hasAnyOpenSession;
 	ObservableValue<Boolean> sessionUpdated;
 	ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> hubMapResult;
-	ObservableCollection<Class> selectedHubMapResult;
+	ObservableCollection<NamedElement> selectedHubMapResult;
 	ArrayList<Element> projectElements;
 
 	@BeforeEach

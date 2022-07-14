@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.MutableTriple;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
@@ -125,7 +126,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
      */
     private boolean TryGetMappedElement(Class element, Ref<IMappedElementRowViewModel> refMappedElementRowViewModel)
     {
-        Optional<ImmutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.correspondences.stream()
+        Optional<MutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.correspondences.stream()
                 .filter(x -> AreTheseEquals(x.middle.Identifier, element.getID()))
                 .findFirst();
         
@@ -193,7 +194,7 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
         
         for (Parameter parameter : stateDependentParameters)
         {
-            Optional<ImmutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.correspondences.stream()
+            Optional<MutableTriple<UUID, ExternalIdentifier, UUID>> optionalCorrespondence = this.correspondences.stream()
                     .filter(x -> AreTheseEquals(parameter.getIid().toString(), x.middle.Identifier))
                     .findFirst();
             
