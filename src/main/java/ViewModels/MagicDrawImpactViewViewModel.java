@@ -37,7 +37,9 @@ import org.netbeans.swing.outline.DefaultOutlineModel;
 import org.netbeans.swing.outline.OutlineModel;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DataType;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import DstController.IDstController;
@@ -52,8 +54,10 @@ import ViewModels.Interfaces.IMagicDrawImpactViewViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.PartPropertyRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
 import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
@@ -116,7 +120,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 		});
 
 		this.dstController.GetSelectedHubMapResultForTransfer().ItemsAdded().subscribe(x -> {
-			for (Class thing : x)
+			for (Element thing : x)
 			{
 				this.SwitchIsSelected(thing, true);
 			}
@@ -139,7 +143,7 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	 * @param shouldSelect A value indicating whether the row view model should set
 	 *                     as selected
 	 */
-	private void SwitchIsSelected(Class element, boolean shouldSelect)
+	private void SwitchIsSelected(Element element, boolean shouldSelect)
 	{
 		Ref<ElementRowViewModel<? extends Element>> refRowViewModel = new Ref<>(null);
 
@@ -171,7 +175,8 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 		if (!rowViewModel.GetIsSelected() && shouldSelect)
 		{
 			rowViewModel.SetIsSelected(true);
-		} else if (rowViewModel.GetIsSelected() && !shouldSelect)
+		} 
+		else if (rowViewModel.GetIsSelected() && !shouldSelect)
 		{
 			rowViewModel.SetIsSelected(false);
 		}
@@ -436,16 +441,19 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	 * transfered, and return the filtered collection for feedback application on
 	 * the tree
 	 * 
-	 * @param selectedRow the collection of selected view model
-	 *                    {@linkplain IThingRowViewModel}
+	 * @param selectedRow the collection of selected view model {@linkplain ElementRowViewModel}
 	 */
-	@Override
-	public void OnSelectionChanged(ClassRowViewModel selectedRow)
+	@SuppressWarnings("unchecked")
+    @Override
+	public void OnSelectionChanged(ElementRowViewModel<?> selectedRow)
 	{
 		if (selectedRow != null && selectedRow.GetElement() != null && this.dstController.GetHubMapResult().stream()
-				.anyMatch(r -> AreTheseEquals(r.GetDstElement().getID(), selectedRow.GetElement().getID())))
+				.anyMatch(r -> AreTheseEquals(r.GetDstElement().getID(), selectedRow.GetElement().getID())
+				        || (selectedRow.GetParent() instanceof ElementRowViewModel 
+				                && ((ElementRowViewModel<?>)selectedRow.GetParent()).GetElement() != null
+				                && AreTheseEquals(r.GetDstElement().getID(), ((ElementRowViewModel<?>)selectedRow.GetParent()).GetElement().getID()))))
 		{
-			this.AddOrRemoveSelectedRowToTransfer(selectedRow);
+			this.AddOrRemoveSelectedRowToTransfer((ElementRowViewModel<? extends NamedElement>) selectedRow);
 		}
 	}
 
@@ -453,44 +461,89 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	 * Adds or remove the {@linkplain Thing} to/from the relevant collection
 	 * depending on the {@linkplain MappingDirection}
 	 * 
-	 * @param thing the {@linkplain Thing} to add or remove
-	 * @return a value indicating whether the row has been selected
+	 * @param rowViewModel the {@linkplain ElementRowViewModel} to add or remove
 	 */
-	private void AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel)
+	@SuppressWarnings("unchecked")
+    private void AddOrRemoveSelectedRowToTransfer(ElementRowViewModel<? extends NamedElement> rowViewModel)
 	{
-		this.AddOrRemoveSelectedRowToTransfer(rowViewModel, rowViewModel.SwitchIsSelectedValue());
-		this.AddOrRemoveForTransfer(rowViewModel.GetIsSelected(), rowViewModel);
+	    if(rowViewModel instanceof ClassRowViewModel)
+	    {
+	        this.AddOrRemoveSelectedRowToTransfer((ClassRowViewModel)rowViewModel, rowViewModel.SwitchIsSelectedValue());
+	        this.AddOrRemoveForTransfer(rowViewModel.GetIsSelected(), rowViewModel);
+	    }
+	    else
+	    {
+	        this.AddOrRemoveForTransfer(rowViewModel.SwitchIsSelectedValue(), rowViewModel);
+	        
+	        if(rowViewModel.GetParent() instanceof ClassRowViewModel)
+	        {
+	            ClassRowViewModel parent = (ClassRowViewModel)rowViewModel.GetParent();
+	            
+	            if(!parent.GetIsSelected() && rowViewModel.GetIsSelected())
+	            {
+	                this.AddOrRemoveForTransfer(true, parent);
+	                this.SwitchIsSelected(parent, true);
+	            }
+	        }
+	        
+	        if(rowViewModel instanceof PartPropertyRowViewModel)
+	        {
+	            Ref<ElementRowViewModel<? extends Element>> refBlockRowViewModel = new Ref<>(null); 
+                
+	            if(!this.TryGetRowViewModelById(this.GetRootRowViewModel().GetContainedRows(), ((PartPropertyRowViewModel)rowViewModel).GetElement().getType(), refBlockRowViewModel))
+                {
+                    return;
+                }
+	            
+	            if(refBlockRowViewModel.Get() instanceof BlockRowViewModel && !refBlockRowViewModel.Get().GetIsSelected() && rowViewModel.GetIsSelected())
+	            {
+	                this.AddOrRemoveSelectedRowToTransfer((BlockRowViewModel)refBlockRowViewModel.Get(), true);
+	                this.AddOrRemoveForTransfer(true, (ElementRowViewModel<? extends NamedElement>) refBlockRowViewModel.Get());
+	            }
+	        }
+	    }
 	}
 
 	/**
 	 * Adds or remove the {@linkplain Thing} to/from the relevant collection
 	 * depending on the {@linkplain MappingDirection}
 	 * 
-	 * @param thing      the {@linkplain Thing} to add or remove
+	 * @param rowViewModel the {@linkplain ClassRowViewModel} to add or remove
 	 * @param isSelected a value indicating whether the row is selected
 	 */
-	private void AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel, boolean isSelected)
+	@SuppressWarnings("unchecked")
+    private void AddOrRemoveSelectedRowToTransfer(ClassRowViewModel rowViewModel, boolean isSelected)
 	{
-		for (Property partProperty : rowViewModel.GetElement().getOwnedAttribute().stream()
-				.filter(x -> this.stereotypeService.DoesItHaveTheStereotype(x, Stereotypes.PartProperty)
-						|| x.getType() instanceof Class)
+		for (Property property : rowViewModel.GetElement().getOwnedAttribute().stream()
 				.collect(Collectors.toList()))
 
 		{
 			Ref<ElementRowViewModel<? extends Element>> refRowViewModel = new Ref<>(null);
-
-			if (this.TryGetRowViewModelBy(this.GetRootRowViewModel().GetContainedRows(),
-					x -> AreTheseEquals(x.GetElement().getID(), partProperty.getType().getID()), refRowViewModel)
-					&& refRowViewModel.Get() instanceof ClassRowViewModel
-					&& this.dstController.GetHubMapResult().stream().anyMatch(
-							r -> AreTheseEquals(r.GetDstElement().getID(), refRowViewModel.Get().GetElement().getID())))
+			
+			if(this.stereotypeService.IsPartProperty(property) || property.getType() instanceof Class)
 			{
-				ClassRowViewModel childRowViewModel = (ClassRowViewModel) refRowViewModel.Get();
-
-				childRowViewModel.SetIsSelected(isSelected);
-				this.AddOrRemoveForTransfer(isSelected, childRowViewModel);
-				this.AddOrRemoveSelectedRowToTransfer(childRowViewModel, isSelected);
+    			if (this.TryGetRowViewModelBy(this.GetRootRowViewModel().GetContainedRows(),
+    					x -> AreTheseEquals(x.GetElement().getID(), property.getType().getID()), refRowViewModel)
+    					&& refRowViewModel.Get() instanceof ClassRowViewModel
+    					&& this.dstController.GetHubMapResult().stream().anyMatch(
+    							r -> AreTheseEquals(r.GetDstElement().getID(), refRowViewModel.Get().GetElement().getID())))
+    			{
+    				ClassRowViewModel childRowViewModel = (ClassRowViewModel) refRowViewModel.Get();
+    
+    				childRowViewModel.SetIsSelected(isSelected);
+    				this.AddOrRemoveForTransfer(isSelected, childRowViewModel);
+    				this.AddOrRemoveSelectedRowToTransfer(childRowViewModel, isSelected);
+    			}
 			}
+			else if(this.stereotypeService.IsValueProperty(property) || property.getType() instanceof DataType)
+	        {
+			    if (this.TryGetRowViewModelBy(rowViewModel.GetContainedRows(),
+			            x -> AreTheseEquals(x.GetElement().getID(), property.getID()), refRowViewModel))
+			    {
+			        refRowViewModel.Get().SetIsSelected(isSelected);
+                    this.AddOrRemoveForTransfer(isSelected, (ElementRowViewModel<NamedElement>)refRowViewModel.Get());
+			    }
+	        }
 		}
 	}
 
@@ -501,12 +554,14 @@ public class MagicDrawImpactViewViewModel extends MagicDrawObjectBrowserViewMode
 	 * @param isSelected   a value indicating whether the row is selected
 	 * @param rowViewModel the {@linkplain Thing} to add or remove
 	 */
-	private void AddOrRemoveForTransfer(boolean isSelected, ClassRowViewModel rowViewModel)
+	private void AddOrRemoveForTransfer(boolean isSelected, ElementRowViewModel<? extends NamedElement> rowViewModel)
 	{
-		if (isSelected)
+		if (isSelected && this.dstController.GetSelectedHubMapResultForTransfer().stream()
+		        .noneMatch(x -> AreTheseEquals(rowViewModel.GetElement().getID(), x.getID())))
 		{
 			this.dstController.GetSelectedHubMapResultForTransfer().add(rowViewModel.GetElement());
-		} else
+		} 
+		else
 		{
 			this.dstController.GetSelectedHubMapResultForTransfer().RemoveOne(rowViewModel.GetElement());
 		}

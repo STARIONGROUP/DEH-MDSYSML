@@ -26,11 +26,12 @@ package ViewModels.Dialogs.Interfaces;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import cdp4common.commondata.Thing;
 
 /**
  * The IHubToDstMappingConfigurationDialogViewModel is the interface definition for the {@linkplain HubToDstMappingConfigurationDialogViewModel}
  */
-public interface IHubToDstMappingConfigurationDialogViewModel extends IMappingConfigurationDialogViewModel<Thing, Class, ClassRowViewModel>
+public interface IHubToDstMappingConfigurationDialogViewModel extends IMappingConfigurationDialogViewModel<Thing, Class, ElementRowViewModel<?>>
 {
 }

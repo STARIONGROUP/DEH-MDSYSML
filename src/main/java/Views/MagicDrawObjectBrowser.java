@@ -34,6 +34,7 @@ import ViewModels.Interfaces.IViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import Views.ObjectBrowser.ObjectBrowserBase;
 
 /**
@@ -86,12 +87,12 @@ public class MagicDrawObjectBrowser extends ObjectBrowserBase<IMagicDrawObjectBr
         Pair<Integer, IElementRowViewModel<?>> row = Pair.of(selectedRowIndex,
                 (IElementRowViewModel<?>) objectBrowserTree.getValueAt(selectedRowIndex, 0));
 
-        if (!(row.getRight() instanceof ClassRowViewModel))
+        if (!(row.getRight() instanceof ElementRowViewModel))
         {
             return;
         }
 
-        dataContext.OnSelectionChanged((ClassRowViewModel) row.getRight());
+        dataContext.OnSelectionChanged((ElementRowViewModel<?>) row.getRight());
 
         SwingUtilities.invokeLater(() -> 
             objectBrowserTree.tableChanged(new TableModelEvent(objectBrowserTree.getOutlineModel(), row.getLeft())));

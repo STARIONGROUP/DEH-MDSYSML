@@ -58,6 +58,7 @@ import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
 import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewModel;
 import ViewModels.ObjectBrowser.ElementDefinitionTree.Rows.ElementDefinitionRowViewModel;
@@ -82,7 +83,7 @@ class DstToHubMappingConfigurationDialogViewModelTest
 	IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel;
 	IMappedElementListViewViewModel<Class> mappedElementListViewViewModel;
 	IStereotypeService stereotypeService;
-	ObservableValue<ClassRowViewModel> magicDrawSelectedElement;
+	ObservableValue<ElementRowViewModel<?>> magicDrawSelectedElement;
 	ObservableValue<ThingRowViewModel<Thing>> elementDefinitionSelectedElement;
 	ObservableValue<ThingRowViewModel<Thing>> requirementSelectedElement;
 	ObservableValue<MappedElementRowViewModel<DefinedThing, Class>> mappedSelectedElement;

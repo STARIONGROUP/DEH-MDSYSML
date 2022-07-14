@@ -41,6 +41,7 @@ import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
 import Views.MagicDrawObjectBrowser;
 import io.reactivex.Observable;
@@ -48,7 +49,7 @@ import io.reactivex.Observable;
 /**
  * The {@linkplain MagicDrawObjectBrowserViewModel} is the view model for the MagicDraw object browser {@linkplain MagicDrawObjectBrowser}
  */
-public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<ClassRowViewModel> implements IMagicDrawObjectBrowserViewModel
+public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<ElementRowViewModel<?>> implements IMagicDrawObjectBrowserViewModel
 {
     /**
      * The {@linkplain IMagicDrawSessionService}
@@ -63,7 +64,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
     /**
      * Backing field for {@linkplain GetSelectedElement}
      */
-    private ObservableValue<ClassRowViewModel> selectedElement = new ObservableValue<>(ClassRowViewModel.class);
+    private ObservableValue<ElementRowViewModel<?>> selectedElement = new ObservableValue<>();
         
     /**
      * Gets the {@linkplain Observable} of {@linkplain ClassRowViewModel} that yields the selected element
@@ -71,7 +72,7 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
      * @return an {@linkplain Observable} of {@linkplain ClassRowViewModel}
      */
     @Override
-    public Observable<ClassRowViewModel> GetSelectedElement()
+    public Observable<ElementRowViewModel<?>> GetSelectedElement()
     {
         return this.selectedElement.Observable();
     }
@@ -91,15 +92,12 @@ public class MagicDrawObjectBrowserViewModel extends ObjectBrowserBaseViewModel<
     /**
      * Occurs when the selection changes
      * 
-     * @param selectedRow the selected {@linkplain ClassRowViewModel}
+     * @param selectedRow the selected {@linkplain ElementRowViewModel}
      */
     @Override
-    public void OnSelectionChanged(ClassRowViewModel selectedRow)
+    public void OnSelectionChanged(ElementRowViewModel<?> selectedRow)
     {
-        if(selectedRow instanceof BlockRowViewModel || selectedRow instanceof RequirementRowViewModel)
-        {
-            this.selectedElement.Value(selectedRow);
-        }            
+        this.selectedElement.Value(selectedRow);
     }
             
     /**

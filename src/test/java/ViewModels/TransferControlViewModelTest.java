@@ -3,7 +3,7 @@
 *
 * Copyright (c) 2020-2022 RHEA System S.A.
 *
-* Author: Sam Gerené, Alex Vorobiev, Nathanael Smiechowski, Antoine Théate
+* Author: Sam Gerenï¿½, Alex Vorobiev, Nathanael Smiechowski, Antoine Thï¿½ate
 *
 * This file is part of DEH-CommonJ
 *
@@ -38,6 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 
 import DstController.IDstController;
 import Enumerations.MappingDirection;
@@ -45,6 +46,7 @@ import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
 import Services.HistoryService.IMagicDrawLocalExchangeHistoryService;
 import Services.MagicDrawUILog.IMagicDrawUILogService;
+import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
 
@@ -55,7 +57,7 @@ class TransferControlViewModelTest
 	IMagicDrawUILogService logService;
 	IMagicDrawLocalExchangeHistoryService exchangeHistory;
 	ObservableCollection<Thing> selectedDstMapResult;
-	ObservableCollection<Class> selectedHubMapResult;
+	ObservableCollection<NamedElement> selectedHubMapResult;
 	ObservableValue<MappingDirection> mappingDirection;
 	Integer currentSelectedTransferCount;
 

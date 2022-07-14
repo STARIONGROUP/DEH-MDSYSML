@@ -42,7 +42,11 @@ import ViewModels.ObjectBrowser.Interfaces.IThingRowViewModel;
 import ViewModels.ObjectBrowser.Rows.ThingRowViewModel;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
+import cdp4common.engineeringmodeldata.ElementDefinition;
 import cdp4common.engineeringmodeldata.Iteration;
+import cdp4common.engineeringmodeldata.Parameter;
+import cdp4common.engineeringmodeldata.ParameterOrOverrideBase;
+import cdp4common.engineeringmodeldata.ParameterOverride;
 
 /**
  * The {@linkplain ImpactViewBaseViewModel} is the main abstract base view model for the impact views tab panel
@@ -97,15 +101,18 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
                     this.UpdateBrowserTrees(this.hubController.GetIsSessionOpen());
                 }
             });
-
+        
         this.dstController.GetSelectedDstMapResultForTransfer()
             .ItemsAdded()
-            .filter(x -> x.stream().allMatch(t -> this.clazz.isInstance(t)))
             .subscribe(x ->
             {
-                for(Thing thing : x)
+                for(Thing thing : x.stream()
+                        .filter(t -> this.clazz.isInstance(t) 
+                                || (this.clazz == ElementDefinition.class && (t instanceof Parameter || t instanceof ParameterOverride)))
+                        .collect(Collectors.toList()))
                 {
-                    this.SwitchIsSelected((TThing)thing, true);
+                    this.logger.debug(String.format("Setting is selected TRUE for %s", thing.getUserFriendlyName()));
+                    this.SwitchIsSelected(thing, true);
                 }
                 
                 this.shouldRefreshTree.Value(true);
@@ -113,10 +120,10 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
 
         this.dstController.GetSelectedDstMapResultForTransfer()
             .ItemRemoved()
-            .filter(x -> this.clazz.isInstance(x))
             .subscribe(x -> 
             {
-                this.SwitchIsSelected((TThing)x, false);
+                this.logger.debug(String.format("Setting is selected FALSE for %s", x.getUserFriendlyName()));
+                this.SwitchIsSelected(x, false);
                 this.shouldRefreshTree.Value(true);
             });
     }
@@ -125,20 +132,54 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
      * Sets is selected property on the row view model that represents the provided {@linkplain Thing}
      * 
      * @param thing The {@linkplain Thing} to find the corresponding row view model
-     * @param shouldSelect A value indicating whether the row view model should set as selected
+     * @param shouldSelect a value indicating whether the row view model should set as selected
      */
-    private void SwitchIsSelected(TThing thing, boolean shouldSelect)
+    @SuppressWarnings("unchecked")
+    private void SwitchIsSelected(Thing thing, boolean shouldSelect)
     {
-        IThingRowViewModel<TThing> viewModel = this.GetRowViewModelFromThing(thing);
+        IThingRowViewModel<TThing> viewModel = null;
         
-        if(!viewModel.GetIsSelected() && shouldSelect)
+        if(thing instanceof Parameter && this.clazz.isInstance(thing.getContainer()) && thing.getContainer() instanceof ElementDefinition)
         {
-            viewModel.SetIsSelected(true);
-        }
-        else if(viewModel.GetIsSelected() && !shouldSelect)
+            IThingRowViewModel<TThing> parentViewModel = this.GetRowViewModelFromThing((TThing)thing.getContainer());
+            
+            for (IThingRowViewModel<TThing> childRow : ((IHaveContainedRows<IThingRowViewModel<TThing>>)parentViewModel).GetContainedRows())
+            {
+                if(AreTheseEquals(childRow.GetThing().getIid(), thing.getIid()))
+                {
+                    viewModel = childRow;
+                }
+            }            
+        }    
+        else if(this.clazz.isInstance(thing))
         {
-            viewModel.SetIsSelected(false);            
+            viewModel = this.GetRowViewModelFromThing((TThing)thing);
         }
+        
+        if(viewModel == null)
+        {
+            return;
+        }
+        
+        this.SwitchIsSelected(viewModel, shouldSelect);
+    }
+    
+    /**
+     * Sets is selected property on the provided row view model that represents the provided {@linkplain Thing}
+     * 
+     * @param rowViewModel the {@linkplain IThingRowViewModel}
+     * @param shouldSelect a value indicating whether the row view model should set as selected
+     */
+    private void SwitchIsSelected(IThingRowViewModel<?> rowViewModel, boolean shouldSelect)
+    {
+        if(!rowViewModel.GetIsSelected() && shouldSelect)
+        {
+            rowViewModel.SetIsSelected(true);
+        }
+        else if(rowViewModel.GetIsSelected() && !shouldSelect)
+        {
+            rowViewModel.SetIsSelected(false);            
+        }        
     }
 
     /**
@@ -292,12 +333,21 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
         if(selectedRow != null && selectedRow.GetThing() != null)
         {
             Ref<Boolean> refShouldSelect = new Ref<>(Boolean.class, null);
-            
+                        
             Collection<IThingRowViewModel<?>> allSelectableRows = this.GetAllSelectableRows(selectedRow, null);
             
             for(IThingRowViewModel<?> rowViewModel : allSelectableRows)
             {
                 this.AddOrRemoveSelectedRowToTransfer(rowViewModel, refShouldSelect);
+            }
+
+            if(selectedRow.GetThing() instanceof ParameterOrOverrideBase)
+            {
+                if(refShouldSelect.Get().booleanValue())
+                {
+                    selectedRow.GetParent().SetIsSelected(true);
+                    this.AddOrRemoveSelectedRowToTransfer((IThingRowViewModel<?>) selectedRow.GetParent(), refShouldSelect);
+                }
             }
         }
     }
@@ -322,20 +372,18 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
         {
             return selectableRows;
         }
+
+        this.logger.debug(String.format("Current row %s is eligible %s", selectedRow.GetThing().getUserFriendlyName(), this.dstController.GetDstMapResult().stream()
+                .anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getIid())
+                        || AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getContainer().getIid()))));
         
         if(this.dstController.GetDstMapResult().stream()
-                    .anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getIid())))
+                    .anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getIid())
+                            || AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getContainer().getIid())))
         {
             selectableRows.add(selectedRow);
         }
-        else if(this.dstController.GetDstMapResult().stream()
-                .anyMatch(x -> AreTheseEquals(x.GetHubElement().getIid(), selectedRow.GetThing().getContainer().getIid())) 
-                && selectableRows.stream().noneMatch(x -> AreTheseEquals(x.GetThing().getIid(), selectedRow.GetThing().getContainer().getIid()))
-                && selectedRow.GetParent() instanceof IThingRowViewModel)
-        {
-            selectableRows.add((IThingRowViewModel<?>) selectedRow.GetParent());
-        }
-        
+                
         if(selectedRow instanceof IHaveContainedRows)
         {
             for (IThingRowViewModel<?> childRow : ((IHaveContainedRows<IThingRowViewModel<?>>)selectedRow).GetContainedRows())
@@ -374,5 +422,7 @@ public abstract class ImpactViewBaseViewModel<TThing extends Thing> extends Obje
         {
             this.dstController.GetSelectedDstMapResultForTransfer().RemoveOne(rowViewModel.GetThing());
         }
+
+        this.SwitchIsSelected(rowViewModel, shouldSelect.Get().booleanValue());
     }
 }

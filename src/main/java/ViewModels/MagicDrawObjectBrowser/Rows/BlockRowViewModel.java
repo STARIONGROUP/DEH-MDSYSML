@@ -73,13 +73,16 @@ public class BlockRowViewModel extends ClassRowViewModel
 			if (StereotypeService.Current().IsReferenceProperty(property))
 			{
 				this.GetContainedRows().add(new ReferencePropertyRowViewModel(this, property));
-			} else if (StereotypeService.Current().IsValueProperty(property) || property.getType() instanceof DataType)
+			}
+			else if (StereotypeService.Current().IsValueProperty(property) || property.getType() instanceof DataType)
 			{
 				this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
-			} else if (StereotypeService.Current().IsPartProperty(property) || property.getType() instanceof Class)
+			}
+			else if (StereotypeService.Current().IsPartProperty(property) || property.getType() instanceof Class)
 			{
 				this.GetContainedRows().add(new PartPropertyRowViewModel(this, property));
-			} else
+			}
+			else
 			{
 				this.GetContainedRows().add(new ValuePropertyRowViewModel(this, property));
 			}
