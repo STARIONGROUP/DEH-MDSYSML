@@ -1,32 +1,26 @@
 # DEH-MDSYSML
 
 The DEH MDSYSML is a Java plugin Application that makes use of the [Comet SDKJ](https://github.com/RHEAGROUP/COMET-SDKJ-Community-Edition),
-which is available on Maven Central.
+which is available on Maven Central. It allows users to interactivly exchange data between models built with the [MagicDraw SysML](hhttps://www.3ds.com/products-services/catia/products/no-magic/addons/sysml-plugin/) software and an ECSS-E-TM-10-25A data source.
 
-The DEH MDSYSML allows users to interactivly exchange data between models built with the [MagicDraw SysML](hhttps://www.3ds.com/products-services/catia/products/no-magic/addons/sysml-plugin/) software and a ECSS-E-TM-10-25A data source.
+The DEH MDSYSML can be used in MagicDraw™ with the SysML plugin and Cameo™ (Cameo Systems Modeler™ and Cameo Enterprise Architecture™), compatible versions are 19 SP3 and 19 SP4.
 
-## Build Instructions
+## Installing the DEH-MDSYSML adapter
 
-Building the DEH-MDSysML adapter requires Maven. If it is not installed yet, download Maven from [apache.org](https://maven.apache.org/download.cgi)
+- Download the [latest release](https://github.com/RHEAGROUP/DEH-MDSYSML/releases/latest).
+- Close any running instance of MagicDraw™ or Cameo™.
+- Unzip the plugin and/or copy the folder contained in the zip file into the plugin directory of the installation location of MagicDraw™ or Cameo™.
+- Restart MagicDraw™ or Cameo™.
+- The same step applies for updating the adapter.
 
-1. Set the class path
-    - ```set CLASSPATH={DEH-MDSYSML project folder}lib\;bin\;C:\Users\nsmiechowski\.m2\repository;{DEH-Commonj project folder}```
-2. Pack the Common library if any changes done to it
-    - ```cd {DEH-Commonj project folder}```
-    - ```mvn package```
-3. Install the generated Jar into the local maven cache
-    - ```mvn install:install-file -Dfile=DEHCommonJ.jar -DgroupId=com.rheagroup -DartifactId=DEHCommonJ -Dversion=1.0.0  -Dpackaging=jar -DgeneratePom=true```
-4. Install required libraries
-    - Copy then past all the Jar file located in ```{your Cameo/MagicDraw installation path}\lib\``` to ```{The location of the DEH-MDSYSML project repository}\lib\```.
-5. Make sure the DEH-MDSYSML compiles in eclipse
-6. Pack the plugin
-    - ```cd {DEH-MDSYSML project folder}```
-    - ```mvn package```
-7. Install the plugin
-    - copy paste ```\target\DEHMDSYSMLPlugin.jar``` and ```{DEH-MDSYSML project folder}plugin.xml``` to ```{cameo of magic draw installation folder}\plugins\com.rheagroup.dehmdsysml\```
+## Operating the DEH-MDSYSML adapter
 
-- Copy then paste the Jar file into ```{your Cameo/MagicDraw installation path}\plugins\com.rheagroup.dehmdsysml\```.
-- Copy then paste the file named ```plugin.xml``` into ```{your Cameo/MagicDraw installation path}\plugins\com.rheagroup.dehmdsysml\```.
+- After installing the adpter.
+- A Comet icon ![Comet](https://github.com/RHEAGROUP/DEH-CommonJ/blob/master/src/main/resources/icon16.png?raw=true) in the main toolbar gives access to show/hide all the views of the adapter.
+- The Hub panel is the one that allows to connect to a Comet webservice/ECSS-E-TM-10-25A data source. Once there is a Comet model open, and a SysML project open. Mapping between models can achieved in any direction.
+- To initialize a new mapping, there is a Map action available in the context menus of Project browsers such as the ones from Cameo or MagicDraw and the ElementDefinitions and Requirements ones from the adapter panels.
+- The Impact View panel is where Impact on target models can be previewed/transfered. Also from this view mapping information can be loaded/saved.
+- The *Notification Window* displays the output of the adapter.
 
 ## License
 
