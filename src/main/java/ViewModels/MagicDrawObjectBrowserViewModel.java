@@ -39,10 +39,8 @@ import Services.MagicDrawTransaction.IMagicDrawTransactionService;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.MagicDrawObjectBrowserTreeViewModel;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IMagicDrawObjectBrowserViewModel;
-import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ElementRowViewModel;
-import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
 import Views.MagicDrawObjectBrowser;
 import io.reactivex.Observable;
 

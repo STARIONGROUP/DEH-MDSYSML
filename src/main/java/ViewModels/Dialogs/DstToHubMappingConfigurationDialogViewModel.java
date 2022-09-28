@@ -29,10 +29,15 @@ import static Utils.Stereotypes.StereotypeUtils.GetShortName;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.google.common.collect.ArrayListMultimap;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
@@ -42,6 +47,8 @@ import DstController.IDstController;
 import Enumerations.MappedElementRowStatus;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
+import Services.ModelConsistency.ICircularDependencyValidationService;
+import Services.NavigationService.INavigationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.MagicDrawRequirementCollection;
@@ -60,6 +67,7 @@ import ViewModels.MappedElementListView.Interfaces.IMappedElementListViewViewMod
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedElementRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
+import Views.Dialogs.AlertAcyclicDependencyDetectedDialog;
 import cdp4common.commondata.DefinedThing;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -79,11 +87,21 @@ public class DstToHubMappingConfigurationDialogViewModel
 	 * The {@linkplain IDstController}
 	 */
 	private final IDstController iDstController;
+	
+    /**
+     * The {@linkplain ICircularDependencyValidationService}}
+     */
+    private final ICircularDependencyValidationService circularDependencyService;
+    
+    /**
+     * The {@linkplain IMagicDrawObjectBrowserViewModel}
+     */
+    private final IMagicDrawObjectBrowserViewModel magicDrawObjectBrowser;
 
 	/**
-	 * The {@linkplain IMagicDrawObjectBrowserViewModel}
+	 * The {@linkplain INavigationService}
 	 */
-	private final IMagicDrawObjectBrowserViewModel magicDrawObjectBrowser;
+	private final INavigationService navigationService;
 
 	/**
 	 * The {@linkplain IStereotypeService}
@@ -104,23 +122,24 @@ public class DstToHubMappingConfigurationDialogViewModel
 	/**
 	 * Initializes a new {@linkplain DstToHubMappingConfigurationDialogViewModel}
 	 * 
-	 * @param dstController                     the {@linkplain IDstController}
-	 * @param hubController                     the {@linkplain IHubController}
-	 * @param elementDefinitionBrowserViewModel the
-	 *                                          {@linkplain IElementDefinitionBrowserViewModel}
-	 * @param requirementBrowserViewModel       the
-	 *                                          {@linkplain IRequirementBrowserViewModel}
-	 * @param magicDrawObjectBrowserViewModel   the
-	 *                                          {@linkplain IMagicDrawObjectBrowserViewModel}
-	 * @param mappedElementListViewViewModel    the
-	 *                                          {@linkplain ICapellaMappedElementListViewViewModel}
-	 * @param stereotypeService                 the {@linkplain IStereotypeService}
+	 * @param dstController the {@linkplain IDstController}
+	 * @param hubController the {@linkplain IHubController}
+	 * @param elementDefinitionBrowserViewModel the {@linkplain IElementDefinitionBrowserViewModel}
+	 * @param requirementBrowserViewModel the {@linkplain IRequirementBrowserViewModel}
+	 * @param magicDrawObjectBrowserViewModel the {@linkplain IMagicDrawObjectBrowserViewModel}
+	 * @param mappedElementListViewViewModel the {@linkplain ICapellaMappedElementListViewViewModel}
+	 * @param stereotypeService the {@linkplain IStereotypeService}
+	 * @param circularDependencyService the {@linkplain ICircularDependencyValidationService}
+	 * @param navigationService the {@linkplain INavigationService}
 	 */
 	public DstToHubMappingConfigurationDialogViewModel(IDstController dstController, IHubController hubController,
 			IElementDefinitionBrowserViewModel elementDefinitionBrowserViewModel,
 			IRequirementBrowserViewModel requirementBrowserViewModel,
 			IMagicDrawObjectBrowserViewModel magicDrawObjectBrowserViewModel,
-			IMappedElementListViewViewModel<Class> mappedElementListViewViewModel, IStereotypeService stereotypeService)
+			IMappedElementListViewViewModel<Class> mappedElementListViewViewModel, 
+			IStereotypeService stereotypeService,
+			ICircularDependencyValidationService circularDependencyService,
+			INavigationService navigationService)
 	{
 		super(dstController, hubController, elementDefinitionBrowserViewModel, requirementBrowserViewModel,
 				mappedElementListViewViewModel);
@@ -128,6 +147,8 @@ public class DstToHubMappingConfigurationDialogViewModel
 		this.iDstController = dstController;
 		this.magicDrawObjectBrowser = magicDrawObjectBrowserViewModel;
 		this.stereotypeService = stereotypeService;
+		this.circularDependencyService = circularDependencyService;
+		this.navigationService = navigationService;
 
 		this.InitializeObservables();
 		this.UpdateProperties();
@@ -224,17 +245,17 @@ public class DstToHubMappingConfigurationDialogViewModel
 	/**
 	 * Pre-map the selected elements
 	 * 
-	 * @param selectedElement the collection of {@linkplain Element}
+	 * @param selectedElements the collection of {@linkplain Element}
 	 * @param requirements the collection of {@linkplain Class}
 	 */
-	protected void PreMap(Collection<Element> selectedElement, Collection<Class> requirements)
+	protected void PreMap(Collection<Element> selectedElements, Collection<Class> requirements)
 	{
-		if (selectedElement == null)
+		if (selectedElements == null)
 		{
 			return;
 		}
 
-		for (Element element : selectedElement)
+		for (Element element : this.FilterInvalidElements(selectedElements))
 		{
 		    if(element instanceof Class)
 		    {		    
@@ -262,6 +283,24 @@ public class DstToHubMappingConfigurationDialogViewModel
 	}
 
 	/**
+	 * Filters out un-mappable {@linkplain Element}s and warn the user
+	 * 
+     * @param selectedElements the original selection of {@linkplain Element}
+     * @return the filtered collection of {@linkplain Element}
+     */
+    private Collection<Element> FilterInvalidElements(Collection<Element> selectedElements)
+    {
+        Pair<ArrayListMultimap<Class, Collection<NamedElement>>, Collection<Element>> elements = this.circularDependencyService.FiltersInvalidElements(selectedElements);
+        
+        if(!elements.getLeft().isEmpty())
+        {
+            this.navigationService.ShowDialog(new AlertAcyclicDependencyDetectedDialog(), new AlertAcyclicDependencyDetectedDialogViewModel(elements.getLeft()));
+        }
+        
+        return elements.getRight();
+    }
+
+    /**
 	 * Get a {@linkplain MappedElementRowViewModel} that represents a pre-mapped
 	 * {@linkplain Class}
 	 * 
@@ -328,7 +367,7 @@ public class DstToHubMappingConfigurationDialogViewModel
 							mappedElementRowViewModel.GetHubElement().getIid())))
 			{
 				mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.ExistingMapping);
-			} 
+			}
 			else if (this.hubController.TryGetThingById(mappedElementRowViewModel.GetHubElement().getIid(), refThing))
 			{
 				mappedElementRowViewModel.SetRowStatus(MappedElementRowStatus.ExisitingElement);

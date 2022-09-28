@@ -26,6 +26,7 @@ package ViewModels.MagicDrawObjectBrowser.Rows;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.poifs.property.Parent;
 
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
@@ -256,6 +257,7 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
             }
         }
     }
+    
     /**
      * Updates the represented {@linkplain Element} with the specified one
      * 
@@ -280,5 +282,24 @@ public abstract class ElementRowViewModel<TElement extends Element> implements I
             thisAsParent.GetContainedRows().clear();
             thisAsParent.ComputeContainedRows();
         }
+    }
+    
+    /**
+     * Helper method to get the {@linkplain RootRowViewModel}
+     * 
+     * @return the {@linkplain RootRowViewModel}
+     */
+    protected RootRowViewModel GetRootRowViewModel()
+    {
+        IRowViewModel parent = this.GetParent();
+        IRowViewModel previousParent = this;
+        
+        while(parent != null && !(parent instanceof RootRowViewModel))
+        {
+            parent = parent.GetParent();
+            previousParent = parent;
+        }
+        
+        return (RootRowViewModel) previousParent;
     }
 }

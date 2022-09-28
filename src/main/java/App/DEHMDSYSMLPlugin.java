@@ -73,6 +73,8 @@ import Services.MappingConfiguration.IMappingConfigurationService;
 import Services.MappingConfiguration.MagicDrawMappingConfigurationService;
 import Services.MappingEngineService.IMappingEngineService;
 import Services.MappingEngineService.MappingEngineService;
+import Services.ModelConsistency.CircularDependencyValidationService;
+import Services.ModelConsistency.ICircularDependencyValidationService;
 import Services.Stereotype.IStereotypeService;
 import Services.Stereotype.StereotypeService;
 import Services.AdapterInfo.IAdapterInfoService;
@@ -86,8 +88,10 @@ import ViewModels.MagicDrawObjectBrowserViewModel;
 import ViewModels.RequirementImpactViewViewModel;
 import ViewModels.TransferControlViewModel;
 import ViewModels.ContextMenu.HubBrowserContextMenuViewModel;
+import ViewModels.Dialogs.AlertAcyclicDependencyDetectedDialogViewModel;
 import ViewModels.Dialogs.DstToHubMappingConfigurationDialogViewModel;
 import ViewModels.Dialogs.HubToDstMappingConfigurationDialogViewModel;
+import ViewModels.Dialogs.Interfaces.IAlertAcyclicDependencyDetectedDialogViewModel;
 import ViewModels.Dialogs.Interfaces.IDstToHubMappingConfigurationDialogViewModel;
 import ViewModels.Dialogs.Interfaces.IHubToDstMappingConfigurationDialogViewModel;
 import ViewModels.Interfaces.IElementDefinitionImpactViewViewModel;
@@ -236,6 +240,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addComponent(DirectedRelationshipsToBinaryRelationshipsMappingRule.class.getName(), DirectedRelationshipsToBinaryRelationshipsMappingRule.class);
             AppContainer.Container.addComponent(BinaryRelationshipsToDirectedRelationshipsMappingRule.class.getName(), BinaryRelationshipsToDirectedRelationshipsMappingRule.class);
             AppContainer.Container.addComponent(IStateMappingRule.class, StateMappingRule.class);
+            AppContainer.Container.as(CACHE).addComponent(ICircularDependencyValidationService.class, CircularDependencyValidationService.class);
 
             AppContainer.Container.addComponent(IMappingConfigurationService.class, MagicDrawMappingConfigurationService.class);
             AppContainer.Container.addComponent(IMagicDrawUILogService.class, MagicDrawUILogService.class);
@@ -261,6 +266,7 @@ public class DEHMDSYSMLPlugin extends Plugin
             AppContainer.Container.addConfig("TElement", Class.class);
             AppContainer.Container.as(Characteristics.USE_NAMES).addComponent(IMappedElementListViewViewModel.class, MappedElementListViewViewModel.class);
             AppContainer.Container.addComponent(IMappingListViewViewModel.class, MagicDrawMappingListViewViewModel.class);
+            AppContainer.Container.addComponent(IAlertAcyclicDependencyDetectedDialogViewModel.class.getSimpleName(), AlertAcyclicDependencyDetectedDialogViewModel.class);
         }
         catch (Exception exception) 
         {

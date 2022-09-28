@@ -45,6 +45,9 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
+import Services.ModelConsistency.ICircularDependencyValidationService;
+import Services.NavigationService.INavigationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.Stereotypes;
@@ -62,6 +65,9 @@ class MagicDrawMappingConfigurationServiceTest
     private ElementDefinition elementDefinition;
     private Requirement requirement;
     private Class dstRequirement;
+    private ICircularDependencyValidationService circularDependencyValidationService;
+    private INavigationService navigationService;
+    private IMagicDrawUILogService logService;
 
     @BeforeEach
     void setUp() throws Exception
@@ -69,10 +75,14 @@ class MagicDrawMappingConfigurationServiceTest
         this.hubController = mock(IHubController.class);
         this.stereotypeService = mock(IStereotypeService.class);
         this.transactionService = mock(IMagicDrawTransactionService.class);
+        this.circularDependencyValidationService = mock(ICircularDependencyValidationService.class);
+        this.navigationService = mock(INavigationService.class);
+        this.logService = mock(IMagicDrawUILogService.class);
         
         when(this.hubController.GetIsSessionOpenObservable()).thenReturn(Observable.fromArray(true, false));
         
-        this.service = new MagicDrawMappingConfigurationService(this.hubController, this.transactionService, this.stereotypeService);
+        this.service = new MagicDrawMappingConfigurationService(this.hubController, this.transactionService, this.stereotypeService, 
+                this.circularDependencyValidationService, this.navigationService, this.logService);
     }
     
     @SuppressWarnings("unchecked")

@@ -28,26 +28,37 @@ import static Utils.Operators.Operators.AreTheseEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.MutableTriple;
 
+import com.nomagic.magicdraw.ui.notification.NotificationSeverity;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 
 import Enumerations.MappingDirection;
 import HubController.IHubController;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.MagicDrawUILog.IMagicDrawUILogService;
+import Services.MagicDrawUILog.MagicDrawUILogService;
+import Services.ModelConsistency.ICircularDependencyValidationService;
+import Services.NavigationService.INavigationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Ref;
 import Utils.Stereotypes.Stereotypes;
+import ViewModels.Dialogs.AlertAcyclicDependencyDetectedDialogViewModel;
 import ViewModels.Interfaces.IMappedElementRowViewModel;
 import ViewModels.Rows.MappedElementDefinitionRowViewModel;
 import ViewModels.Rows.MappedRequirementRowViewModel;
+import Views.Dialogs.AlertAcyclicDependencyDetectedDialog;
 import cdp4common.commondata.Thing;
 import cdp4common.engineeringmodeldata.ActualFiniteState;
 import cdp4common.engineeringmodeldata.ElementDefinition;
@@ -63,11 +74,26 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
      * The {@linkplain IMagicDrawTransactionService}
      */
     private final IMagicDrawTransactionService transactionService;
+
+    /**
+     * The {@linkplain ICircularDependencyValidationService}
+     */
+    private final ICircularDependencyValidationService circularDependencyValidationService;
     
     /**
      * The {@linkplain IStereotypeService}
      */
-    private IStereotypeService stereotypeService;
+    private final IStereotypeService stereotypeService;
+    
+    /**
+     * The {@linkplain INavigationService}
+     */
+    private final INavigationService navigationService;
+
+    /**
+     * The {@linkplain IMagicDrawUILogService}
+     */
+    private final IMagicDrawUILogService logService;
     
     /**
      * Initializes a new {@linkplain MagicDrawMappingConfigurationService}
@@ -75,12 +101,20 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
      * @param HubController the {@linkplain IHubController}
      * @param transactionService the {@linkplain ICapellaTransactionService}
      * @param stereotypeService the {@linkplain IStereotypeService}
+     * @param circularDependencyValidationService the {@linkplain ICircularDependencyValidationService}
+     * @param navigationservice the {@linkplain INavigationService}
+     * @param logService the {@linkplain IMagicDrawUILogService}
      */
-    public MagicDrawMappingConfigurationService(IHubController hubController, IMagicDrawTransactionService transactionService, IStereotypeService stereotypeService)
+    public MagicDrawMappingConfigurationService(IHubController hubController, IMagicDrawTransactionService transactionService, 
+            IStereotypeService stereotypeService, ICircularDependencyValidationService circularDependencyValidationService,
+            INavigationService navigationservice, IMagicDrawUILogService logService)
     {
         super(hubController, ExternalIdentifier.class);
         this.transactionService = transactionService;
         this.stereotypeService = stereotypeService;
+        this.circularDependencyValidationService = circularDependencyValidationService;
+        this.navigationService = navigationservice;
+        this.logService = logService;
 
         this.hubController.GetIsSessionOpenObservable()
         .subscribe(x -> 
@@ -104,14 +138,28 @@ public class MagicDrawMappingConfigurationService extends MappingConfigurationSe
     {
         List<IMappedElementRowViewModel> mappedElements = new ArrayList<>();
 
+        Set<Class> invalidElements = new HashSet<>();
+        
         for (Class element : elements)
         {
             Ref<IMappedElementRowViewModel> refMappedElementRowViewModel = new Ref<>(IMappedElementRowViewModel.class);
             
             if(this.TryGetMappedElement(element, refMappedElementRowViewModel))
             {
+                if(this.circularDependencyValidationService.GetInvalidPaths().containsKey(element))
+                {
+                    invalidElements.add(element);
+                    continue;
+                }
+                
                 mappedElements.add(refMappedElementRowViewModel.Get());
             }
+        }
+        
+        for (Class unLoadedElement : invalidElements)
+        {
+            this.logService.Append("Mapping for element [%s] was not loaded because its part of a cyclic dependency path in the SysML model", 
+                    NotificationSeverity.WARNING, unLoadedElement.getName());
         }
         
         return mappedElements;
