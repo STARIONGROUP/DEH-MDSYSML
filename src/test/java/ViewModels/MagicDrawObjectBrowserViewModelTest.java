@@ -49,8 +49,10 @@ import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Rows.BlockRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.ClassRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.PackageRowViewModel;
+import ViewModels.MagicDrawObjectBrowser.Rows.PartPropertyRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RequirementRowViewModel;
 import ViewModels.MagicDrawObjectBrowser.Rows.RootRowViewModel;
+import ViewModels.ObjectBrowser.Interfaces.IHaveContainedRows;
 
 class MagicDrawObjectBrowserViewModelTest
 {
@@ -211,4 +213,53 @@ class MagicDrawObjectBrowserViewModelTest
 		blockRow.UpdateElement(typeBlock, false);
 		blockRow.UpdateElement(typeBlock, true);
 	}
+	
+	@Test
+	public void VerifyCircularModelDependiesDontCrashTheComputationOfTheTree()
+	{
+	    Package mainPackage = mock(Package.class);
+        when(mainPackage.getName()).thenReturn("Package");
+
+        this.elements.add(mainPackage);
+        ArrayList<Element> containedElements = new ArrayList<>();
+        when(mainPackage.getOwnedElement()).thenReturn(containedElements);
+
+        Class blockA = mock(Class.class);
+        when(blockA.getName()).thenReturn("blockB");
+        when(this.stereotypeService.DoesItHaveTheStereotype(blockA, Stereotypes.Block)).thenReturn(true);
+        containedElements.add(blockA);
+        
+        ArrayList<Property> blockAProperties = new ArrayList<>();
+        when(blockA.getOwnedAttribute()).thenReturn(blockAProperties);
+
+        Class blockB = mock(Class.class);
+        when(blockB.getName()).thenReturn("blockB");
+        when(this.stereotypeService.DoesItHaveTheStereotype(blockB, Stereotypes.Block)).thenReturn(true);
+        containedElements.add(blockB);
+        
+        ArrayList<Property> blockBProperties = new ArrayList<>();
+        when(blockB.getOwnedAttribute()).thenReturn(blockBProperties);
+
+        Property partPropertyA = mock(Property.class);
+        when(partPropertyA.getID()).thenReturn(UUID.randomUUID().toString());
+        when(this.stereotypeService.IsPartProperty(partPropertyA)).thenReturn(true);
+        blockBProperties.add(partPropertyA);
+        
+        Property partPropertyB = mock(Property.class);
+        when(partPropertyB.getID()).thenReturn(UUID.randomUUID().toString());
+        when(this.stereotypeService.IsPartProperty(partPropertyB)).thenReturn(true);
+        blockAProperties.add(partPropertyB);
+
+        assertDoesNotThrow(() -> this.viewModel.BuildTree());
+        
+        RootRowViewModel root = (RootRowViewModel) this.viewModel.GetBrowserTreeModel().getRoot();
+
+        PackageRowViewModel packageRow = (PackageRowViewModel) root.GetContainedRows().get(0);
+        assertEquals(Stereotypes.Package, packageRow.GetClassKind());
+        assertEquals(2, packageRow.GetContainedRows().size());
+        assertEquals(1, ((IHaveContainedRows<?>)packageRow.GetContainedRows().get(0)).GetContainedRows().size());
+        assertEquals(1, ((IHaveContainedRows<?>)packageRow.GetContainedRows().get(1)).GetContainedRows().size());
+        assertTrue(((PartPropertyRowViewModel)((IHaveContainedRows<?>)packageRow.GetContainedRows().get(0)).GetContainedRows().get(0)).GetContainedRows().isEmpty());
+        assertTrue(((PartPropertyRowViewModel)((IHaveContainedRows<?>)packageRow.GetContainedRows().get(1)).GetContainedRows().get(0)).GetContainedRows().isEmpty());
+	}	
 }

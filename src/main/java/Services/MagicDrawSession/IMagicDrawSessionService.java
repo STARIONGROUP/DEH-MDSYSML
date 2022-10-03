@@ -29,6 +29,7 @@ import com.nomagic.magicdraw.core.Project;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
+import Reactive.ObservableValue;
 import io.reactivex.Observable;
 
 /**
@@ -54,8 +55,7 @@ public interface IMagicDrawSessionService
 	boolean HasAnyOpenSession();
 
 	/**
-	 * Gets the {@linkplain Observable} of {@linkplain Boolean} that indicates when
-	 * the emitted Project gets saved
+	 * Gets the {@linkplain Observable} of {@linkplain Boolean} that indicates whenever the session has been updated
 	 * 
 	 * @return an {@linkplain Observable} of {@linkplain Boolean}
 	 */
@@ -95,4 +95,18 @@ public interface IMagicDrawSessionService
      * @return a {@linkplain Collection} of {@linkplain Element}
      */
     Collection<Element> GetProjectElements();
+
+    /**
+     * Gets the Session Event {@linkplain ObservableValue}
+     * 
+     * @return an {@linkplain ObservableValue} of {@linkplain Boolean}
+     */
+    ObservableValue<Boolean> GetSessionEvent();
+
+    /**
+     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating the subscribers whenever the open document gets saved
+     * 
+     * @return an {@linkplain Observable} of {@linkplain Boolean}
+     */
+    Observable<Boolean> ProjectSaved();
 }

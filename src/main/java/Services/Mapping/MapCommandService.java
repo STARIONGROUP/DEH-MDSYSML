@@ -291,7 +291,7 @@ public class MapCommandService implements IMapCommandService
                 .stream()
                 .filter(m -> m.GetIsValid())
                 .collect(Collectors.toList());
-                    
+
         StopWatch timer = StopWatch.createStarted();
         
         Task.Run(() -> this.MapSelectedElements(validMappedElements, mappingDirection), boolean.class)

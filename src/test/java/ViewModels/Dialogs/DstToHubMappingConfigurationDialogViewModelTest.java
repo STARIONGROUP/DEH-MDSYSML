@@ -49,6 +49,8 @@ import HubController.IHubController;
 import Reactive.ObservableCollection;
 import Reactive.ObservableValue;
 import Services.MagicDrawTransaction.IMagicDrawTransactionService;
+import Services.ModelConsistency.ICircularDependencyValidationService;
+import Services.NavigationService.INavigationService;
 import Services.Stereotype.IStereotypeService;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.Interfaces.IElementDefinitionBrowserViewModel;
@@ -90,6 +92,8 @@ class DstToHubMappingConfigurationDialogViewModelTest
 	ObservableCollection<MappedElementRowViewModel<DefinedThing, Class>> dstMapResult;
 	Iteration iteration;
     private IMagicDrawTransactionService transactionService;
+    private ICircularDependencyValidationService circularDependencyService;
+    private INavigationService navigationService;
 
 	@SuppressWarnings("unchecked")
 	@BeforeEach
@@ -109,6 +113,8 @@ class DstToHubMappingConfigurationDialogViewModelTest
 		this.mappedElementListViewViewModel = mock(IMappedElementListViewViewModel.class);
 		this.stereotypeService = mock(IStereotypeService.class);
 		this.transactionService = mock(IMagicDrawTransactionService.class);
+		this.circularDependencyService = mock(ICircularDependencyValidationService.class);
+		this.navigationService = mock(INavigationService.class);
 
 		DomainOfExpertise domain = new DomainOfExpertise();
 		domain.setName("THERMAL");
@@ -133,7 +139,8 @@ class DstToHubMappingConfigurationDialogViewModelTest
 
 		this.viewModel = new DstToHubMappingConfigurationDialogViewModel(this.dstController, this.hubController,
 				this.elementDefinitionBrowserViewModel, this.requirementBrowserViewModel,
-				this.magicDrawObjectBrowserViewModel, this.mappedElementListViewViewModel, this.stereotypeService);
+				this.magicDrawObjectBrowserViewModel, this.mappedElementListViewViewModel, 
+				this.stereotypeService, this.circularDependencyService, this.navigationService);
 	}
 
 	@Test

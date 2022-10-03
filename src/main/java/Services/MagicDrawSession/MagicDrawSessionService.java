@@ -31,6 +31,7 @@ import com.nomagic.magicdraw.core.project.ProjectEventListener;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 
+import Reactive.ObservableValue;
 import io.reactivex.Observable;
 
 /**
@@ -71,11 +72,38 @@ public class MagicDrawSessionService implements IMagicDrawSessionService
      * @return an {@linkplain Observable} of {@linkplain Boolean}
      */
     @Override
-    public Observable<Boolean> SessionUpdated() 
+    public Observable<Boolean> ProjectSaved() 
     {
         return this.projectEventListener.ProjectSaved();
     }
-
+    
+    /**
+     * Backing field for {@linkplain #GetSessionEvent()}
+     */
+    private ObservableValue<Boolean> sessionEvent = new ObservableValue<>();
+    
+    /**
+     * Gets the Session Event {@linkplain ObservableValue}
+     * 
+     * @return an {@linkplain ObservableValue} of {@linkplain Boolean}
+     */
+    @Override
+    public ObservableValue<Boolean> GetSessionEvent()
+    {
+        return this.sessionEvent;
+    }
+    
+    /**
+     * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating the subscribers whenever the session has been updated
+     * 
+     * @return an {@linkplain Observable} of {@linkplain Boolean}
+     */
+    @Override
+    public Observable<Boolean> SessionUpdated()
+    {
+        return this.sessionEvent.Observable();
+    }
+    
     /**
      * Gets an {@linkplain Observable} of {@linkplain Boolean} indicating if Cameo/MagicDraw has an open document
      * 

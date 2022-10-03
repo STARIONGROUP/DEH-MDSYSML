@@ -27,7 +27,10 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 
+import App.AppContainer;
 import Reactive.ObservableCollection;
+import Services.ModelConsistency.CircularDependencyValidationService;
+import Services.ModelConsistency.ICircularDependencyValidationService;
 import Services.Stereotype.StereotypeService;
 import Utils.Stereotypes.Stereotypes;
 import ViewModels.MagicDrawObjectBrowser.Interfaces.IElementRowViewModel;
@@ -83,27 +86,31 @@ public class PartPropertyRowViewModel extends PropertyRowViewModel implements IH
 	{
 		this.containedRows.clear();
 
-		Type elementType = this.GetElement().getType();
+		Type propertyType = this.GetElement().getType();
 		
-		if (!(elementType instanceof Class))
+		if (!(propertyType instanceof Class))
 		{
 			this.logger.error(String.format("The Part Property %s is not correctly typed", this.GetName()));
 			return;
 		}
 
-		for (Property property : ((Class) elementType).getOwnedAttribute())
+		for (Property property : ((Class) propertyType).getOwnedAttribute())
 		{
 			if (StereotypeService.Current().IsReferenceProperty(property))
 			{
 				this.containedRows.add(new ReferencePropertyRowViewModel(this, property));
-			} else if (StereotypeService.Current().IsValueProperty(property))
+			} 
+			else if (StereotypeService.Current().IsValueProperty(property))
 			{
 				this.containedRows.add(new ValuePropertyRowViewModel(this, property));
-			} else if (StereotypeService.Current().IsPartProperty(property)
-					&& !property.getID().equals(this.GetElement().getID()))
+			} 
+			else if (StereotypeService.Current().IsPartProperty(property)
+					&& !property.getID().equals(this.GetElement().getID())
+					&& AppContainer.Container.getComponent(ICircularDependencyValidationService.class).IsAlreadyPresent(this.GetRootRowViewModel(), property))
 			{
 				this.containedRows.add(new PartPropertyRowViewModel(this, property));
-			} else
+			} 
+			else
 			{
 				this.containedRows.add(new ValuePropertyRowViewModel(this, property));
 			}
