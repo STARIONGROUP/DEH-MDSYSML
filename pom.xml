@@ -6,15 +6,14 @@
 
 	<groupId>com.rheagroup</groupId>
 	<artifactId>DEHMDSYSMLPlugin</artifactId>
-	<version>1.6.3</version>
+	<version>1.6.4</version>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.rheagroup</groupId>
-			<artifactId>cdp4servicesdal</artifactId>
-			<scope>compile</scope>
-			<version>3.0.0</version>
-		</dependency>
+	    <dependency>
+	        <groupId>com.rheagroup</groupId>
+	        <artifactId>DEHCommonJ</artifactId>
+	        <version>1.1.0</version>
+	    </dependency>
 		<dependency>
 			<groupId>org.bidib.org.picocontainer</groupId>
 			<artifactId>picocontainer</artifactId>
@@ -31,11 +30,6 @@
 			<artifactId>swingx-all</artifactId>
 			<version>1.6.5-1</version>
 		</dependency>
-		<dependency>
-			<groupId>com.rheagroup</groupId>
-			<artifactId>DEHCommonJ</artifactId>
-			<version>1.0.0</version>
-		</dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -46,6 +40,12 @@
             <artifactId>org.eclipse.emf.ecore</artifactId>
             <version>2.25.0</version>
 	   </dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>RELEASE</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
