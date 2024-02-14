@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="com.rheagroup" name="DEH-MDSYSML adapter" version="1.6.4" provider-name="Rheagroup" class="App.DEHMDSYSMLPlugin">
+<plugin id="com.rheagroup.dehcsmadapter" name="DEH-MDSYSML adapter" version="1.6.5" provider-name="Rheagroup" class="App.DEHMDSYSMLPlugin">
     <requires>
         <api version="1.0" />
     </requires>

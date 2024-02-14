@@ -35,7 +35,7 @@ echo ^= \-c ===^> Run Cameo                                                     
 echo ^= \-m ===^> Run MagicDraw                                                                              =
 echo ^=======================================================================================================
 
-set target = "m"
+set target="m"
 if /I "%1" == "-c" set target="c"
 if /I "%1" == "-m" set target="m"
 if /I "%2" == "-p" goto PackPlugin
