@@ -6,19 +6,29 @@
 
 	<groupId>com.rheagroup</groupId>
 	<artifactId>DEHMDSYSMLPlugin</artifactId>
-	<version>1.6.4</version>
+	<version>1.6.5</version>
+
+	<properties>
+		<maven.compiler.source>8</maven.compiler.source>
+		<maven.compiler.target>8</maven.compiler.target>
+	</properties>
 
 	<dependencies>
 	    <dependency>
 	        <groupId>com.rheagroup</groupId>
 	        <artifactId>DEHCommonJ</artifactId>
-	        <version>1.1.0</version>
+	        <version>1.1.1</version>
 	    </dependency>
 		<dependency>
 			<groupId>org.bidib.org.picocontainer</groupId>
 			<artifactId>picocontainer</artifactId>
 			<scope>compile</scope>
 			<version>2.16</version>
+		</dependency>
+		<dependency>
+			<groupId>org.netbeans.api</groupId>
+			<artifactId>org-netbeans-swing-outline</artifactId>
+			<version>RELEASE170</version>
 		</dependency>
         <dependency>
             <groupId>io.reactivex.rxjava2</groupId>
